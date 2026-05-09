@@ -2988,22 +2988,22 @@ const LICENCE_KEY = 'vla_licence_v1';
 async function checkLicence(){
   // ── Bypass entirely if licence URL has not been configured yet ──
   const isConfigured = LICENCE_URL && !LICENCE_URL.startsWith('YOUR_');
+  console.log('[LICENCE] isConfigured:', isConfigured, '| URL:', LICENCE_URL);
   if(!isConfigured) return { allowed: true };
 
   // ── 1. Try an online check (6-second timeout) ──
   try {
-    const controller = new AbortController();
-    const timer = setTimeout(()=>controller.abort(), 6000);
-    const res = await fetch(LICENCE_URL + '?action=licence', {
+    const fetchPromise = fetch(LICENCE_URL + '?action=licence', {
       cache:'no-store',
-      redirect:'follow',
-      signal: controller.signal
+      redirect:'follow'
     });
-    clearTimeout(timer);
+    const timeoutPromise = new Promise((_,rej) => setTimeout(()=>rej(new Error('timeout')), 6000));
+    const res = await Promise.race([fetchPromise, timeoutPromise]);
+    console.log('[LICENCE] response type:', res.type, '| ok:', res.ok, '| status:', res.status);
     if(res.type === 'opaque' || !res.ok) throw new Error('bad_response');
     const data = await res.json();
+    console.log('[LICENCE] server response:', JSON.stringify(data));
     const isActive = data.active === true;
-    // Save BOTH the timestamp and the actual status
     try { localStorage.setItem(LICENCE_KEY, JSON.stringify({ts: Date.now(), active: isActive})); } catch(e){}
     if(isActive){
       return { allowed: true };
@@ -3011,15 +3011,15 @@ async function checkLicence(){
       return { allowed: false, reason: 'expired' };
     }
   } catch(e){
+    console.log('[LICENCE] fetch failed:', e.message);
     // ── 2. Fetch failed (offline, CORS, timeout) — use last saved status ──
     try {
       const saved = JSON.parse(localStorage.getItem(LICENCE_KEY)||'null');
+      console.log('[LICENCE] saved stamp:', JSON.stringify(saved));
       if(saved && saved.ts){
-        // If the last known status was inactive — keep blocking, no grace
         if(saved.active === false){
           return { allowed: false, reason: 'expired' };
         }
-        // Last known was active — apply grace period for genuine offline use
         const daysSince = (Date.now() - saved.ts) / 86400000;
         if(daysSince <= GRACE_DAYS){
           return { allowed: true, offline: true, daysLeft: Math.ceil(GRACE_DAYS - daysSince) };
@@ -3027,8 +3027,7 @@ async function checkLicence(){
         return { allowed: false, reason: 'grace' };
       }
     } catch(e2){}
-    // No saved state at all — if URL is configured, block until first successful check
-    // (agent must be online for their very first login after licence URL is set)
+    console.log('[LICENCE] no stamp found — blocking');
     return { allowed: false, reason: 'no_stamp' };
   }
 }
@@ -3056,22 +3055,19 @@ async function fetchAgentsFromSheets(){
   const url = localStorage.getItem(SHEETS_URL_KEY) || APPS_SCRIPT_URL;
   if(!url) return null;
   try {
-    const controller = new AbortController();
-    const timer = setTimeout(()=>controller.abort(), 5000);
-    const res = await fetch(url + '?action=getAgents', {signal: controller.signal});
-    clearTimeout(timer);
+    const fetchPromise = fetch(url + '?action=getAgents', {cache:'no-store'});
+    const timeoutPromise = new Promise((_,rej) => setTimeout(()=>rej(new Error('timeout')), 5000));
+    const res = await Promise.race([fetchPromise, timeoutPromise]);
     const data = await res.json();
     // Validate response before trusting it
     if(data.status === 'ok' && data.agents && typeof data.agents === 'object' && !Array.isArray(data.agents)){
       const local = getAgents();
-      // Merge: Sheets takes precedence for existing agents; local-only agents preserved
       const merged = Object.assign({}, local, data.agents);
       saveAgents(merged);
       return merged;
     }
     return null;
   } catch(e){
-    // Network error, timeout, or bad JSON — silently fall back to cached agents
     return null;
   }
 }
