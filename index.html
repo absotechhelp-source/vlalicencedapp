@@ -1615,7 +1615,7 @@ input:checked+.tog-trk:before{transform:translateX(17px)}
         <div style="font-size:11px;color:var(--T2);margin-bottom:10px">Select ID type used for this application:</div>
         <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:12px">
           <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer"><input type="radio" name="prop-id-type" value="Passport" style="accent-color:var(--M)"> Passport</label>
-          <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer"><input type="radio" name="prop-id-type" value="Driving " style="accent-color:var(--M)"> Driving </label>
+          <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer"><input type="radio" name="prop-id-type" value="Driving Licence" style="accent-color:var(--M)"> Driving Licence</label>
           <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer"><input type="radio" name="prop-id-type" value="National ID" style="accent-color:var(--M)"> National ID</label>
           <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer"><input type="radio" name="prop-id-type" value="Birth Certificate" style="accent-color:var(--M)"> Birth Certificate</label>
           <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer"><input type="radio" name="prop-id-type" value="Other" style="accent-color:var(--M)"> Other</label>
@@ -2413,7 +2413,7 @@ input:checked+.tog-trk:before{transform:translateX(17px)}
           <textarea id="pp-address" class="f-inp" rows="2" placeholder="Street, Area, City"></textarea>
           <div class="f-row" style="margin-top:10px">
             <div class="f-col"><label class="f-lbl">ID Type</label>
-              <select id="pp-id-type" class="f-inp"><option value="">Select</option><option value="NID">National ID</option><option value="Passport">Passport</option><option value="Drivers License">Driver's </option></select>
+              <select id="pp-id-type" class="f-inp"><option value="">Select</option><option value="NID">National ID</option><option value="Passport">Passport</option><option value="Drivers License">Driver's Licence</option></select>
             </div>
             <div class="f-col"><label class="f-lbl">ID Number</label><input id="pp-id-num" class="f-inp" type="text" placeholder="ID number"></div>
           </div>
@@ -2981,7 +2981,7 @@ const SESSION_KEY   = 'vla_session_v1';
                   successful online licence check
    LICENCE_KEY  → localStorage key that stores the last check timestamp
 ──────────────────────────────────────────────────────────────────── */
-const LICENCE_URL = 'https://script.google.com/macros/s/AKfycbxqz37aR04L_AEBKQN8URTJsI1CsfFMaDAgLMkWfuls_5KdZ_tYu_OcFw-VnGc2SVh2hQ/exec';
+const LICENCE_URL = 'https://script.google.com/macros/s/AKfycbw7-0hF6uMUqEXWlS1pU4VCNTD_amm4dOsH1VZtq3gfEW6a3FDcmQNbN_7pmiruGcCq2w/exec';
 const GRACE_DAYS  = 7;
 const LICENCE_KEY = 'vla_licence_v1';
 
@@ -3346,7 +3346,19 @@ window.addEventListener('DOMContentLoaded', async ()=>{
       const agentRecord = agents[saved.agent];
       if(agentRecord && agentRecord.active) {
         // ── Licence check on session restore ──
-        const lic = await checkLicence();
+        const lic = await checkLicence();if (!lic.allowed) {
+  licErr.style.display = 'block';
+
+  if (lic.reason === 'expired') {
+    licErr.innerHTML = '⛔ Licence expired. Access blocked.';
+  } else if (lic.reason === 'grace') {
+    licErr.innerHTML = '⛔ Offline grace period expired.';
+  } else {
+    licErr.innerHTML = '⛔ Licence check failed.';
+  }
+
+  return; // 🔴 THIS is what actually stops sign-in
+}
         if(!lic.allowed){
           // Licence revoked or grace expired — clear session and show login
           try { localStorage.removeItem(SESSION_KEY); } catch(_){}
