@@ -3346,7 +3346,15 @@ window.addEventListener('DOMContentLoaded', async ()=>{
       const agentRecord = agents[saved.agent];
       if(agentRecord && agentRecord.active) {
         // ── Licence check on session restore ──
-        const lic = await checkLicence();if (!lic.allowed) {
+        const lic = await checkLicence();
+
+if (!lic.allowed) {
+  document.body.innerHTML = '<h1>⛔ Access revoked</h1>';
+  throw new Error('Licence blocked');
+}
+
+// continue login ONLY if allowed 
+      if (!lic.allowed) {
   licErr.style.display = 'block';
 
   if (lic.reason === 'expired') {
