@@ -3027,8 +3027,9 @@ async function checkLicence(){
         return { allowed: false, reason: 'grace' };
       }
     } catch(e2){}
-    // No saved state at all — allow first-time access
-    return { allowed: true, offline: true, daysLeft: GRACE_DAYS };
+    // No saved state at all — if URL is configured, block until first successful check
+    // (agent must be online for their very first login after licence URL is set)
+    return { allowed: false, reason: 'no_stamp' };
   }
 }
 function getAgents(){
@@ -3423,6 +3424,8 @@ async function doLogin(){
       err.style.display='none';
       if(lic.reason === 'expired'){
         licErr.innerHTML = '&#x26D4; This application licence has expired.<br>Please contact your administrator to restore access.';
+      } else if(lic.reason === 'no_stamp'){
+        licErr.innerHTML = '&#x26D4; Unable to verify licence.<br>Please connect to the internet and try again.';
       } else {
         licErr.innerHTML = '&#x26D4; Offline licence grace period has elapsed.<br>Please connect to the internet and try again.';
       }
@@ -3446,7 +3449,8 @@ async function doLogin(){
     document.getElementById('screen-login').classList.remove('active');
     document.getElementById('screen-app').classList.add('active');
     document.getElementById('topbar-agent-name').textContent='VLA Sales App · '+user+(isAdmin?' [Admin]':'');
-    document.getElementById('set-agentname').textContent=user;
+    const _agentName=document.getElementById('set-agentname');
+    if(_agentName) _agentName.textContent=user;
     const _setRole=document.getElementById('set-role');
     if(_setRole){_setRole.textContent=isAdmin?'Administrator':'Sales Agent';_setRole.style.background=isAdmin?'#ede9fe':'';_setRole.style.color=isAdmin?'#6d28d9':'';}
     // Show admin option in More menu
