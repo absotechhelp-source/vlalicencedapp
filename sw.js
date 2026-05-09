@@ -5,7 +5,7 @@
 
 // ── Bump this version string every time you deploy a new build ──
 // The browser detects the change and triggers the update flow.
-const CACHE_VERSION = 'vla-v2.1';
+const CACHE_VERSION = 'vla-v2.2';
 const CACHE_NAME = CACHE_VERSION;
 
 // Files to cache for offline use
