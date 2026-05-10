@@ -4124,24 +4124,30 @@ async function retroSyncAllQuotes(){
 
   showToast('🔍 Checking what\'s already in Sheets…', 3000);
 
-  // ── Step 1: Fetch all refs already in Sheets for this agent ──
+  // ── Step 1: Fetch all refs already in Sheets (quotes AND proposals) ──
   let existingRefs = new Set();
-  try {
-    const res = await Promise.race([
-      fetch(url + '?action=getQuotes&agent=' + encodeURIComponent(currentAgent), {cache:'no-store'}),
-      new Promise((_,rej) => setTimeout(()=>rej(new Error('timeout')), 8000))
-    ]);
-    const data = await res.json();
-    if(data.status === 'ok' && Array.isArray(data.quotes)){
-      data.quotes.forEach(q => {
-        const ref = q.Reference || q.QuoteRef || q.ref || '';
-        if(ref) existingRefs.add(ref.trim());
-      });
-    }
-  } catch(e){
-    // Can't reach Sheets — proceed anyway, user accepts risk of duplicates
-    showToast('⚠️ Could not check existing records — proceeding anyway', 3000);
-    await new Promise(r=>setTimeout(r,2000));
+  async function fetchRefs(action){
+    try {
+      const res = await Promise.race([
+        fetch(url+'?action='+action+'&agent='+encodeURIComponent(currentAgent), {cache:'no-store'}),
+        new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')),8000))
+      ]);
+      const data = await res.json();
+      if(data.status === 'ok'){
+        const items = data.quotes || data.refs || [];
+        items.forEach(item => {
+          const ref = typeof item === 'string' ? item
+                    : (item.Reference || item.QuoteRef || item.ref || '');
+          if(ref) existingRefs.add(ref.trim());
+        });
+      }
+    } catch(e){}
+  }
+  await fetchRefs('getQuotes');
+  await fetchRefs('getProposals');
+  if(existingRefs.size === 0){
+    showToast('⚠️ Could not verify existing records — duplicates possible', 3000);
+    await new Promise(r=>setTimeout(r,1500));
   }
 
   // ── Step 2: Collect all local records ──
