@@ -3504,6 +3504,8 @@ async function doLogin(){
     setTimeout(()=>flushSyncQueue(true), 2000);
     // Sync agent list from Sheets in the background — does not affect this login
     setTimeout(()=>{ try{ fetchAgentsFromSheets(); }catch(e){} }, 3000);
+    // Restore any missing quote history from Sheets (survives data clears & new devices)
+    setTimeout(()=>{ try{ restoreHistoryFromSheets(user); }catch(e){} }, 4000);
   } else {
     err.style.display='block';
     document.getElementById('l-pin').value='';
@@ -3964,6 +3966,70 @@ function saveQuoteLocally(q){
 }
 function getLocalQuotes(){return JSON.parse(localStorage.getItem('vla_quotes')||'[]');}
 function getLocalMyQuotes(){return JSON.parse(localStorage.getItem('vla_my_quotes')||'[]');}
+
+/* ── Restore quote history from Sheets on login ─────────────────────────
+   Fetches this agent's quotes from Sheets and merges with local history.
+   Local quotes always take precedence. New quotes from Sheets are added
+   so history survives data clears and new device installs.
+──────────────────────────────────────────────────────────────────────── */
+async function restoreHistoryFromSheets(agentName){
+  const url = localStorage.getItem(SHEETS_URL_KEY) || APPS_SCRIPT_URL;
+  if(!url || !agentName) return;
+  try {
+    const fetchPromise = fetch(url + '?action=getQuotes&agent=' + encodeURIComponent(agentName), {cache:'no-store'});
+    const timeout = new Promise((_,rej) => setTimeout(()=>rej(new Error('timeout')), 8000));
+    const res = await Promise.race([fetchPromise, timeout]);
+    const data = await res.json();
+    if(data.status === 'ok' && Array.isArray(data.quotes) && data.quotes.length > 0){
+
+      // Split by product — Manga Yako goes into its own localStorage key
+      const myQuotes    = data.quotes.filter(q => (q.Product||q.product||'') === 'Manga Yako');
+      const otherQuotes = data.quotes.filter(q => (q.Product||q.product||'') !== 'Manga Yako');
+
+      let totalRestored = 0;
+
+      // ── Restore PSP / Edu / Phindu into vla_quotes ──
+      if(otherQuotes.length > 0){
+        const local     = getLocalQuotes();
+        const localRefs = new Set(local.map(q => q.Reference || q.Ref || q.ref || ''));
+        const incoming  = otherQuotes.filter(q => {
+          const ref = q.Reference || q.Ref || q.ref || '';
+          return ref && !localRefs.has(ref);
+        });
+        if(incoming.length > 0){
+          const merged = [...local, ...incoming]
+            .sort((a,b) => new Date(b.savedAt||b.Timestamp||0) - new Date(a.savedAt||a.Timestamp||0))
+            .slice(0, 200);
+          localStorage.setItem('vla_quotes', JSON.stringify(merged));
+          totalRestored += incoming.length;
+        }
+      }
+
+      // ── Restore Manga Yako into vla_my_quotes ──
+      if(myQuotes.length > 0){
+        const localMY     = getLocalMyQuotes();
+        const localMyRefs = new Set(localMY.map(q => q.Reference || q.QuoteRef || q.ref || ''));
+        const incomingMY  = myQuotes.filter(q => {
+          const ref = q.Reference || q.QuoteRef || q.ref || '';
+          return ref && !localMyRefs.has(ref);
+        });
+        if(incomingMY.length > 0){
+          const mergedMY = [...localMY, ...incomingMY]
+            .sort((a,b) => new Date(b.savedAt||b.Timestamp||0) - new Date(a.savedAt||a.Timestamp||0))
+            .slice(0, 200);
+          localStorage.setItem('vla_my_quotes', JSON.stringify(mergedMY));
+          totalRestored += incomingMY.length;
+        }
+      }
+
+      if(totalRestored > 0){
+        showToast('📋 '+totalRestored+' historical quote'+(totalRestored>1?'s':'')+' restored from Sheets', 4000);
+      }
+    }
+  } catch(e){
+    // Sheets unreachable — local history used as-is, no disruption
+  }
+}
 
 /* ═══════════════════════════════════════════
    GOOGLE SHEETS SYNC
