@@ -2,6 +2,22 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<!-- ── LICENCE GUARD — runs before anything else ── -->
+<script>
+(function(){
+  var EXPIRY = '2026-06-30'; // ← change this date to control access
+  var today  = new Date(); today.setHours(0,0,0,0);
+  var expiry = new Date(EXPIRY); expiry.setHours(0,0,0,0);
+  if(today > expiry){
+    document.addEventListener('DOMContentLoaded', function(){
+      document.body.style.cssText='margin:0;background:#1a0000;display:flex;align-items:center;justify-content:center;height:100vh;font-family:Arial,sans-serif';
+      document.body.innerHTML='<div style="text-align:center;padding:40px;max-width:320px"><div style="font-size:48px;margin-bottom:16px">⛔</div><div style="color:#fca5a5;font-size:18px;font-weight:600;margin-bottom:12px">Licence Expired</div><div style="color:#fecaca;font-size:14px;line-height:1.6">This application licence has expired.<br>Please contact your administrator<br>to restore access.</div></div>';
+    });
+    // Block every subsequent script from running
+    document.addEventListener('DOMContentLoaded', function(e){ e.stopImmediatePropagation(); }, true);
+  }
+})();
+</script>
 <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
 <meta name="theme-color" content="#641414">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -1615,7 +1631,7 @@ input:checked+.tog-trk:before{transform:translateX(17px)}
         <div style="font-size:11px;color:var(--T2);margin-bottom:10px">Select ID type used for this application:</div>
         <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:12px">
           <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer"><input type="radio" name="prop-id-type" value="Passport" style="accent-color:var(--M)"> Passport</label>
-          <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer"><input type="radio" name="prop-id-type" value="Driving " style="accent-color:var(--M)"> Driving </label>
+          <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer"><input type="radio" name="prop-id-type" value="Driving Licence" style="accent-color:var(--M)"> Driving Licence</label>
           <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer"><input type="radio" name="prop-id-type" value="National ID" style="accent-color:var(--M)"> National ID</label>
           <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer"><input type="radio" name="prop-id-type" value="Birth Certificate" style="accent-color:var(--M)"> Birth Certificate</label>
           <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer"><input type="radio" name="prop-id-type" value="Other" style="accent-color:var(--M)"> Other</label>
@@ -2413,7 +2429,7 @@ input:checked+.tog-trk:before{transform:translateX(17px)}
           <textarea id="pp-address" class="f-inp" rows="2" placeholder="Street, Area, City"></textarea>
           <div class="f-row" style="margin-top:10px">
             <div class="f-col"><label class="f-lbl">ID Type</label>
-              <select id="pp-id-type" class="f-inp"><option value="">Select</option><option value="NID">National ID</option><option value="Passport">Passport</option><option value="Drivers License">Driver's </option></select>
+              <select id="pp-id-type" class="f-inp"><option value="">Select</option><option value="NID">National ID</option><option value="Passport">Passport</option><option value="Drivers License">Driver's Licence</option></select>
             </div>
             <div class="f-col"><label class="f-lbl">ID Number</label><input id="pp-id-num" class="f-inp" type="text" placeholder="ID number"></div>
           </div>
@@ -2981,7 +2997,7 @@ const SESSION_KEY   = 'vla_session_v1';
    To extend: change the date below and push to GitHub.
    Format: 'YYYY-MM-DD'
 ──────────────────────────────────────────────────────────────────── */
-const LICENCE_EXPIRY = '2026-05-18';   // ← change this date to control access
+const LICENCE_EXPIRY = '2026-06-30';   // ← must match the date in the licence guard at top of file
 
 async function checkLicence(){
   const today = new Date();
@@ -2989,7 +3005,6 @@ async function checkLicence(){
   const expiry = new Date(LICENCE_EXPIRY);
   expiry.setHours(0,0,0,0);
   const expired = today > expiry;
-  console.log('[LICENCE] today:', today.toISOString().slice(0,10), '| expiry:', LICENCE_EXPIRY, '| expired:', expired);
   if(expired){
     return { allowed: false, reason: 'expired' };
   }
@@ -3031,7 +3046,8 @@ async function fetchAgentsFromSheets(){
     // Validate response before trusting it
     if(data.status === 'ok' && data.agents && typeof data.agents === 'object' && !Array.isArray(data.agents)){
       const local = getAgents();
-      const merged = Object.assign({}, local, data.agents);
+      // Local takes precedence — Sheets can add new agents but NEVER overwrite existing credentials
+      const merged = Object.assign({}, data.agents, local);
       saveAgents(merged);
       return merged;
     }
@@ -3368,13 +3384,12 @@ async function doLogin(){
   const licErr=document.getElementById('l-lic-err');
   const btn=document.querySelector('.login-btn');
   licErr.style.display='none';
-  btn.textContent='Checking…'; btn.disabled=true;
-  // Try to get fresh agents from Sheets (5s timeout); fall back to cache silently
-  let fresh = null;
-  try { fresh = await fetchAgentsFromSheets(); } catch(e){}
-  btn.textContent='Sign In →'; btn.disabled=false;
-  const agents = fresh || getAgents();
-  const agent=agents[user];
+  err.style.display='none';
+
+  // ── Always use locally cached agents for login — never fetch from Sheets here.
+  //    Sheets sync happens in the background after login, never during it.
+  const agents = getAgents();
+  const agent  = agents[user];
   if(agent && agent.active && agent.pin===pin){
 
     // ── Licence check — must pass before granting access ──
@@ -3421,6 +3436,8 @@ async function doLogin(){
     showToast('Welcome, '+user+'!');
     // Flush any quotes that were saved while offline
     setTimeout(()=>flushSyncQueue(true), 2000);
+    // Sync agent list from Sheets in the background — does not affect this login
+    setTimeout(()=>{ try{ fetchAgentsFromSheets(); }catch(e){} }, 3000);
   } else {
     err.style.display='block';
     document.getElementById('l-pin').value='';
