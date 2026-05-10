@@ -2054,6 +2054,10 @@ input:checked+.tog-trk:before{transform:translateX(17px)}
           <input class="f-inp" type="url" id="sheets-url" placeholder="https://script.google.com/macros/s/…/exec" style="font-size:11px;margin-bottom:8px">
           <button class="btn-primary btn-secondary" style="padding:9px;font-size:13px" onclick="saveSheetURL()">Save &amp; Test</button>
           <div id="conn-status" style="font-size:12px;color:var(--T2);display:none;margin-top:6px"></div>
+          <div style="margin-top:12px;padding:10px 12px;background:#fef3c7;border-radius:8px;font-size:12px;color:#92400e;line-height:1.5">
+            <strong>Missing quotes in Sheets?</strong> Tap below to push all locally stored quotes (PSP, Manga Yako, Phindu & Educational Plans) to Google Sheets. Run this once only per device — running twice will create duplicates.
+          </div>
+          <button class="btn-primary btn-secondary" style="padding:9px;font-size:13px;margin-top:8px;background:#92400e" onclick="if(confirm('Push all local quotes (all products) to Sheets? Run once only — will duplicate if run again.'))retroSyncAllQuotes()">📤 Push All Local Quotes to Sheets</button>
         </div>
 
         <!-- Pending Sync -->
@@ -4042,38 +4046,46 @@ async function syncToSheets(q){
   ss.innerHTML='<span class="sync-dot"></span><span>Saving to central database…</span>';
   ss.style.display='inline-flex';
   const payload={
-    action:'logQuote',
-    Timestamp:new Date().toISOString(),
-    Agent:q.agent||'',QuoteRef:q.ref||'',
-    ClientName:q.clientName||'',ClientEmail:q.clientEmail||'',
-    ClientPhone:q.clientPhone||'',Gender:q.gender||'',
-    Occupation:q.occupation||'',OccClass:q.occClass||'',
-    DOB:q.dob||'',ANB:String(q.anb||''),QuoteDate:q.doq||'',
-    Term:String(q.term||''),Frequency:q.freq||'',
-    SumAssured:String(Math.round(q.SA||0)),
-    BasicPremium:String(Math.round(q.basicP||0)),
-    DABPremium:String(Math.round(q.dabP||0)),
-    PolicyFee:String(Math.round(q.policyFee||0)),
-    TotalPremium:String(Math.round(q.totalP||0)),
-    ProjectedMaturity:String(Math.round(q.projM||0)),
-    DABIncluded:q.dabIncluded?'Yes':'No',
-    Mode:q.mode==='sa'?'SA to Premium':'Premium to SA',
+    action:'logConvQuote',          // ← matches Apps Script handler
+    Agent:q.agent||'',
+    Reference:q.ref||'',            // ← Apps Script uses Reference not QuoteRef
+    QuoteDate:q.doq||'',
+    PlanName:q.planName||q.plan||'Pure Savings Plan',
+    PlanCode:q.plan||'',
+    ClientName:q.clientName||'',
     FirstName:q.clientFirstName||'',
     MiddleName:q.clientMiddleName||'',
     LastName:q.clientLastName||'',
-    Area:q.clientArea||'',
-    City:q.clientCity||'',
-    District:q.clientDistrict||''
+    Gender:q.gender||'',
+    DOB:q.dob||'',
+    ANB:String(q.anb||''),
+    Phone:q.clientPhone||'',
+    Email:q.clientEmail||'',
+    Town:q.clientCity||q.clientArea||'',
+    District:q.clientDistrict||'',
+    Occupation:q.occupation||'',
+    OccClass:q.occClass||'Standard',
+    SumAssured:Math.round(q.SA||0),
+    AnnualPremium:Math.round((q.totalP||0)*12),
+    MonthlyPremium:Math.round(q.totalP||0),
+    BasicPremium:Math.round(q.basicP||0),
+    DABPremium:Math.round(q.dabP||0),
+    PolicyFee:Math.round(q.policyFee||0),
+    TotalPremium:Math.round(q.totalP||0),
+    ProjectedMaturity:Math.round(q.projM||0),
+    DABIncluded:q.dabIncluded?'Yes':'No',
+    PremiumTerm:String(q.term||''),
+    PolicyTerm:String(q.term||''),
+    Frequency:q.freq||'Monthly',
+    Smoker:'Non-Smoker',
+    Mode:q.mode==='sa'?'SA to Premium':'Premium to SA'
   };
   try{
-    // Use no-cors + no Content-Type header = "simple request" → no CORS preflight
-    // Google Apps Script receives the JSON in e.postData.contents
     await fetch(url,{
       method:'POST',
       mode:'no-cors',
       body:JSON.stringify(payload)
     });
-    // no-cors means we can't read the response body, but if no exception = request sent
     ss.className='sync-pill sync-ok';
     ss.innerHTML='<span class="sync-dot"></span><span>✓ Saved to Google Sheets</span>';
   }catch(err){
@@ -4082,6 +4094,183 @@ async function syncToSheets(q){
     enqueueSyncPayload(payload, 'PSP Quote · '+(q.clientName||q.ref||''));
   }
 }
+
+/* ── Retroactive sync — pushes ALL locally stored quotes AND proposals to Sheets ──
+   Covers: Pure Savings Plan, Educational Plans, Manga Yako, Phindu (quotes + proposals).
+   Run once per device — running twice creates duplicates.
+──────────────────────────────────────────────────────────────────── */
+async function retroSyncAllQuotes(){
+  const url = localStorage.getItem(SHEETS_URL_KEY)||APPS_SCRIPT_URL;
+  if(!url){ showToast('⚠️ No Sheets URL configured', 3000); return; }
+
+  // ── Collect everything ──
+  const pspEduQuotes    = getLocalQuotes();
+  const myQuotes        = getLocalMyQuotes();
+  const phinduQuotes    = JSON.parse(localStorage.getItem(PHINDU_QUOTES_KEY)||'[]');
+  const myProposals     = JSON.parse(localStorage.getItem(PROPOSALS_KEY)||'[]');
+  const phinduProposals = JSON.parse(localStorage.getItem(PHINDU_PROPOSALS_KEY)||'[]');
+
+  const total = pspEduQuotes.length + myQuotes.length + phinduQuotes.length
+              + myProposals.length + phinduProposals.length;
+
+  if(!total){ showToast('No local data found to sync', 3000); return; }
+
+  showToast('📤 Syncing '+total+' record'+(total>1?'s':'')+'…', 3000);
+
+  let sent = 0, failed = 0;
+
+  async function send(payload){
+    try{
+      await fetch(url,{ method:'POST', mode:'no-cors', body:JSON.stringify(payload) });
+      sent++;
+    }catch(e){ failed++; }
+    await new Promise(r=>setTimeout(r,300));
+  }
+
+  // ── 1. PSP & Educational Plans ──
+  for(const q of pspEduQuotes){
+    const isEdu = (q.product||'') === 'Educational Plans';
+    if(isEdu){
+      await send({
+        action:'logEduQuote',
+        QuoteDate:q.doq||q.savedAt||'',  Reference:q.ref||'',  Agent:q.agent||'',
+        PlanName:q.planName||'',          PlanCode:q.plan||'',
+        ParentFirstName:q.clientFirstName||'',  ParentMiddleName:q.clientMiddleName||'',
+        ParentLastName:q.clientLastName||'',    ParentName:q.clientName||'',
+        ParentGender:q.gender||'',        ParentDOB:q.dob||'',  ParentANB:q.anb||'',
+        Phone:q.clientPhone||'',          Town:q.clientCity||'',  District:q.clientDistrict||'',
+        ChildName:q.childName||'',        ChildGender:q.childGender||'',
+        ChildDOB:q.childDob||'',          ChildANB:q.childAnb||'',
+        BasicSA:Math.round(q.totalSA||0),
+        CollegeSA:Math.round(q.colSA||0), HasCollege:q.hasCollege?'Yes':'No',
+        BasicPremium:Math.round(q.basicPrem||0), CollegePremium:Math.round(q.colPrem||0),
+        OccLoading:Math.round(q.occPrem||0),     TotalPremium:Math.round(q.totalPrem||0),
+        PremiumTerm:q.premTerm||'',       Frequency:q.isMo?'Monthly':'Annual',
+        OccClass:q.occCls||'Standard'
+      });
+    } else {
+      await send({
+        action:'logConvQuote',
+        Agent:q.agent||'',                Reference:q.ref||'',
+        QuoteDate:q.doq||q.savedAt||'',   PlanName:q.planName||q.plan||'Pure Savings Plan',
+        PlanCode:q.plan||'',              ClientName:q.clientName||'',
+        FirstName:q.clientFirstName||'',  MiddleName:q.clientMiddleName||'',
+        LastName:q.clientLastName||'',    Gender:q.gender||'',
+        DOB:q.dob||'',                    ANB:String(q.anb||''),
+        Phone:q.clientPhone||'',          Email:q.clientEmail||'',
+        Town:q.clientCity||q.clientArea||'', District:q.clientDistrict||'',
+        Occupation:q.occupation||'',      OccClass:q.occClass||'Standard',
+        SumAssured:Math.round(q.SA||0),
+        AnnualPremium:Math.round((q.totalP||0)*12),
+        MonthlyPremium:Math.round(q.totalP||0),
+        BasicPremium:Math.round(q.basicP||0),
+        DABPremium:Math.round(q.dabP||0), TotalPremium:Math.round(q.totalP||0),
+        ProjectedMaturity:Math.round(q.projM||0),
+        DABIncluded:q.dabIncluded?'Yes':'No',
+        PremiumTerm:String(q.term||''),   Frequency:q.freq||'Monthly',
+        Smoker:'Non-Smoker',              Mode:q.mode==='sa'?'SA to Premium':'Premium to SA'
+      });
+    }
+  }
+
+  // ── 2. Manga Yako Quotes ──
+  for(const q of myQuotes){
+    await send({
+      action:'logMyQuote',
+      Agent:q.agent||'',              QuoteRef:q.ref||'',
+      QuoteDate:q.doq||q.savedAt||'', FirstName:q.clientFirstName||'',
+      MiddleName:q.clientMiddleName||'', LastName:q.clientLastName||'',
+      ClientName:q.clientName||'',    ClientEmail:q.clientEmail||'',
+      ClientPhone:q.clientPhone||'',  Gender:q.gender||'',
+      DOB:q.dob||'',                  ANB:String(q.anb||''),
+      City:q.clientCity||'',          Country:q.clientCountry||'',
+      Term:String(q.term||15),
+      MonthlyPremium:String(Math.round(q.prem||0)),
+      TargetMaturityValue:String(Math.round(q.tmv||0)),
+      TotalContributions:String(Math.round(q.totalContrib||0)),
+      Mode:q.mode==='tmv'?'Target to Premium':'Premium to Target'
+    });
+  }
+
+  // ── 3. Phindu Quotes ──
+  for(const q of phinduQuotes){
+    await send({
+      action:'logPhinduQuote',
+      QuoteDate:q.savedAt?q.savedAt.split('T')[0]:'',
+      Reference:q.ref||'',            Agent:q.agent||'',
+      ClientName:q.name||'',          Gender:q.gender||'',
+      DOB:q.dob||'',                  ANB:String(q.anb||''),
+      Band:String(q.band||''),        Phone:q.phone||'',
+      Town:q.town||'',                District:q.district||'',
+      MoneyTreePct:String(q.mt||0),   MonthlyPremium:String(q.premium||0),
+      BasicSA:String(q.basicSA||0),   SAWithBonus:String(q.saWithBonus||0),
+      MTBenefit:String(q.mtBenefit||0), TotalReceipts:String(q.totalReceipts||0),
+      TotalPremiums:String(q.totalPremiums||0), Profit:String(q.profit||0),
+      Mode:q.mode||''
+    });
+  }
+
+  // ── 4. Manga Yako Proposals ──
+  for(const d of myProposals){
+    await send({
+      action:'logMyProposal',
+      ref:d.ref,                      agent:d.agent||'',
+      status:d.status||'Pending',     submittedAt:d.submittedAt||'',
+      title:d.title||'',              firstName:d.firstName||'',
+      middleName:d.middleName||'',    lastName:d.lastName||'',
+      clientName:d.clientName||'',    dob:d.dob||'',
+      gender:d.gender||'',            nrc:d.nrc||'',
+      nationality:d.nationality||'',  maritalStatus:d.maritalStatus||'',
+      maidenName:d.maidenName||'',    spouseNames:d.spouseNames||'',
+      postal:d.postal||'',            physical:d.physical||'',
+      mobile:d.mobile||'',            email:d.email||'',
+      city:d.city||'',                country:d.country||'',
+      nextOfKin:d.nextOfKin||'',      nokRelationship:d.nokRelationship||'',
+      nokContact:d.nokContact||'',    idType:d.idType||'',
+      idNumber:d.idNumber||'',        malawiDistrict:d.malawiDistrict||'',
+      malawiVillage:d.malawiVillage||'', malawiTA:d.malawiTA||'',
+      otherPolicies:d.otherPolicies||'', otherPoliciesDetail:d.otherPoliciesDetail||'',
+      occupation:d.occupation||'',    employerName:d.employerName||'',
+      employerAddr:d.employerAddr||'', dateEmployed:d.dateEmployed||'',
+      income:d.income||'',            incomeCurrency:d.incomeCurrency||'',
+      incomeFrequency:d.incomeFrequency||'', selfEmployed:d.selfEmployed||'',
+      bizNature:d.bizNature||'',      bizRevenue:d.bizRevenue||'',
+      monthlyPremium:d.monthlyPremium||'', targetMaturityValue:d.targetMaturityValue||'',
+      commencement:d.commencement||'', escalation:d.escalation||'',
+      q1:d.q1||'', q1Assurer:d.q1Assurer||'', q1Policy:d.q1Policy||'',
+      q2:d.q2||'', q2Assurer:d.q2Assurer||'', q2Policy:d.q2Policy||'',
+      q3:d.q3||'', q3Assurer:d.q3Assurer||'', q3Policy:d.q3Policy||'', q3Reason:d.q3Reason||'',
+      q4:d.q4||'', q4Details:d.q4Details||'',
+      beneficiarySummary:d.beneficiarySummary||''
+    });
+  }
+
+  // ── 5. Phindu Proposals ──
+  for(const d of phinduProposals){
+    await send({
+      action:'logPhinduProposal',
+      data:{
+        ref:d.ref||'',                  agent:d.agent||'',
+        ProposalDate:d.submittedAt?d.submittedAt.split('T')[0]:'',
+        ProposerName:d.name||'',        ProposerDOB:d.dob||'',
+        ProposerGender:d.gender||'',    Nationality:d.nationality||'',
+        Phone:d.phone||'',              Email:d.email||'',
+        Address:d.address||'',          IDType:d.idType||'',
+        IDNumber:d.idNum||'',           Premium:d.premium||'',
+        MoneyTree:d.mt||'',             Commence:d.commence||'',
+        Branch:d.branch||'',            Payment:d.payment||'',
+        Beneficiaries:JSON.stringify(d.beneficiaries||[]),
+        QuoteRef:d.quoteRef||'',        Status:d.status||'Pending'
+      }
+    });
+  }
+
+  showToast(
+    '✅ '+sent+' of '+total+' records synced'+(failed>0?' · '+failed+' failed — try again':''),
+    6000
+  );
+}
+
 
 /* ═══════════════════════════════════════════
    SETTINGS
