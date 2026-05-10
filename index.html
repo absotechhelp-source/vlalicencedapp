@@ -1615,7 +1615,7 @@ input:checked+.tog-trk:before{transform:translateX(17px)}
         <div style="font-size:11px;color:var(--T2);margin-bottom:10px">Select ID type used for this application:</div>
         <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:12px">
           <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer"><input type="radio" name="prop-id-type" value="Passport" style="accent-color:var(--M)"> Passport</label>
-          <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer"><input type="radio" name="prop-id-type" value="Driving Licence" style="accent-color:var(--M)"> Driving Licence</label>
+          <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer"><input type="radio" name="prop-id-type" value="Driving " style="accent-color:var(--M)"> Driving </label>
           <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer"><input type="radio" name="prop-id-type" value="National ID" style="accent-color:var(--M)"> National ID</label>
           <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer"><input type="radio" name="prop-id-type" value="Birth Certificate" style="accent-color:var(--M)"> Birth Certificate</label>
           <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer"><input type="radio" name="prop-id-type" value="Other" style="accent-color:var(--M)"> Other</label>
@@ -2413,7 +2413,7 @@ input:checked+.tog-trk:before{transform:translateX(17px)}
           <textarea id="pp-address" class="f-inp" rows="2" placeholder="Street, Area, City"></textarea>
           <div class="f-row" style="margin-top:10px">
             <div class="f-col"><label class="f-lbl">ID Type</label>
-              <select id="pp-id-type" class="f-inp"><option value="">Select</option><option value="NID">National ID</option><option value="Passport">Passport</option><option value="Drivers License">Driver's Licence</option></select>
+              <select id="pp-id-type" class="f-inp"><option value="">Select</option><option value="NID">National ID</option><option value="Passport">Passport</option><option value="Drivers License">Driver's </option></select>
             </div>
             <div class="f-col"><label class="f-lbl">ID Number</label><input id="pp-id-num" class="f-inp" type="text" placeholder="ID number"></div>
           </div>
@@ -2981,7 +2981,7 @@ const SESSION_KEY   = 'vla_session_v1';
    To extend: change the date below and push to GitHub.
    Format: 'YYYY-MM-DD'
 ──────────────────────────────────────────────────────────────────── */
-const LICENCE_EXPIRY = '2025-06-30';   // ← change this date to control access
+const LICENCE_EXPIRY = '2026-05-18';   // ← change this date to control access
 
 async function checkLicence(){
   const today = new Date();
