@@ -1,86 +1,81 @@
 /* ═══════════════════════════════════════════════════════
-   VLA Sales App — Service Worker
-   Handles offline caching + automatic silent updates
+   VLA Sales App — Service Worker v2.7
 ═══════════════════════════════════════════════════════ */
 
-// ── Bump this version string every time you deploy a new build ──
-// The browser detects the change and triggers the update flow.
-const CACHE_VERSION = 'vla-v2.6';
-const CACHE_NAME = CACHE_VERSION;
+const CACHE_VERSION = 'vla-v2.8';
+const CACHE_NAME    = CACHE_VERSION;
 
-// Files to cache for offline use
+// Only cache static assets — NEVER index.html
 const PRECACHE_URLS = [
-  './',
-  './index.html',
   './manifest.json',
   './icon-192.png',
   './icon-512.png',
 ];
 
-// ── Install: cache essential files ──
+// ── Install: take over immediately, don't wait ──
 self.addEventListener('install', event => {
+  self.skipWaiting(); // Always activate new SW immediately
   event.waitUntil(
-    caches.open(CACHE_NAME).then(cache => {
-      return cache.addAll(PRECACHE_URLS).catch(() => {
-        // If some assets are missing, still install — don't block
-        return cache.add('./index.html');
-      });
-    })
+    caches.open(CACHE_NAME).then(cache =>
+      cache.addAll(PRECACHE_URLS).catch(() => {}) // Fail silently if icons missing
+    )
   );
-  // Do NOT call skipWaiting() here — we wait for the app to signal readiness
 });
 
-// ── Activate: delete old caches from previous versions ──
+// ── Activate: delete all old caches, claim all tabs immediately ──
 self.addEventListener('activate', event => {
   event.waitUntil(
-    caches.keys().then(keys =>
-      Promise.all(
-        keys
-          .filter(key => key !== CACHE_NAME)
-          .map(key => caches.delete(key))
-      )
-    ).then(() => self.clients.claim())
+    caches.keys()
+      .then(keys => Promise.all(
+        keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k))
+      ))
+      .then(() => self.clients.claim()) // Take control of all open tabs now
   );
 });
 
-// ── Fetch: serve from cache, fall back to network ──
+// ── Fetch strategy ──
 self.addEventListener('fetch', event => {
-  // Only handle GET requests for same-origin assets
   if(event.request.method !== 'GET') return;
-  if(!event.request.url.startsWith(self.location.origin)) return;
 
-  // For navigation (page loads): network-first so agents always get latest HTML
-  if(event.request.mode === 'navigate'){
+  const url = new URL(event.request.url);
+
+  // ── index.html: ALWAYS network-first, never serve stale cached version ──
+  // If offline, serve cached copy as fallback only
+  if(event.request.mode === 'navigate' ||
+     url.pathname.endsWith('index.html') ||
+     url.pathname === '/' ||
+     url.pathname.endsWith('/')){
     event.respondWith(
-      fetch(event.request)
+      fetch(event.request, { cache: 'no-cache' }) // Force revalidate from server
         .then(res => {
-          // Cache the fresh response for offline fallback
-          const copy = res.clone();
-          caches.open(CACHE_NAME).then(cache => cache.put(event.request, copy));
+          // Only cache successful responses
+          if(res.ok){
+            const copy = res.clone();
+            caches.open(CACHE_NAME).then(c => c.put(event.request, copy));
+          }
           return res;
         })
-        .catch(() => caches.match('./index.html'))
+        .catch(() => caches.match('./index.html')) // Offline fallback only
     );
     return;
   }
 
-  // For all other assets: cache-first
+  // ── Everything else (icons, manifest): cache-first ──
   event.respondWith(
     caches.match(event.request).then(cached => {
-      return cached || fetch(event.request).then(res => {
-        const copy = res.clone();
-        caches.open(CACHE_NAME).then(cache => cache.put(event.request, copy));
+      if(cached) return cached;
+      return fetch(event.request).then(res => {
+        if(res.ok){
+          const copy = res.clone();
+          caches.open(CACHE_NAME).then(c => c.put(event.request, copy));
+        }
         return res;
       });
-    }).catch(() => caches.match('./index.html'))
+    }).catch(() => new Response('Offline', { status: 503 }))
   );
 });
 
-// ── Message handler: app signals the SW to take over immediately ──
-// This is called by index.html when a new version is ready,
-// triggering a silent automatic reload on all open tabs.
+// ── External reload trigger (kept for compatibility) ──
 self.addEventListener('message', event => {
-  if(event.data && event.data.type === 'SKIP_WAITING'){
-    self.skipWaiting();
-  }
+  if(event.data && event.data.type === 'SKIP_WAITING') self.skipWaiting();
 });

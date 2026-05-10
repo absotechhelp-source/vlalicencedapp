@@ -2869,7 +2869,7 @@ input:checked+.tog-trk:before{transform:translateX(17px)}
 ═══════════════════════════════════════════ */
 const AGENTS_KEY = 'vla_agents_v2';
 const SHEETS_URL_KEY = 'vla_sheets_url';
-const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbz2haXwhNto_HFkH4bRwOWFuHnKLYr-5EZAVdAKUsP0K6cRNLC90Zx_db6tMlrkuoldDQ/exec';
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx6CSWIiSQqwSLrzjbhde9opvruGqlRl1AoLrBVdb4GTn/exec';
 const ADMIN_USER = 'VLA Admin';
 const ADMIN_PIN  = '9999';  // Admin PIN — change via admin panel
 
@@ -3312,7 +3312,10 @@ window.addEventListener('DOMContentLoaded', async ()=>{
   const t=new Date();
   const today=`${t.getFullYear()}-${String(t.getMonth()+1).padStart(2,'0')}-${String(t.getDate()).padStart(2,'0')}`;
   document.getElementById('c-doq').value=today;
-  const url=localStorage.getItem(SHEETS_URL_KEY)||APPS_SCRIPT_URL;
+  // Always ensure the Sheets URL is set — if localStorage was cleared, restore from the
+  // hardcoded default. If the user has saved a custom URL, preserve it.
+  const savedUrl = localStorage.getItem(SHEETS_URL_KEY);
+  const url = (savedUrl && savedUrl.startsWith('https://script.google.com')) ? savedUrl : APPS_SCRIPT_URL;
   localStorage.setItem(SHEETS_URL_KEY, url);
   document.getElementById('sheets-url').value=url;
   document.getElementById('l-pin').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin();});
@@ -6081,34 +6084,18 @@ if('serviceWorker' in navigator){
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('sw.js')
       .then(reg => {
-        // Check for updates every 10 minutes (was 30)
+        // Check for updates every 10 minutes
         setInterval(() => reg.update(), 10 * 60 * 1000);
-        reg.addEventListener('updatefound', () => {
-          const nw = reg.installing;
-          nw.addEventListener('statechange', () => {
-            if(nw.state === 'installed' && navigator.serviceWorker.controller){
-              // Tell the new service worker to take over immediately
-              nw.postMessage({type:'SKIP_WAITING'});
-            }
-          });
-        });
       })
       .catch(() => {});
 
-    // When the new service worker takes control, reload the page automatically
-    // This happens in the background — agent just sees the latest version next time
+    // New SW takes over immediately (skipWaiting is in sw.js install event)
+    // Reload the page so agents always get the latest version
     let refreshing = false;
     navigator.serviceWorker.addEventListener('controllerchange', () => {
       if(!refreshing){
         refreshing = true;
-        // Only auto-reload if the app is in the background or idle (not mid-quote)
-        const isBusy = !!document.querySelector('.modal-overlay[style*="flex"]');
-        if(!isBusy){
-          window.location.reload();
-        } else {
-          // App is in use — show a gentle banner instead of force-reloading
-          showToast('📲 Update ready — will apply on next open', 6000);
-        }
+        window.location.reload();
       }
     });
   });
