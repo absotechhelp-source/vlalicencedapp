@@ -4299,19 +4299,30 @@ async function retroSyncAllQuotes(){
 
   // ── 5. Phindu Proposals ──
   for(const d of toSyncPhinduProp){
+    const benSummary = (d.beneficiaries||[]).map(b=>`${b.name||''}(${b.relationship||''},${b.share||''}%)`).join('; ');
     await send({
       action:'logPhinduProposal',
-      data:{
-        ref:d.ref||'', agent:d.agent||'',
-        ProposalDate:d.submittedAt?d.submittedAt.split('T')[0]:'',
-        ProposerName:d.name||'', ProposerDOB:d.dob||'', ProposerGender:d.gender||'',
-        Phone:d.phone||'', Email:d.email||'', Address:d.address||'',
-        IDType:d.idType||'', IDNumber:d.idNum||'',
-        Premium:d.premium||'', MoneyTree:d.mt||'',
-        Commence:d.commence||'', Branch:d.branch||'', Payment:d.payment||'',
-        Beneficiaries:JSON.stringify(d.beneficiaries||[]),
-        QuoteRef:d.quoteRef||'', Status:d.status||'Pending'
-      }
+      ProposalDate: d.submittedAt ? d.submittedAt.split('T')[0] : '',
+      Reference:    d.ref         || '',
+      Agent:        d.agent       || '',
+      Product:      'Phindu',
+      ProposerName: d.name        || '',
+      ProposerDOB:  d.dob         || '',
+      ProposerGender: d.gender    || '',
+      Nationality:  d.nationality || '',
+      Phone:        d.phone       || '',
+      Email:        d.email       || '',
+      Address:      d.address     || '',
+      IDType:       d.idType      || '',
+      IDNumber:     d.idNum       || '',
+      Premium:      d.premium     || '',
+      MoneyTree:    d.mt          || '',
+      Commence:     d.commence    || '',
+      Branch:       d.branch      || '',
+      Payment:      d.payment     || '',
+      Beneficiaries: benSummary,
+      QuoteRef:     d.quoteRef    || '',
+      Status:       d.status      || 'Pending'
     });
   }
 
@@ -7293,12 +7304,51 @@ function phinduPropSubmit(){
   /* Build and show proposal document */
   phinduPropBuildDoc(phinduPropData);
   document.getElementById('pp-doc').style.display='block';
-  /* Sync to Sheets */
-  const url=localStorage.getItem(SHEETS_URL_KEY)||APPS_SCRIPT_URL;
-  if(url)fetch(url,{method:'POST',mode:'no-cors',body:JSON.stringify({action:'logPhinduProposal',data:phinduPropData})}).catch(()=>{});
   const ab=document.getElementById('app-body'),suc=document.getElementById('pp-success');
   if(ab&&suc)ab.scrollTop=suc.offsetTop-10;
   showToast('Phindu proposal submitted!',3000);
+  /* Sync to Sheets — flat fields, same pattern as MY proposal */
+  phinduPropSyncToSheets(phinduPropData);
+}
+
+async function phinduPropSyncToSheets(d){
+  const url = localStorage.getItem(SHEETS_URL_KEY)||APPS_SCRIPT_URL;
+  if(!url) return;
+  const ss = document.getElementById('pp-sync-status');
+  if(ss){ ss.className='sync-pill sync-pending'; ss.innerHTML='<span class="sync-dot"></span><span>Saving to database…</span>'; ss.style.display='inline-flex'; }
+  const benSummary = (d.beneficiaries||[]).map(b=>`${b.name||''}(${b.relationship||''},${b.share||''}%)`).join('; ');
+  const payload = {
+    action:'logPhinduProposal',
+    // Send all fields flat — no data wrapper
+    ProposalDate: d.submittedAt ? d.submittedAt.split('T')[0] : '',
+    Reference:    d.ref            || '',
+    Agent:        d.agent          || '',
+    Product:      'Phindu',
+    ProposerName: d.name           || '',
+    ProposerDOB:  d.dob            || '',
+    ProposerGender: d.gender       || '',
+    Nationality:  d.nationality    || '',
+    Phone:        d.phone          || '',
+    Email:        d.email          || '',
+    Address:      d.address        || '',
+    IDType:       d.idType         || '',
+    IDNumber:     d.idNum          || '',
+    Premium:      d.premium        || '',
+    MoneyTree:    d.mt             || '',
+    Commence:     d.commence       || '',
+    Branch:       d.branch         || '',
+    Payment:      d.payment        || '',
+    Beneficiaries: benSummary,
+    QuoteRef:     d.quoteRef       || '',
+    Status:       d.status         || 'Pending'
+  };
+  try{
+    await fetch(url,{method:'POST',mode:'no-cors',body:JSON.stringify(payload)});
+    if(ss){ ss.className='sync-pill sync-ok'; ss.innerHTML='<span class="sync-dot"></span><span>✓ Saved to Google Sheets</span>'; }
+  }catch(err){
+    if(ss){ ss.className='sync-pill sync-fail'; ss.innerHTML='<span class="sync-dot"></span><span>⚠️ Saved locally — will sync when online</span>'; }
+    enqueueSyncPayload(payload, 'Phindu Proposal · '+(d.name||d.ref||''));
+  }
 }
 
 /* ── Build Phindu Proposal document (for display + PDF) ── */
