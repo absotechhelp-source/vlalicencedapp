@@ -2,7 +2,7 @@
    VLA Sales App — Service Worker v2.7
 ═══════════════════════════════════════════════════════ */
 
-const CACHE_VERSION = 'vla-v2.10';
+const CACHE_VERSION = 'vla-v3.1';
 const CACHE_NAME    = CACHE_VERSION;
 
 // Only cache static assets — NEVER index.html
@@ -38,6 +38,12 @@ self.addEventListener('fetch', event => {
   if(event.request.method !== 'GET') return;
 
   const url = new URL(event.request.url);
+
+  // ── licence.json: NEVER cache — always fetch fresh, no offline fallback ──
+  if(url.pathname.endsWith('licence.json')){
+    event.respondWith(fetch(event.request, {cache:'no-store'}));
+    return;
+  }
 
   // ── index.html: ALWAYS network-first, never serve stale cached version ──
   // If offline, serve cached copy as fallback only

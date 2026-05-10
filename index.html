@@ -2,20 +2,30 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<!-- ── LICENCE GUARD — runs before anything else ── -->
+<!-- ── LICENCE GUARD — reads from licence.json which is never cached ── -->
 <script>
 (function(){
-  var EXPIRY = '2026-04-30'; // ← change this date to control access
-  var today  = new Date(); today.setHours(0,0,0,0);
-  var expiry = new Date(EXPIRY); expiry.setHours(0,0,0,0);
-  if(today > expiry){
+  // Fallback expiry baked in — used only if licence.json cannot be fetched
+  var FALLBACK_EXPIRY = '2026-06-30';
+
+  function blockApp(){
     document.addEventListener('DOMContentLoaded', function(){
       document.body.style.cssText='margin:0;background:#1a0000;display:flex;align-items:center;justify-content:center;height:100vh;font-family:Arial,sans-serif';
       document.body.innerHTML='<div style="text-align:center;padding:40px;max-width:320px"><div style="font-size:48px;margin-bottom:16px">⛔</div><div style="color:#fca5a5;font-size:18px;font-weight:600;margin-bottom:12px">Licence Expired</div><div style="color:#fecaca;font-size:14px;line-height:1.6">This application licence has expired.<br>Please contact your administrator<br>to restore access.</div></div>';
-    });
-    // Block every subsequent script from running
-    document.addEventListener('DOMContentLoaded', function(e){ e.stopImmediatePropagation(); }, true);
+    }, true);
   }
+
+  function checkExpiry(dateStr){
+    var today  = new Date(); today.setHours(0,0,0,0);
+    var expiry = new Date(dateStr); expiry.setHours(0,0,0,0);
+    if(today > expiry) blockApp();
+  }
+
+  // Try to fetch the latest expiry from licence.json (never cached by SW)
+  fetch('./licence.json?t=' + Date.now(), {cache:'no-store'})
+    .then(function(r){ return r.json(); })
+    .then(function(d){ checkExpiry(d.expiry || FALLBACK_EXPIRY); })
+    .catch(function(){ checkExpiry(FALLBACK_EXPIRY); }); // offline: use baked-in date
 })();
 </script>
 <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
@@ -2993,15 +3003,24 @@ function renderSyncBadge(){
 window.addEventListener('online', ()=>{ setTimeout(()=>flushSyncQueue(true), 2500); });
 
 // 2. App foregrounded — most reliable on mobile
+// Uses localStorage session check (not currentAgent variable) so it works after page reloads
 document.addEventListener('visibilitychange', ()=>{
-  if(document.visibilityState === 'visible' && currentAgent){
-    setTimeout(()=>flushSyncQueue(true), 1500);
+  if(document.visibilityState === 'visible'){
+    try{
+      const s = JSON.parse(localStorage.getItem('vla_session_v1')||'null');
+      if(s && s.agent) setTimeout(()=>flushSyncQueue(true), 1500);
+    }catch(e){}
   }
 });
 
 // 3. Periodic retry every 5 minutes
 setInterval(()=>{
-  if(navigator.onLine && currentAgent && getSyncQueue().length > 0) flushSyncQueue(true);
+  if(!navigator.onLine) return;
+  if(!getSyncQueue().length) return;
+  try{
+    const s = JSON.parse(localStorage.getItem('vla_session_v1')||'null');
+    if(s && s.agent) flushSyncQueue(true);
+  }catch(e){}
 }, 5 * 60 * 1000);
 
 /* ── Agent store: localStorage cache + Sheets source of truth ── */
