@@ -2941,8 +2941,12 @@ async function flushSyncQueue(silent){
 
   renderSyncBadge();
 
-  if(flushed>0 && !silent){
-    showToast('✅ '+flushed+' quote'+(flushed>1?'s':'')+' synced to Google Sheets'+(failed>0?' ('+failed+' still pending)':''), 3500);
+  if(!silent){
+    if(flushed > 0){
+      showToast('✅ '+flushed+' quote'+(flushed>1?'s':'')+' synced to Sheets'+(failed>0?' · '+failed+' still pending':''), 3500);
+    } else if(failed > 0){
+      showToast('⚠️ Sync failed — will retry automatically', 4000);
+    }
   }
 }
 
@@ -2983,10 +2987,22 @@ function renderSyncBadge(){
   }
 }
 
-/* Listen for browser coming back online and auto-flush */
-window.addEventListener('online', ()=>{
-  setTimeout(()=>flushSyncQueue(false), 1500); // small delay to let connection stabilise
+/* ── Sync triggers: 3 ways to catch connectivity returning ── */
+
+// 1. Browser reports online
+window.addEventListener('online', ()=>{ setTimeout(()=>flushSyncQueue(true), 2500); });
+
+// 2. App foregrounded — most reliable on mobile
+document.addEventListener('visibilitychange', ()=>{
+  if(document.visibilityState === 'visible' && currentAgent){
+    setTimeout(()=>flushSyncQueue(true), 1500);
+  }
 });
+
+// 3. Periodic retry every 5 minutes
+setInterval(()=>{
+  if(navigator.onLine && currentAgent && getSyncQueue().length > 0) flushSyncQueue(true);
+}, 5 * 60 * 1000);
 
 /* ── Agent store: localStorage cache + Sheets source of truth ── */
 const SESSION_KEY   = 'vla_session_v1';
