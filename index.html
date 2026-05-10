@@ -2975,61 +2975,30 @@ window.addEventListener('online', ()=>{
 /* ── Agent store: localStorage cache + Sheets source of truth ── */
 const SESSION_KEY   = 'vla_session_v1';
 
-/* ── Licence control ────────────────────────────────────────────────
-   LICENCE_URL  → your Google Apps Script web-app URL (fill this in)
-   GRACE_DAYS   → how many days offline use is allowed after last
-                  successful online licence check
-   LICENCE_KEY  → localStorage key that stores the last check timestamp
+/* ── Licence expiry ─────────────────────────────────────────────────
+   Set LICENCE_EXPIRY to the last date you want the app to work.
+   When that date passes every login is blocked.
+   To extend: change the date below and push to GitHub.
+   Format: 'YYYY-MM-DD'
 ──────────────────────────────────────────────────────────────────── */
-const LICENCE_URL = 'https://script.google.com/macros/s/AKfycbw7-0hF6uMUqEXWlS1pU4VCNTD_amm4dOsH1VZtq3gfEW6a3FDcmQNbN_7pmiruGcCq2w/exec';
-const GRACE_DAYS  = 7;
-const LICENCE_KEY = 'vla_licence_v1';
+const LICENCE_EXPIRY = '2025-06-30';   // ← change this date to control access
 
 async function checkLicence(){
-  // ── Bypass entirely if licence URL has not been configured yet ──
-  const isConfigured = LICENCE_URL && !LICENCE_URL.startsWith('YOUR_');
-  console.log('[LICENCE] isConfigured:', isConfigured, '| URL:', LICENCE_URL);
-  if(!isConfigured) return { allowed: true };
-
-  // ── 1. Try an online check (6-second timeout) ──
-  try {
-    const fetchPromise = fetch(LICENCE_URL + '?action=licence', {
-      cache:'no-store',
-      redirect:'follow'
-    });
-    const timeoutPromise = new Promise((_,rej) => setTimeout(()=>rej(new Error('timeout')), 6000));
-    const res = await Promise.race([fetchPromise, timeoutPromise]);
-    console.log('[LICENCE] response type:', res.type, '| ok:', res.ok, '| status:', res.status);
-    if(res.type === 'opaque' || !res.ok) throw new Error('bad_response');
-    const data = await res.json();
-    console.log('[LICENCE] server response:', JSON.stringify(data));
-    const isActive = data.active === true;
-    try { localStorage.setItem(LICENCE_KEY, JSON.stringify({ts: Date.now(), active: isActive})); } catch(e){}
-    if(isActive){
-      return { allowed: true };
-    } else {
-      return { allowed: false, reason: 'expired' };
-    }
-  } catch(e){
-    console.log('[LICENCE] fetch failed:', e.message);
-    // ── 2. Fetch failed (offline, CORS, timeout) — use last saved status ──
-    try {
-      const saved = JSON.parse(localStorage.getItem(LICENCE_KEY)||'null');
-      console.log('[LICENCE] saved stamp:', JSON.stringify(saved));
-      if(saved && saved.ts){
-        if(saved.active === false){
-          return { allowed: false, reason: 'expired' };
-        }
-        const daysSince = (Date.now() - saved.ts) / 86400000;
-        if(daysSince <= GRACE_DAYS){
-          return { allowed: true, offline: true, daysLeft: Math.ceil(GRACE_DAYS - daysSince) };
-        }
-        return { allowed: false, reason: 'grace' };
-      }
-    } catch(e2){}
-    console.log('[LICENCE] no stamp found — blocking');
-    return { allowed: false, reason: 'no_stamp' };
+  const today = new Date();
+  today.setHours(0,0,0,0);
+  const expiry = new Date(LICENCE_EXPIRY);
+  expiry.setHours(0,0,0,0);
+  const expired = today > expiry;
+  console.log('[LICENCE] today:', today.toISOString().slice(0,10), '| expiry:', LICENCE_EXPIRY, '| expired:', expired);
+  if(expired){
+    return { allowed: false, reason: 'expired' };
   }
+  // Warn when within 7 days of expiry
+  const daysLeft = Math.ceil((expiry - today) / 86400000);
+  if(daysLeft <= 7){
+    return { allowed: true, expiringSoon: true, daysLeft };
+  }
+  return { allowed: true };
 }
 function getAgents(){
   const DEFAULTS = {'VLA Agent':{pin:'1625',role:'agent',active:true},'VLA Admin':{pin:'9999',role:'admin',active:true}};
@@ -3347,40 +3316,17 @@ window.addEventListener('DOMContentLoaded', async ()=>{
       if(agentRecord && agentRecord.active) {
         // ── Licence check on session restore ──
         const lic = await checkLicence();
-
-if (!lic.allowed) {
-  document.body.innerHTML = '<h1>⛔ Access revoked</h1>';
-  throw new Error('Licence blocked');
-}
-
-// continue login ONLY if allowed 
-      if (!lic.allowed) {
-  licErr.style.display = 'block';
-
-  if (lic.reason === 'expired') {
-    licErr.innerHTML = '⛔ Licence expired. Access blocked.';
-  } else if (lic.reason === 'grace') {
-    licErr.innerHTML = '⛔ Offline grace period expired.';
-  } else {
-    licErr.innerHTML = '⛔ Licence check failed.';
-  }
-
-  return; // 🔴 THIS is what actually stops sign-in
-}
         if(!lic.allowed){
-          // Licence revoked or grace expired — clear session and show login
           try { localStorage.removeItem(SESSION_KEY); } catch(_){}
           const licErr = document.getElementById('l-lic-err');
           if(licErr){
-            licErr.innerHTML = lic.reason === 'expired'
-              ? '&#x26D4; This application licence has expired.<br>Please contact your administrator to restore access.'
-              : '&#x26D4; Offline licence grace period has elapsed.<br>Please connect to the internet and try again.';
+            licErr.innerHTML = '&#x26D4; This application licence has expired.<br>Please contact your administrator to restore access.';
             licErr.style.display = 'block';
           }
           return;
         }
-        if(lic.offline && lic.daysLeft <= 2){
-          setTimeout(()=>showToast('⚠️ Offline mode — '+lic.daysLeft+' day'+(lic.daysLeft===1?'':'s')+' of grace period remaining', 5000), 1500);
+        if(lic.expiringSoon){
+          setTimeout(()=>showToast('⚠️ App licence expires in '+lic.daysLeft+' day'+(lic.daysLeft===1?'':'s'), 6000), 1500);
         }
         currentAgent = saved.agent;
         isAdmin = !!saved.isAdmin;
@@ -3438,22 +3384,16 @@ async function doLogin(){
 
     if(!lic.allowed){
       err.style.display='none';
-      if(lic.reason === 'expired'){
-        licErr.innerHTML = '&#x26D4; This application licence has expired.<br>Please contact your administrator to restore access.';
-      } else if(lic.reason === 'no_stamp'){
-        licErr.innerHTML = '&#x26D4; Unable to verify licence.<br>Please connect to the internet and try again.';
-      } else {
-        licErr.innerHTML = '&#x26D4; Offline licence grace period has elapsed.<br>Please connect to the internet and try again.';
-      }
+      licErr.innerHTML = '&#x26D4; This application licence has expired.<br>Please contact your administrator to restore access.';
       licErr.style.display='block';
       document.getElementById('l-pin').value='';
       document.getElementById('l-pin').focus();
       return;
     }
 
-    // Warn agent if they are offline but within grace period
-    if(lic.offline){
-      showToast('⚠️ Offline mode — '+lic.daysLeft+' day'+(lic.daysLeft===1?'':'s')+' of grace period remaining', 5000);
+    // Warn agent if licence is expiring within 7 days
+    if(lic.expiringSoon){
+      showToast('⚠️ App licence expires in '+lic.daysLeft+' day'+(lic.daysLeft===1?'':'s'), 6000);
     }
     currentAgent=user;
     isAdmin=(agent.role==='admin');
