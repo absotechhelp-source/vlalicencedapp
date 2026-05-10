@@ -2057,7 +2057,18 @@ input:checked+.tog-trk:before{transform:translateX(17px)}
           <div style="margin-top:12px;padding:10px 12px;background:#fef3c7;border-radius:8px;font-size:12px;color:#92400e;line-height:1.5">
             <strong>Missing quotes in Sheets?</strong> Tap below to push all locally stored quotes (PSP, Manga Yako, Phindu & Educational Plans) to Google Sheets. Run this once only per device — running twice will create duplicates.
           </div>
-          <button class="btn-primary btn-secondary" style="padding:9px;font-size:13px;margin-top:8px;background:#92400e" onclick="if(confirm('Push all local quotes (all products) to Sheets? Run once only — will duplicate if run again.'))retroSyncAllQuotes()">📤 Push All Local Quotes to Sheets</button>
+          <button class="btn-primary btn-secondary" style="padding:9px;font-size:13px;margin-top:8px;background:#92400e" onclick="showRetroSyncModal()">📤 Push Local Quotes to Sheets</button>
+          <div id="retro-sync-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9000;align-items:center;justify-content:center">
+            <div style="background:var(--color-background-primary,#fff);border-radius:14px;padding:24px;margin:20px;max-width:340px;box-shadow:0 8px 32px rgba(0,0,0,.3)">
+              <div style="font-size:22px;margin-bottom:10px">📤</div>
+              <div style="font-weight:600;font-size:15px;margin-bottom:8px;color:#1a0000">Push Local Quotes to Sheets</div>
+              <div style="font-size:13px;color:#555;line-height:1.6;margin-bottom:18px">This will sync all locally stored quotes and proposals to Google Sheets.<br><br>Only records <strong>not already in Sheets</strong> will be pushed — duplicates are automatically skipped.</div>
+              <div style="display:flex;gap:10px;justify-content:flex-end">
+                <button onclick="document.getElementById('retro-sync-modal').style.display='none'" style="padding:9px 18px;border-radius:8px;border:1px solid #ccc;background:none;font-size:13px;cursor:pointer">Cancel</button>
+                <button onclick="document.getElementById('retro-sync-modal').style.display='none';retroSyncAllQuotes()" style="padding:9px 18px;border-radius:8px;border:none;background:#92400e;color:#fff;font-size:13px;font-weight:600;cursor:pointer">Sync Now</button>
+              </div>
+            </div>
+          </div>
         </div>
 
         <!-- Pending Sync -->
@@ -4095,27 +4106,69 @@ async function syncToSheets(q){
   }
 }
 
-/* ── Retroactive sync — pushes ALL locally stored quotes AND proposals to Sheets ──
-   Covers: Pure Savings Plan, Educational Plans, Manga Yako, Phindu (quotes + proposals).
-   Run once per device — running twice creates duplicates.
-──────────────────────────────────────────────────────────────────── */
+function showRetroSyncModal(){
+  const m = document.getElementById('retro-sync-modal');
+  if(m) m.style.display = 'flex';
+}
+
+/* ── Retroactive sync with deduplication ───────────────────────────────
+   1. Fetches all existing References already in Sheets for this agent
+   2. Only pushes records whose Reference is NOT already there
+   3. Covers all products: PSP, Educational Plans, Manga Yako, Phindu
+      plus both proposal types (Manga Yako & Phindu)
+──────────────────────────────────────────────────────────────────────── */
 async function retroSyncAllQuotes(){
   const url = localStorage.getItem(SHEETS_URL_KEY)||APPS_SCRIPT_URL;
   if(!url){ showToast('⚠️ No Sheets URL configured', 3000); return; }
+  if(!currentAgent){ showToast('⚠️ Please sign in first', 3000); return; }
 
-  // ── Collect everything ──
+  showToast('🔍 Checking what\'s already in Sheets…', 3000);
+
+  // ── Step 1: Fetch all refs already in Sheets for this agent ──
+  let existingRefs = new Set();
+  try {
+    const res = await Promise.race([
+      fetch(url + '?action=getQuotes&agent=' + encodeURIComponent(currentAgent), {cache:'no-store'}),
+      new Promise((_,rej) => setTimeout(()=>rej(new Error('timeout')), 8000))
+    ]);
+    const data = await res.json();
+    if(data.status === 'ok' && Array.isArray(data.quotes)){
+      data.quotes.forEach(q => {
+        const ref = q.Reference || q.QuoteRef || q.ref || '';
+        if(ref) existingRefs.add(ref.trim());
+      });
+    }
+  } catch(e){
+    // Can't reach Sheets — proceed anyway, user accepts risk of duplicates
+    showToast('⚠️ Could not check existing records — proceeding anyway', 3000);
+    await new Promise(r=>setTimeout(r,2000));
+  }
+
+  // ── Step 2: Collect all local records ──
   const pspEduQuotes    = getLocalQuotes();
   const myQuotes        = getLocalMyQuotes();
   const phinduQuotes    = JSON.parse(localStorage.getItem(PHINDU_QUOTES_KEY)||'[]');
   const myProposals     = JSON.parse(localStorage.getItem(PROPOSALS_KEY)||'[]');
   const phinduProposals = JSON.parse(localStorage.getItem(PHINDU_PROPOSALS_KEY)||'[]');
 
-  const total = pspEduQuotes.length + myQuotes.length + phinduQuotes.length
-              + myProposals.length + phinduProposals.length;
+  // ── Step 3: Filter out records already in Sheets ──
+  function notInSheets(q){ const r=q.ref||q.Reference||q.QuoteRef||''; return !r||!existingRefs.has(r.trim()); }
 
-  if(!total){ showToast('No local data found to sync', 3000); return; }
+  const toSyncPspEdu    = pspEduQuotes.filter(notInSheets);
+  const toSyncMY        = myQuotes.filter(notInSheets);
+  const toSyncPhindu    = phinduQuotes.filter(notInSheets);
+  const toSyncMyProp    = myProposals.filter(notInSheets);
+  const toSyncPhinduProp= phinduProposals.filter(notInSheets);
 
-  showToast('📤 Syncing '+total+' record'+(total>1?'s':'')+'…', 3000);
+  const total    = toSyncPspEdu.length + toSyncMY.length + toSyncPhindu.length + toSyncMyProp.length + toSyncPhinduProp.length;
+  const skipped  = (pspEduQuotes.length + myQuotes.length + phinduQuotes.length + myProposals.length + phinduProposals.length) - total;
+
+  if(!total){
+    showToast('✅ All records already in Sheets — nothing to sync'+(skipped>0?' ('+skipped+' skipped)':''), 4000);
+    return;
+  }
+
+  showToast('📤 Syncing '+total+' new record'+(total>1?'s':'')+' ('+skipped+' already in Sheets)…', 4000);
 
   let sent = 0, failed = 0;
 
@@ -4128,7 +4181,7 @@ async function retroSyncAllQuotes(){
   }
 
   // ── 1. PSP & Educational Plans ──
-  for(const q of pspEduQuotes){
+  for(const q of toSyncPspEdu){
     const isEdu = (q.product||'') === 'Educational Plans';
     if(isEdu){
       await send({
@@ -4174,7 +4227,7 @@ async function retroSyncAllQuotes(){
   }
 
   // ── 2. Manga Yako Quotes ──
-  for(const q of myQuotes){
+  for(const q of toSyncMY){
     await send({
       action:'logMyQuote',
       Agent:q.agent||'',              QuoteRef:q.ref||'',
@@ -4193,7 +4246,7 @@ async function retroSyncAllQuotes(){
   }
 
   // ── 3. Phindu Quotes ──
-  for(const q of phinduQuotes){
+  for(const q of toSyncPhindu){
     await send({
       action:'logPhinduQuote',
       QuoteDate:q.savedAt?q.savedAt.split('T')[0]:'',
@@ -4211,70 +4264,56 @@ async function retroSyncAllQuotes(){
   }
 
   // ── 4. Manga Yako Proposals ──
-  for(const d of myProposals){
+  for(const d of toSyncMyProp){
     await send({
       action:'logMyProposal',
-      ref:d.ref,                      agent:d.agent||'',
-      status:d.status||'Pending',     submittedAt:d.submittedAt||'',
-      title:d.title||'',              firstName:d.firstName||'',
-      middleName:d.middleName||'',    lastName:d.lastName||'',
-      clientName:d.clientName||'',    dob:d.dob||'',
-      gender:d.gender||'',            nrc:d.nrc||'',
-      nationality:d.nationality||'',  maritalStatus:d.maritalStatus||'',
-      maidenName:d.maidenName||'',    spouseNames:d.spouseNames||'',
-      postal:d.postal||'',            physical:d.physical||'',
-      mobile:d.mobile||'',            email:d.email||'',
-      city:d.city||'',                country:d.country||'',
-      nextOfKin:d.nextOfKin||'',      nokRelationship:d.nokRelationship||'',
-      nokContact:d.nokContact||'',    idType:d.idType||'',
-      idNumber:d.idNumber||'',        malawiDistrict:d.malawiDistrict||'',
+      ref:d.ref, agent:d.agent||'', status:d.status||'Pending', submittedAt:d.submittedAt||'',
+      title:d.title||'', firstName:d.firstName||'', middleName:d.middleName||'',
+      lastName:d.lastName||'', clientName:d.clientName||'', dob:d.dob||'',
+      gender:d.gender||'', nrc:d.nrc||'', nationality:d.nationality||'',
+      maritalStatus:d.maritalStatus||'', maidenName:d.maidenName||'', spouseNames:d.spouseNames||'',
+      postal:d.postal||'', physical:d.physical||'', mobile:d.mobile||'', email:d.email||'',
+      city:d.city||'', country:d.country||'', nextOfKin:d.nextOfKin||'',
+      nokRelationship:d.nokRelationship||'', nokContact:d.nokContact||'',
+      idType:d.idType||'', idNumber:d.idNumber||'', malawiDistrict:d.malawiDistrict||'',
       malawiVillage:d.malawiVillage||'', malawiTA:d.malawiTA||'',
       otherPolicies:d.otherPolicies||'', otherPoliciesDetail:d.otherPoliciesDetail||'',
-      occupation:d.occupation||'',    employerName:d.employerName||'',
-      employerAddr:d.employerAddr||'', dateEmployed:d.dateEmployed||'',
-      income:d.income||'',            incomeCurrency:d.incomeCurrency||'',
+      occupation:d.occupation||'', employerName:d.employerName||'', employerAddr:d.employerAddr||'',
+      dateEmployed:d.dateEmployed||'', income:d.income||'', incomeCurrency:d.incomeCurrency||'',
       incomeFrequency:d.incomeFrequency||'', selfEmployed:d.selfEmployed||'',
-      bizNature:d.bizNature||'',      bizRevenue:d.bizRevenue||'',
+      bizNature:d.bizNature||'', bizRevenue:d.bizRevenue||'',
       monthlyPremium:d.monthlyPremium||'', targetMaturityValue:d.targetMaturityValue||'',
       commencement:d.commencement||'', escalation:d.escalation||'',
       q1:d.q1||'', q1Assurer:d.q1Assurer||'', q1Policy:d.q1Policy||'',
       q2:d.q2||'', q2Assurer:d.q2Assurer||'', q2Policy:d.q2Policy||'',
       q3:d.q3||'', q3Assurer:d.q3Assurer||'', q3Policy:d.q3Policy||'', q3Reason:d.q3Reason||'',
-      q4:d.q4||'', q4Details:d.q4Details||'',
-      beneficiarySummary:d.beneficiarySummary||''
+      q4:d.q4||'', q4Details:d.q4Details||'', beneficiarySummary:d.beneficiarySummary||''
     });
   }
 
   // ── 5. Phindu Proposals ──
-  for(const d of phinduProposals){
+  for(const d of toSyncPhinduProp){
     await send({
       action:'logPhinduProposal',
       data:{
-        ref:d.ref||'',                  agent:d.agent||'',
+        ref:d.ref||'', agent:d.agent||'',
         ProposalDate:d.submittedAt?d.submittedAt.split('T')[0]:'',
-        ProposerName:d.name||'',        ProposerDOB:d.dob||'',
-        ProposerGender:d.gender||'',    Nationality:d.nationality||'',
-        Phone:d.phone||'',              Email:d.email||'',
-        Address:d.address||'',          IDType:d.idType||'',
-        IDNumber:d.idNum||'',           Premium:d.premium||'',
-        MoneyTree:d.mt||'',             Commence:d.commence||'',
-        Branch:d.branch||'',            Payment:d.payment||'',
+        ProposerName:d.name||'', ProposerDOB:d.dob||'', ProposerGender:d.gender||'',
+        Phone:d.phone||'', Email:d.email||'', Address:d.address||'',
+        IDType:d.idType||'', IDNumber:d.idNum||'',
+        Premium:d.premium||'', MoneyTree:d.mt||'',
+        Commence:d.commence||'', Branch:d.branch||'', Payment:d.payment||'',
         Beneficiaries:JSON.stringify(d.beneficiaries||[]),
-        QuoteRef:d.quoteRef||'',        Status:d.status||'Pending'
+        QuoteRef:d.quoteRef||'', Status:d.status||'Pending'
       }
     });
   }
 
   showToast(
-    '✅ '+sent+' of '+total+' records synced'+(failed>0?' · '+failed+' failed — try again':''),
+    '✅ '+sent+' synced · '+skipped+' already existed'+(failed>0?' · '+failed+' failed':''),
     6000
   );
 }
-
-
-/* ═══════════════════════════════════════════
-   SETTINGS
-═══════════════════════════════════════════ */
 function saveSheetURL(){
   const raw=document.getElementById('sheets-url').value.trim();
   const s=document.getElementById('conn-status');
