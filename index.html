@@ -3087,11 +3087,22 @@ function getAgents(){
     const stored = localStorage.getItem(AGENTS_KEY);
     if(stored) {
       const parsed = JSON.parse(stored);
-      // Basic sanity check — must be a non-null object
-      if(parsed && typeof parsed === 'object' && !Array.isArray(parsed)) return parsed;
+      if(parsed && typeof parsed === 'object' && !Array.isArray(parsed)){
+        // ── Normalise: convert any old string-PIN entries to full objects ──
+        // Old format: {'VLA Agent': '1625'}
+        // New format: {'VLA Agent': {pin:'1625', role:'agent', active:true}}
+        let needsSave = false;
+        Object.keys(parsed).forEach(name => {
+          if(typeof parsed[name] === 'string'){
+            parsed[name] = { pin: parsed[name], role: name==='VLA Admin'?'admin':'agent', active: true };
+            needsSave = true;
+          }
+        });
+        if(needsSave) try { localStorage.setItem(AGENTS_KEY, JSON.stringify(parsed)); } catch(e){}
+        return parsed;
+      }
     }
   } catch(e) {
-    // Corrupted data — wipe it so next login uses defaults and re-seeds cleanly
     try { localStorage.removeItem(AGENTS_KEY); } catch(_){}
   }
   return DEFAULTS;
@@ -3498,7 +3509,13 @@ async function doLogin(){
   //    Sheets sync happens in the background after login, never during it.
   const agents = getAgents();
   const agent  = agents[user];
-  if(agent && agent.active && agent.pin===pin){
+  // Support both formats:
+  //   Old: agents[name] = '1625'  (PIN string)
+  //   New: agents[name] = {pin:'1625', role:'agent', active:true}
+  const agentPin    = typeof agent === 'object' ? agent.pin    : agent;
+  const agentActive = typeof agent === 'object' ? agent.active : true;
+  const agentRole   = typeof agent === 'object' ? agent.role   : 'agent';
+  if(agent && agentActive !== false && agentPin === pin){
 
     // ── Licence check — must pass before granting access ──
     btn.textContent='Verifying licence…'; btn.disabled=true;
@@ -3519,7 +3536,7 @@ async function doLogin(){
       showToast('⚠️ App licence expires in '+lic.daysLeft+' day'+(lic.daysLeft===1?'':'s'), 6000);
     }
     currentAgent=user;
-    isAdmin=(agent.role==='admin');
+    isAdmin=(agentRole==='admin');
     // Persist session so a pull-to-refresh doesn't log the agent out
     try { localStorage.setItem(SESSION_KEY, JSON.stringify({agent:user, isAdmin:isAdmin})); } catch(e){}
     // Render home dashboard BEFORE screen becomes visible — prevents stale HTML flash
