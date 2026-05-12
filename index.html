@@ -436,10 +436,7 @@ input:checked+.tog-trk:before{transform:translateX(17px)}
 <!-- MAIN APP SCREEN -->
 <!-- Licence checking overlay — shown while licence.json is being fetched -->
 <div id="screen-licence-check" style="position:fixed;inset:0;background:#1a0000;display:flex;align-items:center;justify-content:center;z-index:9999;font-family:Arial,sans-serif">
-  <div style="text-align:center;color:#fca5a5">
-    <div style="font-size:32px;margin-bottom:12px">🔐</div>
-    <div style="font-size:14px;opacity:.7">Verifying licence…</div>
-  </div>
+  <!-- Intentionally blank — no message shown during licence check -->
 </div>
 
 <!-- Licence expired screen — shown permanently if licence has lapsed -->
@@ -2054,15 +2051,15 @@ input:checked+.tog-trk:before{transform:translateX(17px)}
           <input class="f-inp" type="url" id="sheets-url" placeholder="https://script.google.com/macros/s/…/exec" style="font-size:11px;margin-bottom:8px">
           <button class="btn-primary btn-secondary" style="padding:9px;font-size:13px" onclick="saveSheetURL()">Save &amp; Test</button>
           <div id="conn-status" style="font-size:12px;color:var(--T2);display:none;margin-top:6px"></div>
-          <div style="margin-top:12px;padding:10px 12px;background:#fef3c7;border-radius:8px;font-size:12px;color:#92400e;line-height:1.5">
-            <strong>Missing quotes in Sheets?</strong> Tap below to push all locally stored quotes (PSP, Manga Yako, Phindu & Educational Plans) to Google Sheets. Run this once only per device — running twice will create duplicates.
+          <div style="margin-top:12px;padding:10px 12px;background:#f5e0e0;border-radius:8px;font-size:12px;color:#641414;line-height:1.5">
+            <strong>Quotes missing in Sheets?</strong> Tap below to push locally stored quotes to Google Sheets. The app automatically checks what's already there and only uploads what's missing — <strong>duplicates are prevented</strong>. Safe to run multiple times.
           </div>
-          <button class="btn-primary btn-secondary" style="padding:9px;font-size:13px;margin-top:8px;background:#92400e" onclick="showRetroSyncModal()">📤 Push Local Quotes to Sheets</button>
+          <button class="btn-primary btn-secondary" style="padding:9px;font-size:13px;margin-top:8px;background:var(--M,#641414);color:#fff" onclick="showRetroSyncModal()">📤 Push Local Quotes to Sheets</button>
           <div id="retro-sync-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9000;align-items:center;justify-content:center">
             <div style="background:var(--color-background-primary,#fff);border-radius:14px;padding:24px;margin:20px;max-width:340px;box-shadow:0 8px 32px rgba(0,0,0,.3)">
               <div style="font-size:22px;margin-bottom:10px">📤</div>
               <div style="font-weight:600;font-size:15px;margin-bottom:8px;color:#1a0000">Push Local Quotes to Sheets</div>
-              <div style="font-size:13px;color:#555;line-height:1.6;margin-bottom:18px">This will sync all locally stored quotes and proposals to Google Sheets.<br><br>Only records <strong>not already in Sheets</strong> will be pushed — duplicates are automatically skipped.</div>
+              <div style="font-size:13px;color:#555;line-height:1.6;margin-bottom:18px">This will sync all locally stored quotes and proposals to Google Sheets.<br><br>The app automatically checks what's already in Sheets and <strong>only uploads records that are missing</strong>. Duplicates are prevented. Safe to run anytime.</div>
               <div style="display:flex;gap:10px;justify-content:flex-end">
                 <button onclick="document.getElementById('retro-sync-modal').style.display='none'" style="padding:9px 18px;border-radius:8px;border:1px solid #ccc;background:none;font-size:13px;cursor:pointer">Cancel</button>
                 <button onclick="document.getElementById('retro-sync-modal').style.display='none';retroSyncAllQuotes()" style="padding:9px 18px;border-radius:8px;border:none;background:#92400e;color:#fff;font-size:13px;font-weight:600;cursor:pointer">Sync Now</button>
@@ -2521,6 +2518,7 @@ input:checked+.tog-trk:before{transform:translateX(17px)}
           <div id="pp-success-title" style="font-size:15px;font-weight:700;color:var(--M)">Proposal Submitted</div>
           <div id="pp-success-sub" style="font-size:12px;color:var(--M2);margin-top:4px">Saved to database · Team Leader notified</div>
           <div id="pp-ref-display" style="font-size:11px;font-weight:600;margin-top:10px;background:#f3f4f6;padding:4px 14px;border-radius:20px;display:inline-block"></div>
+          <div id="phindu-prop-sync-status" style="display:none;font-size:11px;text-align:center;padding:4px;margin-top:8px;border-radius:6px;background:var(--ML)"></div>
           <div style="margin-top:14px;display:flex;gap:8px;justify-content:center;flex-wrap:wrap">
             <button class="btn-sm btn-pdf" onclick="phinduPropGeneratePDF()">
               <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
@@ -2685,9 +2683,25 @@ input:checked+.tog-trk:before{transform:translateX(17px)}
         <div class="card" style="margin-bottom:12px">
           <div class="sec-lbl">Policy Details</div>
 
-          <label class="f-lbl">Annual Payout / Basic Sum Assured per year (MK) *</label>
-          <input id="edu-sa-amount" class="f-inp" type="number" min="1000000" step="100000" value="1000000" placeholder="e.g. 1000000" style="margin-bottom:4px">
-          <div id="edu-unit-hint" style="font-size:11px;color:#6b7280;margin-bottom:10px">Annual payout / Basic Sum Assured per year</div>
+          <!-- Mode toggle -->
+          <div class="mode-tabs" style="margin-bottom:12px">
+            <button class="mode-tab active" onclick="eduSetMode('sa')" id="edu-tab-sa">I know the Sum Assured</button>
+            <button class="mode-tab" onclick="eduSetMode('prem')" id="edu-tab-prem">I know the Premium</button>
+          </div>
+
+          <!-- SA input -->
+          <div id="edu-sa-row">
+            <label class="f-lbl">Annual Payout / Basic Sum Assured per year (MK) *</label>
+            <input id="edu-sa-amount" class="f-inp" type="number" min="1000000" step="100000" value="1000000" placeholder="e.g. 1000000" style="margin-bottom:4px">
+            <div id="edu-unit-hint" style="font-size:11px;color:#6b7280;margin-bottom:10px">Annual payout / Basic Sum Assured per year</div>
+          </div>
+
+          <!-- Premium input (shown when mode=prem) -->
+          <div id="edu-prem-row" style="display:none">
+            <label class="f-lbl">Premium you can afford (MK) *</label>
+            <input id="edu-prem-amount" class="f-inp" type="number" min="5000" step="1000" placeholder="e.g. 50000" style="margin-bottom:4px">
+            <div style="font-size:11px;color:#6b7280;margin-bottom:10px">We calculate the highest Sum Assured for this premium</div>
+          </div>
 
           <!-- College Benefit — Plan 3 only -->
           <div id="edu-college-row" style="display:none;border-top:1px solid var(--BD);padding-top:10px;margin-bottom:10px">
@@ -4127,9 +4141,12 @@ async function retroSyncAllQuotes(){
   // ── Step 1: Fetch all refs already in Sheets (quotes AND proposals) ──
   let existingRefs = new Set();
   async function fetchRefs(action){
+    // Admin fetches all records (no agent filter) for complete dedup
+    // Regular agents fetch only their own
+    const agentParam = isAdmin ? '' : '&agent='+encodeURIComponent(currentAgent);
     try {
       const res = await Promise.race([
-        fetch(url+'?action='+action+'&agent='+encodeURIComponent(currentAgent), {cache:'no-store'}),
+        fetch(url+'?action='+action+agentParam, {cache:'no-store'}),
         new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')),8000))
       ]);
       const data = await res.json();
@@ -4137,8 +4154,8 @@ async function retroSyncAllQuotes(){
         const items = data.quotes || data.refs || [];
         items.forEach(item => {
           const ref = typeof item === 'string' ? item
-                    : (item.Reference || item.QuoteRef || item.ref || '');
-          if(ref) existingRefs.add(ref.trim());
+                    : (item.Reference || item.QuoteRef || item.Ref || item.ref || '');
+          if(ref) existingRefs.add(ref.trim().toUpperCase());
         });
       }
     } catch(e){}
@@ -4158,7 +4175,11 @@ async function retroSyncAllQuotes(){
   const phinduProposals = JSON.parse(localStorage.getItem(PHINDU_PROPOSALS_KEY)||'[]');
 
   // ── Step 3: Filter out records already in Sheets ──
-  function notInSheets(q){ const r=q.ref||q.Reference||q.QuoteRef||''; return !r||!existingRefs.has(r.trim()); }
+  // Normalise to uppercase so VLA-001 and vla-001 are treated the same
+  function notInSheets(q){
+    const r = (q.ref||q.Reference||q.QuoteRef||q.Ref||'').trim().toUpperCase();
+    return !r || !existingRefs.has(r);
+  }
 
   const toSyncPspEdu    = pspEduQuotes.filter(notInSheets);
   const toSyncMY        = myQuotes.filter(notInSheets);
@@ -7314,7 +7335,7 @@ function phinduPropSubmit(){
 async function phinduPropSyncToSheets(d){
   const url = localStorage.getItem(SHEETS_URL_KEY)||APPS_SCRIPT_URL;
   if(!url) return;
-  const ss = document.getElementById('pp-sync-status');
+  const ss = document.getElementById('phindu-prop-sync-status');
   if(ss){ ss.className='sync-pill sync-pending'; ss.innerHTML='<span class="sync-dot"></span><span>Saving to database…</span>'; ss.style.display='inline-flex'; }
   const benSummary = (d.beneficiaries||[]).map(b=>`${b.name||''}(${b.relationship||''},${b.share||''}%)`).join('; ');
   const payload = {
@@ -7347,7 +7368,8 @@ async function phinduPropSyncToSheets(d){
     if(ss){ ss.className='sync-pill sync-ok'; ss.innerHTML='<span class="sync-dot"></span><span>✓ Saved to Google Sheets</span>'; }
   }catch(err){
     if(ss){ ss.className='sync-pill sync-fail'; ss.innerHTML='<span class="sync-dot"></span><span>⚠️ Saved locally — will sync when online</span>'; }
-    enqueueSyncPayload(payload, 'Phindu Proposal · '+(d.name||d.ref||''));
+    // Don't enqueue — Phindu proposals have their own localStorage, retro sync handles them
+    console.warn('Phindu proposal sync failed:', err);
   }
 }
 
@@ -7889,6 +7911,16 @@ function eduCheckAges(){
   }
 }
 
+/* ── EDU PLANS MODE ── */
+let eduMode = 'sa';
+function eduSetMode(m){
+  eduMode = m;
+  document.getElementById('edu-tab-sa').classList.toggle('active', m==='sa');
+  document.getElementById('edu-tab-prem').classList.toggle('active', m==='prem');
+  document.getElementById('edu-sa-row').style.display   = m==='sa'   ? '' : 'none';
+  document.getElementById('edu-prem-row').style.display = m==='prem' ? '' : 'none';
+}
+
 /* ── 6. COLLEGE TOGGLED ── */
 function eduCollegeToggled(){
   document.getElementById('edu-college-detail').style.display =
@@ -7947,12 +7979,6 @@ function eduGenerate(){
   if(plan==='tep'&&(cANB<13||cANB>18)){ showToast('Child ANB must be 13–18 for TEP'); return; }
 
   const saAmountRaw = parseInt(document.getElementById('edu-sa-amount').value)||0;
-  const minSA = 1000000;
-  if(saAmountRaw < minSA){
-    showToast('Minimum Sum Assured is MK '+minSA.toLocaleString());
-    document.getElementById('edu-sa-amount').value = minSA;
-    return;
-  }
 
   const occCls = document.getElementById('edu-occ').value;
   const freq = document.getElementById('edu-freq').value;
@@ -7982,8 +8008,31 @@ function eduGenerate(){
     basicRate=tbl[pANB][cANB]; premTerm=19-cANB; unitSA=10000;
   }
 
+  /* ── Derive SA: either from input (SA mode) or back-calculated from premium ── */
+  let saInput = saAmountRaw;
+  if(eduMode === 'prem'){
+    const premInput = parseFloat(document.getElementById('edu-prem-amount').value)||0;
+    if(!premInput){ showToast('Please enter a premium amount'); return; }
+    const rawUnits = Math.floor(premInput / basicRate);
+    if(rawUnits < 1){ showToast('Premium too low for this plan at this age'); return; }
+    saInput = rawUnits * unitSA;
+  }
+  const minSA = 1000000;
+  if(saInput < minSA){
+    if(eduMode === 'prem'){
+      // Tell agent the minimum premium needed to reach 1,000,000 SA
+      const minUnits = Math.ceil(minSA / unitSA);
+      const minPrem  = Math.ceil(basicRate * minUnits);
+      showToast('Minimum SA is MK 1,000,000 — enter at least MK '+minPrem.toLocaleString()+' premium');
+    } else {
+      showToast('Minimum Sum Assured is MK 1,000,000');
+      document.getElementById('edu-sa-amount').value = minSA;
+    }
+    return;
+  }
+
   /* Derive units from requested SA — round up to nearest unit */
-  const units = Math.ceil(saAmountRaw / unitSA);
+  const units = Math.ceil(saInput / unitSA);
   const totalSA = units * unitSA;
 
   const basicPrem = basicRate * units;
