@@ -4006,57 +4006,160 @@ async function restoreHistoryFromSheets(agentName){
   if(!url || !agentName) return;
   try {
     const fetchPromise = fetch(url + '?action=getQuotes&agent=' + encodeURIComponent(agentName), {cache:'no-store'});
-    const timeout = new Promise((_,rej) => setTimeout(()=>rej(new Error('timeout')), 8000));
+    const timeout = new Promise((_,rej) => setTimeout(()=>rej(new Error('timeout')), 10000));
     const res = await Promise.race([fetchPromise, timeout]);
     const data = await res.json();
-    if(data.status === 'ok' && Array.isArray(data.quotes) && data.quotes.length > 0){
+    if(data.status !== 'ok' || !Array.isArray(data.quotes) || !data.quotes.length) return;
 
-      // Split by product — Manga Yako goes into its own localStorage key
-      const myQuotes    = data.quotes.filter(q => (q.Product||q.product||'') === 'Manga Yako');
-      const otherQuotes = data.quotes.filter(q => (q.Product||q.product||'') !== 'Manga Yako');
+    let totalRestored = 0;
 
-      let totalRestored = 0;
+    // ── Helper: map a Sheets row back to the local quote format ──
+    function mapSheetQuote(r){
+      return {
+        ref:        r['Reference']         || r['ref']         || '',
+        agent:      r['Agent']             || '',
+        doq:        r['Quote Date']        || '',
+        savedAt:    r['Timestamp']         || r['Quote Date']  || '',
+        product:    r['Product']           || '',
+        planName:   r['Plan Name']         || '',
+        plan:       r['Plan Code']         || '',
+        clientName: r['Full Name']         || r['clientName']  || '',
+        clientFirstName: r['First Name']   || '',
+        clientMiddleName:r['Middle Name']  || '',
+        clientLastName:  r['Last Name']    || '',
+        gender:     r['Gender']            || '',
+        dob:        r['DOB']               || '',
+        anb:        r['ANB']               || '',
+        clientPhone:r['Phone']             || '',
+        clientEmail:r['Email']             || '',
+        clientCity: r['Town / City']       || '',
+        clientDistrict: r['District / Country'] || '',
+        occupation: r['Occupation']        || '',
+        occClass:   r['Occupation Class']  || '',
+        // PSP fields
+        SA:     Number(r['Sum Assured (MK)']   || 0),
+        totalP: Number(r['Monthly Premium (MK)']|| r['Total Premium (MK)'] || 0),
+        basicP: Number(r['Basic Premium (MK)'] || 0),
+        dabP:   Number(r['DAB Premium (MK)']   || 0),
+        projM:  Number(r['Projected SA (MK)']  || r['Sum Assured (MK)'] || 0),
+        term:   r['Premium Term (yrs)']        || '',
+        freq:   r['Frequency']                 || '',
+        // Edu fields
+        totalSA:    Number(r['Sum Assured (MK)']          || 0),
+        totalPrem:  Number(r['Total Premium (MK)']        || 0),
+        basicPrem:  Number(r['Basic Premium (MK)']        || 0),
+        colPrem:    Number(r['College Premium (MK)']      || 0),
+        colSA:      Number(r['College Benefit SA (MK)']   || 0),
+        hasCollege: r['Has College Benefit'] === 'Yes',
+        premTerm:   r['Premium Term (yrs)']               || '',
+        occCls:     r['Occupation Class']                 || '',
+        isMo:       (r['Frequency']||'').toLowerCase() === 'monthly',
+        // MY fields
+        prem:   Number(r['Monthly Premium (MK)']          || 0),
+        tmv:    Number(r['Target Maturity Value (MK)']    || 0),
+        totalContrib: Number(r['Total Contributions (MK)']|| 0),
+        clientCountry: r['District / Country']            || '',
+      };
+    }
 
-      // ── Restore PSP / Edu / Phindu into vla_quotes ──
-      if(otherQuotes.length > 0){
-        const local     = getLocalQuotes();
-        const localRefs = new Set(local.map(q => q.Reference || q.Ref || q.ref || ''));
-        const incoming  = otherQuotes.filter(q => {
-          const ref = q.Reference || q.Ref || q.ref || '';
-          return ref && !localRefs.has(ref);
-        });
-        if(incoming.length > 0){
-          const merged = [...local, ...incoming]
-            .sort((a,b) => new Date(b.savedAt||b.Timestamp||0) - new Date(a.savedAt||a.Timestamp||0))
-            .slice(0, 200);
-          localStorage.setItem('vla_quotes', JSON.stringify(merged));
-          totalRestored += incoming.length;
-        }
+    // ── 1. PSP + Educational Plans → vla_quotes ──
+    const pspEduRows = data.quotes.filter(r => {
+      const p = r['Product'] || '';
+      return p !== 'Manga Yako' && p !== 'Phindu';
+    });
+    if(pspEduRows.length > 0){
+      const local     = getLocalQuotes();
+      const localRefs = new Set(local.map(q => (q.ref||'').toUpperCase()));
+      const incoming  = pspEduRows
+        .filter(r => { const ref=(r['Reference']||'').toUpperCase(); return ref && !localRefs.has(ref); })
+        .map(mapSheetQuote);
+      if(incoming.length > 0){
+        const merged = [...incoming, ...local].slice(0, 200);
+        localStorage.setItem('vla_quotes', JSON.stringify(merged));
+        totalRestored += incoming.length;
       }
+    }
 
-      // ── Restore Manga Yako into vla_my_quotes ──
-      if(myQuotes.length > 0){
-        const localMY     = getLocalMyQuotes();
-        const localMyRefs = new Set(localMY.map(q => q.Reference || q.QuoteRef || q.ref || ''));
-        const incomingMY  = myQuotes.filter(q => {
-          const ref = q.Reference || q.QuoteRef || q.ref || '';
-          return ref && !localMyRefs.has(ref);
-        });
-        if(incomingMY.length > 0){
-          const mergedMY = [...localMY, ...incomingMY]
-            .sort((a,b) => new Date(b.savedAt||b.Timestamp||0) - new Date(a.savedAt||a.Timestamp||0))
-            .slice(0, 200);
-          localStorage.setItem('vla_my_quotes', JSON.stringify(mergedMY));
-          totalRestored += incomingMY.length;
-        }
+    // ── 2. Manga Yako → vla_my_quotes ──
+    const myRows = data.quotes.filter(r => (r['Product']||'') === 'Manga Yako');
+    if(myRows.length > 0){
+      const localMY     = getLocalMyQuotes();
+      const localMyRefs = new Set(localMY.map(q => (q.ref||'').toUpperCase()));
+      const incomingMY  = myRows
+        .filter(r => { const ref=(r['Reference']||'').toUpperCase(); return ref && !localMyRefs.has(ref); })
+        .map(r => ({
+          ref:         r['Reference']                   || '',
+          agent:       r['Agent']                       || '',
+          doq:         r['Quote Date']                  || '',
+          savedAt:     r['Timestamp']||r['Quote Date']  || '',
+          clientName:  r['Full Name']                   || '',
+          clientFirstName:  r['First Name']             || '',
+          clientMiddleName: r['Middle Name']            || '',
+          clientLastName:   r['Last Name']              || '',
+          clientEmail: r['Email']                       || '',
+          clientPhone: r['Phone']                       || '',
+          gender:      r['Gender']                      || '',
+          dob:         r['DOB']                         || '',
+          anb:         r['ANB']                         || '',
+          clientCity:  r['Town / City']                 || '',
+          clientCountry: r['District / Country']        || '',
+          prem:        Number(r['Monthly Premium (MK)'] || 0),
+          tmv:         Number(r['Target Maturity Value (MK)'] || 0),
+          totalContrib:Number(r['Total Contributions (MK)']   || 0),
+          term:        r['Premium Term (yrs)']          || 15,
+          product:     'Manga Yako',
+        }));
+      if(incomingMY.length > 0){
+        const mergedMY = [...incomingMY, ...localMY].slice(0, 200);
+        localStorage.setItem('vla_my_quotes', JSON.stringify(mergedMY));
+        totalRestored += incomingMY.length;
       }
+    }
 
-      if(totalRestored > 0){
-        showToast('📋 '+totalRestored+' historical quote'+(totalRestored>1?'s':'')+' restored from Sheets', 4000);
+    // ── 3. Phindu → vla_phindu_quotes ──
+    const phinduRows = data.quotes.filter(r => (r['Product']||'') === 'Phindu');
+    if(phinduRows.length > 0){
+      const localPh     = JSON.parse(localStorage.getItem(PHINDU_QUOTES_KEY)||'[]');
+      const localPhRefs = new Set(localPh.map(q => (q.ref||'').toUpperCase()));
+      const incomingPh  = phinduRows
+        .filter(r => { const ref=(r['Reference']||'').toUpperCase(); return ref && !localPhRefs.has(ref); })
+        .map(r => ({
+          ref:         r['Reference']                     || '',
+          agent:       r['Agent']                         || '',
+          savedAt:     r['Timestamp']||r['Quote Date']    || '',
+          name:        r['Full Name']                     || '',
+          gender:      r['Gender']                        || '',
+          dob:         r['DOB']                           || '',
+          anb:         r['ANB']                           || '',
+          band:        r['Band (Phindu)']                 || '',
+          phone:       r['Phone']                         || '',
+          town:        r['Town / City']                   || '',
+          district:    r['District / Country']            || '',
+          mt:          r['Money Tree % (Phindu)']         || '',
+          premium:     Number(r['Monthly Premium (MK)']   || 0),
+          basicSA:     Number(r['Sum Assured (MK)']       || 0),
+          saWithBonus: Number(r['SA + Bonus at Maturity (MK)'] || 0),
+          mtBenefit:   Number(r['Money Tree Benefit (MK)']|| 0),
+          totalReceipts: Number(r['Total Receipts (MK)']  || 0),
+          totalPremiums: Number(r['Total Premiums Paid (MK)'] || 0),
+          profit:      Number(r['Phindu Profit (MK)']     || 0),
+        }));
+      if(incomingPh.length > 0){
+        const mergedPh = [...incomingPh, ...localPh].slice(0, 200);
+        localStorage.setItem(PHINDU_QUOTES_KEY, JSON.stringify(mergedPh));
+        totalRestored += incomingPh.length;
+      }
+    }
+
+    if(totalRestored > 0){
+      showToast('📋 '+totalRestored+' quote'+(totalRestored>1?'s':'')+' restored from Sheets', 4000);
+      // Re-render history if it's currently visible
+      if(document.getElementById('tab-history') && document.getElementById('tab-history').classList.contains('active')){
+        renderHistory();
       }
     }
   } catch(e){
-    // Sheets unreachable — local history used as-is, no disruption
+    // Sheets unreachable — local history used as-is
   }
 }
 
