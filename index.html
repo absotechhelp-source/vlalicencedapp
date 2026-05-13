@@ -3530,24 +3530,13 @@ async function doLogin(){
   const agents = getAgents();
   const agent  = agents[user];
 
-  // ── Diagnostic: show what was fetched (visible on screen, not just console) ──
   const agentNames = Object.keys(agents).join(', ');
-  console.log('[LOGIN] Sheets fetch result:', sheetsResult ? 'OK - '+Object.keys(sheetsResult).join(', ') : 'FAILED/NULL');
-  console.log('[LOGIN] Local agents after fetch:', agentNames);
-  console.log('[LOGIN] Looking for user:', user, '| found:', !!agent);
-  console.log('[LOGIN] agent raw:', JSON.stringify(agent));
-
-  // Show on screen briefly so we can see it on phone without DevTools
-  licErr.innerHTML = '🔍 Agents loaded: ' + agentNames + '<br>Sheets: ' + (sheetsResult ? '✅ '+Object.keys(sheetsResult).length+' agents' : '❌ Failed — check Console for [AGENTS] error');
-  licErr.style.display = 'block';
-  licErr.style.background = '#1a3a1a';
-  licErr.style.color = '#90ee90';
 
   const agentPin    = typeof agent === 'object' ? agent.pin    : agent;
   const agentActive = typeof agent === 'object' ? agent.active : true;
   const agentRole   = typeof agent === 'object' ? agent.role   : 'agent';
 
-  console.log('[LOGIN] agentPin:', agentPin, '| entered:', pin, '| match:', agentPin===pin);
+
 
   console.log('[LOGIN] agentPin:', agentPin, '| agentActive:', agentActive, '| match:', agentPin===pin);
   if(agent && agentActive !== false && agentPin === pin){
@@ -4807,12 +4796,17 @@ async function renderAdminPanel(){
   var body = document.getElementById('admin-panel-body');
   if(!body){ return; }
 
-  // Show loading state
-  body.innerHTML = '<p style="font-size:12px;color:#888;padding:12px 0;text-align:center">🔄 Loading agents…</p>';
+  // ── Render immediately with local data so there's no blank screen ──
+  // Then silently refresh from Sheets in the background and re-render
+  _buildAdminPanel(body);
 
-  // Fetch latest from Sheets first — then render with fresh data
-  try { await fetchAgentsFromSheets(); } catch(e){}
+  try {
+    const fresh = await fetchAgentsFromSheets();
+    if(fresh) _buildAdminPanel(body); // re-render with Sheets data
+  } catch(e){}
+}
 
+function _buildAdminPanel(body){
   var agents = getAgents();
   var entries = Object.entries(agents).filter(function(e){ return e[0] !== 'VLA Admin'; });
 
