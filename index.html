@@ -438,15 +438,6 @@ input:checked+.tog-trk:before{transform:translateX(17px)}
 </div>
 
 <!-- MAIN APP SCREEN -->
-<!-- Licence checking overlay — shown while licence.json is being fetched -->
-<div id="screen-licence-check" style="position:fixed;inset:0;background:#1a0000;display:flex;align-items:center;justify-content:center;z-index:9999;font-family:Arial,sans-serif">
-  <!-- Intentionally blank — no message shown during licence check -->
-</div>
-
-<!-- Licence expired screen — shown permanently if licence has lapsed -->
-<div id="screen-licence-expired" style="position:fixed;inset:0;background:#1a0000;display:none;align-items:center;justify-content:center;z-index:9999;font-family:Arial,sans-serif">
-  <div style="text-align:center;padding:40px;max-width:320px">
-    <div style="font-size:48px;margin-bottom:16px">⛔</div>
     <div style="color:#fca5a5;font-size:18px;font-weight:600;margin-bottom:12px">Licence Expired</div>
     <div style="color:#fecaca;font-size:14px;line-height:1.6">This application licence has expired.<br>Please contact your administrator<br>to restore access.</div>
   </div>
@@ -3472,23 +3463,22 @@ window.addEventListener('DOMContentLoaded', async ()=>{
   }
 
   const licResult = await runLicenceCheck();
-  const checkOverlay = document.getElementById('screen-licence-check');
-  if(checkOverlay) checkOverlay.style.display = 'none';
-
   if(!licResult.allowed){
-    const expiredScreen = document.getElementById('screen-licence-expired');
-    if(expiredScreen){
-      // Tailor message based on reason
-      const msgEl = expiredScreen.querySelector('div[style*="line-height"]');
-      if(msgEl){
-        if(licResult.reason === 'grace_expired'){
-          msgEl.innerHTML = 'This application has been offline too long.<br>Please connect to the internet to verify your licence.';
-        } else {
-          msgEl.innerHTML = 'This application licence has expired.<br>Please contact your administrator<br>to restore access.';
-        }
+    // Show expired message on the login card — same style as wrong credentials
+    const loginScreen = document.getElementById('screen-login');
+    if(loginScreen) loginScreen.style.display = '';
+    const licErr = document.getElementById('l-lic-err');
+    if(licErr){
+      if(licResult.reason === 'grace_expired'){
+        licErr.innerHTML = '&#x26D4; App offline too long — please connect to the internet to verify your licence.';
+      } else {
+        licErr.innerHTML = '&#x26D4; This application licence has expired. Please contact your administrator to restore access.';
       }
-      expiredScreen.style.display = 'flex';
+      licErr.style.display = 'block';
     }
+    // Disable the sign in button so they can't attempt login
+    const btn = document.querySelector('.login-btn');
+    if(btn){ btn.disabled = true; btn.style.opacity = '0.4'; }
     return;
   }
 
