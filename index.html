@@ -2066,9 +2066,9 @@ input:checked+.tog-trk:before{transform:translateX(17px)}
           <button class="btn-primary btn-secondary" style="padding:9px;font-size:13px" onclick="saveSheetURL()">Save &amp; Test</button>
           <div id="conn-status" style="font-size:12px;color:var(--T2);display:none;margin-top:6px"></div>
           <div style="margin-top:12px;padding:10px 12px;background:#f5e0e0;border-radius:8px;font-size:12px;color:#641414;line-height:1.5">
-            <strong>Quotes missing in Sheets?</strong> Tap below to push locally stored quotes to Google Sheets. The app automatically checks what's already there and only uploads what's missing — <strong>duplicates are prevented</strong>. Safe to run multiple times.
+            <strong>Sync quotes with Google Sheets</strong> — uploads any quotes missing from Sheets and restores any quotes missing on this device. Safe to run anytime.
           </div>
-          <button class="btn-primary btn-secondary" style="padding:9px;font-size:13px;margin-top:8px;background:var(--M,#641414);color:#fff" onclick="showRetroSyncModal()">📤 Push Local Quotes to Sheets</button>
+          <button class="btn-primary btn-secondary" style="padding:9px;font-size:13px;margin-top:8px;background:var(--M,#641414);color:#fff" onclick="twoWaySync()">🔄 Sync Quotes with Sheets</button>
           <div id="retro-sync-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9000;align-items:center;justify-content:center">
             <div style="background:var(--color-background-primary,#fff);border-radius:14px;padding:24px;margin:20px;max-width:340px;box-shadow:0 8px 32px rgba(0,0,0,.3)">
               <div style="font-size:22px;margin-bottom:10px">📤</div>
@@ -4054,15 +4054,22 @@ function getLocalMyQuotes(){return JSON.parse(localStorage.getItem('vla_my_quote
    Local quotes always take precedence. New quotes from Sheets are added
    so history survives data clears and new device installs.
 ──────────────────────────────────────────────────────────────────────── */
-async function restoreHistoryFromSheets(agentName){
+async function restoreHistoryFromSheets(agentName, showFeedback){
   const url = localStorage.getItem(SHEETS_URL_KEY) || APPS_SCRIPT_URL;
   if(!url || !agentName) return;
+  if(showFeedback) showToast('📋 Checking Sheets for your quotes…', 3000);
   try {
-    const fetchPromise = fetch(url + '?action=getQuotes&agent=' + encodeURIComponent(agentName), {cache:'no-store'});
-    const timeout = new Promise((_,rej) => setTimeout(()=>rej(new Error('timeout')), 10000));
+    const fetchPromise = fetch(url + '?action=getQuotes&agent=' + encodeURIComponent(agentName), {
+      cache:'no-store', redirect:'follow', mode:'cors'
+    });
+    const timeout = new Promise((_,rej) => setTimeout(()=>rej(new Error('timeout')), 12000));
     const res = await Promise.race([fetchPromise, timeout]);
     const data = await res.json();
-    if(data.status !== 'ok' || !Array.isArray(data.quotes) || !data.quotes.length) return;
+    console.log('[RESTORE] Sheets returned', data.quotes ? data.quotes.length : 0, 'quotes for', agentName);
+    if(data.status !== 'ok' || !Array.isArray(data.quotes) || !data.quotes.length){
+      if(showFeedback) showToast('⚠️ No quotes found in Sheets for this agent', 4000);
+      return;
+    }
 
     let totalRestored = 0;
 
@@ -4124,7 +4131,12 @@ async function restoreHistoryFromSheets(agentName){
       const local     = getLocalQuotes();
       const localRefs = new Set(local.map(q => (q.ref||'').toUpperCase()));
       const incoming  = pspEduRows
-        .filter(r => { const ref=(r['Reference']||'').toUpperCase(); return ref && !localRefs.has(ref); })
+        .filter(r => {
+          const ref = (r['Reference']||'').toUpperCase();
+          // If ref exists, check it's not already local
+          // If ref is empty, always include (can't dedup without ref)
+          return !ref || !localRefs.has(ref);
+        })
         .map(mapSheetQuote);
       if(incoming.length > 0){
         const merged = [...incoming, ...local].slice(0, 200);
@@ -4139,7 +4151,7 @@ async function restoreHistoryFromSheets(agentName){
       const localMY     = getLocalMyQuotes();
       const localMyRefs = new Set(localMY.map(q => (q.ref||'').toUpperCase()));
       const incomingMY  = myRows
-        .filter(r => { const ref=(r['Reference']||'').toUpperCase(); return ref && !localMyRefs.has(ref); })
+        .filter(r => { const ref=(r['Reference']||'').toUpperCase(); return !ref || !localMyRefs.has(ref); })
         .map(r => ({
           ref:         r['Reference']                   || '',
           agent:       r['Agent']                       || '',
@@ -4175,7 +4187,7 @@ async function restoreHistoryFromSheets(agentName){
       const localPh     = JSON.parse(localStorage.getItem(PHINDU_QUOTES_KEY)||'[]');
       const localPhRefs = new Set(localPh.map(q => (q.ref||'').toUpperCase()));
       const incomingPh  = phinduRows
-        .filter(r => { const ref=(r['Reference']||'').toUpperCase(); return ref && !localPhRefs.has(ref); })
+        .filter(r => { const ref=(r['Reference']||'').toUpperCase(); return !ref || !localPhRefs.has(ref); })
         .map(r => ({
           ref:         r['Reference']                     || '',
           agent:       r['Agent']                         || '',
@@ -4205,14 +4217,15 @@ async function restoreHistoryFromSheets(agentName){
     }
 
     if(totalRestored > 0){
-      showToast('📋 '+totalRestored+' quote'+(totalRestored>1?'s':'')+' restored from Sheets', 4000);
+      showToast('📋 '+totalRestored+' quote'+(totalRestored>1?'s':'')+' restored from Sheets', 5000);
       // Re-render history if it's currently visible
-      if(document.getElementById('tab-history') && document.getElementById('tab-history').classList.contains('active')){
-        renderHistory();
-      }
+      try{ renderHistory(); }catch(e){}
+    } else if(showFeedback) {
+      showToast('✅ All quotes already up to date on this device', 4000);
     }
   } catch(e){
-    // Sheets unreachable — local history used as-is
+    console.warn('[RESTORE] Failed:', e.message);
+    if(showFeedback) showToast('⚠️ Could not reach Sheets — check connection', 4000);
   }
 }
 
@@ -4276,6 +4289,18 @@ async function syncToSheets(q){
   }
 }
 
+async function twoWaySync(){
+  if(!currentAgent){ showToast('Please sign in first', 3000); return; }
+  showToast('🔄 Syncing quotes with Sheets…', 3000);
+  // Step 1: Flush any pending queue (failed live syncs)
+  try{ await flushSyncQueue(true); }catch(e){}
+  // Step 2: Push missing local quotes up to Sheets
+  await retroSyncAllQuotes(true);
+  // Step 3: Pull missing Sheets quotes down to device
+  await restoreHistoryFromSheets(currentAgent, false);
+  try{ renderHistory(); }catch(e){}
+}
+
 function showRetroSyncModal(){
   const m = document.getElementById('retro-sync-modal');
   if(m) m.style.display = 'flex';
@@ -4287,12 +4312,12 @@ function showRetroSyncModal(){
    3. Covers all products: PSP, Educational Plans, Manga Yako, Phindu
       plus both proposal types (Manga Yako & Phindu)
 ──────────────────────────────────────────────────────────────────────── */
-async function retroSyncAllQuotes(){
+async function retroSyncAllQuotes(silent){
   const url = localStorage.getItem(SHEETS_URL_KEY)||APPS_SCRIPT_URL;
-  if(!url){ showToast('⚠️ No Sheets URL configured', 3000); return; }
-  if(!currentAgent){ showToast('⚠️ Please sign in first', 3000); return; }
+  if(!url){ if(!silent) showToast('⚠️ No Sheets URL configured', 3000); return; }
+  if(!currentAgent){ if(!silent) showToast('⚠️ Please sign in first', 3000); return; }
 
-  showToast('🔍 Checking what\'s already in Sheets…', 3000);
+  if(!silent) showToast('🔍 Checking what\'s already in Sheets…', 3000);
 
   // ── Step 1: Fetch all refs already in Sheets (quotes AND proposals) ──
   let existingRefs = new Set();
@@ -4503,7 +4528,7 @@ async function retroSyncAllQuotes(){
     });
   }
 
-  showToast(
+  if(!silent) showToast(
     '✅ '+sent+' synced · '+skipped+' already existed'+(failed>0?' · '+failed+' failed':''),
     6000
   );
