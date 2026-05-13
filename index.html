@@ -2710,26 +2710,6 @@ input:checked+.tog-trk:before{transform:translateX(17px)}
             <span id="edu-min-prem-value"></span>
           </div>
 
-          <!-- Mode toggle -->
-          <div class="mode-tabs" style="margin-bottom:12px;margin-top:10px">
-            <button class="mode-tab active" onclick="eduSetMode('sa')" id="edu-tab-sa">I know the Sum Assured</button>
-            <button class="mode-tab" onclick="eduSetMode('prem')" id="edu-tab-prem">I know the Premium</button>
-          </div>
-
-          <!-- SA input -->
-          <div id="edu-sa-row">
-            <label class="f-lbl">Annual Payout / Basic Sum Assured per year (MK) *</label>
-            <input id="edu-sa-amount" class="f-inp" type="number" min="1000000" step="100000" value="1000000" placeholder="e.g. 1000000" style="margin-bottom:4px">
-            <div id="edu-unit-hint" style="font-size:11px;color:#6b7280;margin-bottom:10px">Annual payout / Basic Sum Assured per year</div>
-          </div>
-
-          <!-- Premium input (shown when mode=prem) -->
-          <div id="edu-prem-row" style="display:none">
-            <label class="f-lbl">Premium you can afford (MK) *</label>
-            <input id="edu-prem-amount" class="f-inp" type="number" min="5000" step="1000" placeholder="e.g. 50000" style="margin-bottom:4px">
-            <div style="font-size:11px;color:#6b7280;margin-bottom:10px">We calculate the highest Sum Assured for this premium</div>
-          </div>
-
           <!-- College Benefit — Plan 3 only -->
           <div id="edu-college-row" style="display:none;border-top:1px solid var(--BD);padding-top:10px;margin-bottom:10px">
             <div class="tog-row" style="margin-bottom:6px">
