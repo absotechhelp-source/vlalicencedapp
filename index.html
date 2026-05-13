@@ -3406,43 +3406,95 @@ let histModalQuote=null;
 ═══════════════════════════════════════════ */
 window.addEventListener('DOMContentLoaded', async ()=>{
 
-  // ── LICENCE CHECK — must pass before login screen is shown ──────────────
-  // The screen-licence-check overlay is already visible (covers entire screen).
-  // We fetch licence.json fresh (never cached) then either reveal login or block.
+  // ── LICENCE CHECK ────────────────────────────────────────────────────────
+  // Strategy:
+  //   1. Try to fetch licence.json from GitHub (never cached)
+  //   2. If reachable:
+  //        - Not expired → save stamp {active:true, ts:now}, allow access
+  //        - Expired     → save stamp {active:false, ts:now}, block permanently
+  //   3. If unreachable (offline / 404):
+  //        - Read saved stamp from localStorage
+  //        - stamp.active===false → block (licence was revoked while online)
+  //        - stamp.active===true  → check grace period (7 days from last check)
+  //        - No stamp at all      → allow once (first install, no stamp yet)
+  // ─────────────────────────────────────────────────────────────────────────
   const FALLBACK_EXPIRY = '2026-06-30';
-  async function getLicenceExpiry(){
+  const LICENCE_STAMP_KEY = 'vla_lic_stamp';
+  const GRACE_DAYS = 7;
+
+  async function runLicenceCheck(){
+    // ── Try online check ──
     try {
       const r = await Promise.race([
-        fetch('./licence.json?t='+Date.now(), {
-          cache:'no-store',
-          redirect:'follow',
-          mode:'cors'
-        }),
+        fetch('./licence.json?t='+Date.now(), {cache:'no-store', redirect:'follow', mode:'cors'}),
         new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')),8000))
       ]);
       if(!r.ok) throw new Error('HTTP '+r.status);
       const d = await r.json();
-      console.log('[LICENCE] fetched expiry:', d.expiry);
-      return d.expiry || FALLBACK_EXPIRY;
+      const expiry = d.expiry || FALLBACK_EXPIRY;
+      const todayD = new Date(); todayD.setHours(0,0,0,0);
+      const expiryD = new Date(expiry); expiryD.setHours(0,0,0,0);
+      const active = todayD <= expiryD;
+      console.log('[LICENCE] online check — expiry:', expiry, '| active:', active);
+      // Save stamp with status AND timestamp
+      try { localStorage.setItem(LICENCE_STAMP_KEY, JSON.stringify({active, ts:Date.now(), expiry})); } catch(e){}
+      return { allowed: active, source: 'online' };
     } catch(e){
-      console.warn('[LICENCE] fetch failed:', e.message, '— using fallback:', FALLBACK_EXPIRY);
-      return FALLBACK_EXPIRY;
+      console.warn('[LICENCE] offline —', e.message);
     }
-  }
-  const expiryDate = await getLicenceExpiry();
-  const todayD = new Date(); todayD.setHours(0,0,0,0);
-  const expiryD = new Date(expiryDate); expiryD.setHours(0,0,0,0);
-  const licenceOk = todayD <= expiryD;
 
-  // Hide the checking overlay regardless of outcome
+    // ── Offline: read saved stamp ──
+    try {
+      const stamp = JSON.parse(localStorage.getItem(LICENCE_STAMP_KEY)||'null');
+      if(stamp){
+        // If last known status was revoked — block immediately, no grace
+        if(stamp.active === false){
+          console.warn('[LICENCE] stamp says revoked — blocking');
+          return { allowed: false, reason: 'revoked' };
+        }
+        // Active stamp — check grace period
+        const daysSince = (Date.now() - stamp.ts) / 86400000;
+        const daysLeft  = Math.ceil(GRACE_DAYS - daysSince);
+        console.log('[LICENCE] grace period —', daysSince.toFixed(1), 'days since last check |', daysLeft, 'days left');
+        if(daysSince <= GRACE_DAYS){
+          return { allowed: true, source: 'grace', daysLeft };
+        }
+        // Grace period elapsed
+        console.warn('[LICENCE] grace period expired');
+        return { allowed: false, reason: 'grace_expired' };
+      }
+    } catch(e){}
+
+    // No stamp at all — first install or stamp was cleared
+    // Allow but don't stamp (forces online check on next open)
+    console.log('[LICENCE] no stamp — allowing first-time access');
+    return { allowed: true, source: 'no_stamp' };
+  }
+
+  const licResult = await runLicenceCheck();
   const checkOverlay = document.getElementById('screen-licence-check');
   if(checkOverlay) checkOverlay.style.display = 'none';
 
-  if(!licenceOk){
-    // Show the expired screen — nothing else loads
+  if(!licResult.allowed){
     const expiredScreen = document.getElementById('screen-licence-expired');
-    if(expiredScreen){ expiredScreen.style.display = 'flex'; }
-    return; // Stop all further initialisation
+    if(expiredScreen){
+      // Tailor message based on reason
+      const msgEl = expiredScreen.querySelector('div[style*="line-height"]');
+      if(msgEl){
+        if(licResult.reason === 'grace_expired'){
+          msgEl.innerHTML = 'This application has been offline too long.<br>Please connect to the internet to verify your licence.';
+        } else {
+          msgEl.innerHTML = 'This application licence has expired.<br>Please contact your administrator<br>to restore access.';
+        }
+      }
+      expiredScreen.style.display = 'flex';
+    }
+    return;
+  }
+
+  // Warn agent if running on grace period with few days left
+  if(licResult.source === 'grace' && licResult.daysLeft <= 2){
+    setTimeout(()=>showToast('\u26a0\ufe0f Offline mode \u2014 connect within '+licResult.daysLeft+' day'+(licResult.daysLeft===1?'':'s')+' to verify licence', 6000), 2000);
   }
 
   // Licence valid — reveal login screen
