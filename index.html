@@ -2697,6 +2697,32 @@ input:checked+.tog-trk:before{transform:translateX(17px)}
             <div id="edu-unit-hint" style="font-size:11px;color:#6b7280;margin-bottom:10px">Annual payout / Basic Sum Assured per year</div>
           </div>
 
+          <label class="f-lbl" style="margin-top:4px">Payment Frequency</label>
+          <select id="edu-freq" class="f-inp" onchange="eduShowMinPremium()">
+            <option value="monthly">Monthly</option>
+            <option value="annual">Annual</option>
+          </select>
+          <div id="edu-freq-note" style="font-size:11px;color:#6b7280;margin-top:4px"></div>
+
+          <!-- Minimum premium hint — shown automatically when fields are ready -->
+          <div id="edu-min-prem-hint" style="display:none;margin-top:8px;margin-bottom:4px;padding:10px 12px;background:var(--ML);border:1px solid var(--RS);border-radius:8px;font-size:12px;color:var(--M);line-height:1.6">
+            <strong>💡 Minimum premium for MK 1,000,000 SA:</strong><br>
+            <span id="edu-min-prem-value"></span>
+          </div>
+
+          <!-- Mode toggle -->
+          <div class="mode-tabs" style="margin-bottom:12px;margin-top:10px">
+            <button class="mode-tab active" onclick="eduSetMode('sa')" id="edu-tab-sa">I know the Sum Assured</button>
+            <button class="mode-tab" onclick="eduSetMode('prem')" id="edu-tab-prem">I know the Premium</button>
+          </div>
+
+          <!-- SA input -->
+          <div id="edu-sa-row">
+            <label class="f-lbl">Annual Payout / Basic Sum Assured per year (MK) *</label>
+            <input id="edu-sa-amount" class="f-inp" type="number" min="1000000" step="100000" value="1000000" placeholder="e.g. 1000000" style="margin-bottom:4px">
+            <div id="edu-unit-hint" style="font-size:11px;color:#6b7280;margin-bottom:10px">Annual payout / Basic Sum Assured per year</div>
+          </div>
+
           <!-- Premium input (shown when mode=prem) -->
           <div id="edu-prem-row" style="display:none">
             <label class="f-lbl">Premium you can afford (MK) *</label>
@@ -2726,14 +2752,6 @@ input:checked+.tog-trk:before{transform:translateX(17px)}
             <option value="D">Class D</option>
           </select>
           <div id="edu-occ-info" style="display:none;font-size:11px;background:var(--ML);padding:6px 8px;border-radius:6px;color:var(--M);margin-bottom:8px"></div>
-
-          <label class="f-lbl" style="margin-top:4px">Payment Frequency</label>
-          <select id="edu-freq" class="f-inp">
-            <option value="monthly">Monthly</option>
-            <option value="annual">Annual</option>
-          </select>
-          <div id="edu-freq-note" style="font-size:11px;color:#6b7280;margin-top:4px"></div>
-        </div>
 
         <!-- Date of quote -->
         <div class="card" style="margin-bottom:14px">
@@ -8216,6 +8234,8 @@ function eduCheckAges(){
       cErr.style.display = 'block';
     }
   }
+  // Auto-show minimum premium hint whenever ages change
+  eduShowMinPremium();
 }
 
 /* ── EDU PLANS MODE ── */
@@ -8226,6 +8246,51 @@ function eduSetMode(m){
   document.getElementById('edu-tab-prem').classList.toggle('active', m==='prem');
   document.getElementById('edu-sa-row').style.display   = m==='sa'   ? '' : 'none';
   document.getElementById('edu-prem-row').style.display = m==='prem' ? '' : 'none';
+}
+
+/* ── Show minimum premium hint automatically ── */
+function eduShowMinPremium(){
+  const hint    = document.getElementById('edu-min-prem-hint');
+  const valEl   = document.getElementById('edu-min-prem-value');
+  const plan    = document.getElementById('edu-plan').value;
+  const pdob    = document.getElementById('edu-pdob').value;
+  const cdob    = document.getElementById('edu-cdob').value;
+  const freq    = document.getElementById('edu-freq').value;
+  const isMo    = freq === 'monthly';
+
+  if(!hint || !valEl || !plan || !pdob || !cdob){ if(hint) hint.style.display='none'; return; }
+
+  const pANB = eduCalcANB(pdob);
+  const cANB = eduCalcANB(cdob);
+
+  // Look up basic rate for minimum 1 unit (1,000,000 SA → ceil(1000000/unitSA) units)
+  try {
+    let basicRate, unitSA;
+    if(plan==='lgp-lc'){
+      basicRate = isMo ? LGP_LC[pANB]/11.3744 : LGP_LC[pANB]; unitSA = 2000;
+    } else if(plan==='lgp-nl'){
+      basicRate = isMo ? LGP_NL[pANB]/11.3744 : LGP_NL[pANB]; unitSA = 2000;
+    } else if(plan==='lge-wp'){
+      const tbl = isMo ? LGE_MON : LGE_ANN;
+      basicRate = tbl[pANB] && tbl[pANB][cANB]; unitSA = 2000;
+    } else if(plan==='tep'){
+      const tbl = isMo ? TEP_MON : TEP_ANN;
+      basicRate = tbl[pANB] && tbl[pANB][cANB]; unitSA = 10000;
+    }
+
+    if(!basicRate || !unitSA){ hint.style.display='none'; return; }
+
+    const minUnits = Math.ceil(1000000 / unitSA);
+    const minPrem  = Math.ceil(basicRate * minUnits);
+    const freqLabel = isMo ? 'month' : 'year';
+
+    valEl.textContent = 'MK ' + minPrem.toLocaleString() + ' per ' + freqLabel +
+      ' → MK 1,000,000 annual SA' +
+      (unitSA === 2000 ? ' (500 units)' : ' (100 units)');
+    hint.style.display = 'block';
+  } catch(e){
+    hint.style.display = 'none';
+  }
 }
 
 /* ── 6. COLLEGE TOGGLED ── */
