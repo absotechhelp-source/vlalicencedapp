@@ -2742,8 +2742,8 @@ input:checked+.tog-trk:before{transform:translateX(17px)}
 
           <label class="f-lbl" style="margin-top:4px">Payment Frequency</label>
           <select id="edu-freq" class="f-inp">
-            <option value="annual">Annual</option>
             <option value="monthly">Monthly</option>
+            <option value="annual">Annual</option>
           </select>
           <div id="edu-freq-note" style="font-size:11px;color:#6b7280;margin-top:4px"></div>
         </div>
@@ -8101,7 +8101,7 @@ function eduPlanChanged(){
   document.getElementById('edu-college-detail').style.display = 'none';
   if(document.getElementById('edu-college-tog')) document.getElementById('edu-college-tog').checked = false;
 
-  freqSel.innerHTML = '<option value="annual">Annual</option><option value="monthly">Monthly</option>';
+  freqSel.innerHTML = '<option value="monthly">Monthly</option><option value="annual">Annual</option>';
 
   const infos = {
     'lgp-lc': '📘 Little Genius Primary <b>With Life Cover</b><br>Child ANB: 1 (fixed) · Parent ANB: 18–65<br>Premium Term: 4 years · Annual payout per year from child\'s 5th birthday (8 yrs)<br>Min Annual payout: MK 1,000,000 · Annual or Monthly premiums',
@@ -8112,7 +8112,7 @@ function eduPlanChanged(){
   if(infos[plan]) info.innerHTML = infos[plan];
 
   if(plan === 'lgp-lc' || plan === 'lgp-nl'){
-    freqSel.innerHTML = '<option value="annual">Annual</option><option value="monthly">Monthly</option>';
+    freqSel.innerHTML = '<option value="monthly">Monthly</option><option value="annual">Annual</option>';
     freqNote.textContent = 'Monthly rate = Annual ÷ 11.3744';
     unitHint.textContent = 'Annual payout / Basic Sum Assured per year · Minimum MK 1,000,000';
   } else if(plan === 'lge-wp'){
@@ -8707,7 +8707,7 @@ function eduReset(){
   const saEl=document.getElementById('edu-sa-amount'); if(saEl) saEl.value='1000000';
   const colSaEl=document.getElementById('edu-college-sa'); if(colSaEl) colSaEl.value='2500000';
   document.getElementById('edu-occ').value='0';
-  document.getElementById('edu-freq').innerHTML='<option value="annual">Annual</option><option value="monthly">Monthly</option>';  document.getElementById('edu-freq-note').textContent='';
+  document.getElementById('edu-freq').innerHTML='<option value="monthly">Monthly</option><option value="annual">Annual</option>';  document.getElementById('edu-freq-note').textContent='';
   document.getElementById('edu-unit-hint').textContent='Annual payout / Basic Sum Assured per year';
   initEduPlansTab();
   const ab=document.getElementById('app-body'); if(ab) ab.scrollTop=0;
