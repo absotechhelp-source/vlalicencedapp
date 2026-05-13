@@ -3130,7 +3130,7 @@ async function fetchAgentsFromSheets(){
   if(!url) return null;
   try {
     const fetchPromise = fetch(url + '?action=getAgents', {cache:'no-store'});
-    const timeoutPromise = new Promise((_,rej) => setTimeout(()=>rej(new Error('timeout')), 5000));
+    const timeoutPromise = new Promise((_,rej) => setTimeout(()=>rej(new Error('timeout')), 4000));
     const res = await Promise.race([fetchPromise, timeoutPromise]);
     const data = await res.json();
     if(data.status === 'ok' && data.agents && typeof data.agents === 'object' && !Array.isArray(data.agents)){
@@ -3518,6 +3518,13 @@ async function doLogin(){
   licErr.style.display='none';
   err.style.display='none';
 
+  // ── Always try to get fresh agents from Sheets before checking credentials ──
+  // This ensures phones always use the latest agent list even after a data clear.
+  // Falls back to local cache silently if Sheets is unreachable.
+  btn.textContent='Checking…'; btn.disabled=true;
+  try { await fetchAgentsFromSheets(); } catch(e){}
+  btn.textContent='Sign In →'; btn.disabled=false;
+
   const agents = getAgents();
   const agent  = agents[user];
 
@@ -3577,10 +3584,8 @@ async function doLogin(){
     showToast('Welcome, '+user+'!');
     // Flush any quotes that were saved while offline
     setTimeout(()=>flushSyncQueue(true), 2000);
-    // Sync agent list from Sheets in the background — does not affect this login
-    setTimeout(()=>{ try{ fetchAgentsFromSheets(); }catch(e){} }, 3000);
     // Restore any missing quote history from Sheets (survives data clears & new devices)
-    setTimeout(()=>{ try{ restoreHistoryFromSheets(user); }catch(e){} }, 4000);
+    setTimeout(()=>{ try{ restoreHistoryFromSheets(user); }catch(e){} }, 3000);
   } else {
     err.style.display='block';
     document.getElementById('l-pin').value='';
