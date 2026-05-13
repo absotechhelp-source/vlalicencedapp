@@ -3413,12 +3413,21 @@ window.addEventListener('DOMContentLoaded', async ()=>{
   async function getLicenceExpiry(){
     try {
       const r = await Promise.race([
-        fetch('./licence.json?t='+Date.now(), {cache:'no-store'}),
-        new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')),5000))
+        fetch('./licence.json?t='+Date.now(), {
+          cache:'no-store',
+          redirect:'follow',
+          mode:'cors'
+        }),
+        new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')),8000))
       ]);
+      if(!r.ok) throw new Error('HTTP '+r.status);
       const d = await r.json();
+      console.log('[LICENCE] fetched expiry:', d.expiry);
       return d.expiry || FALLBACK_EXPIRY;
-    } catch(e){ return FALLBACK_EXPIRY; }
+    } catch(e){
+      console.warn('[LICENCE] fetch failed:', e.message, '— using fallback:', FALLBACK_EXPIRY);
+      return FALLBACK_EXPIRY;
+    }
   }
   const expiryDate = await getLicenceExpiry();
   const todayD = new Date(); todayD.setHours(0,0,0,0);
