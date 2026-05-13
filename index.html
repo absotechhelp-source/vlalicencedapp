@@ -3140,8 +3140,6 @@ async function fetchAgentsFromSheets(){
       // Local-only agents (added offline, not yet in Sheets) are preserved
       const merged = Object.assign({}, local, data.agents);
       saveAgents(merged);
-      // Refresh admin panel if it's currently open so changes show immediately
-      if(isAdmin) try{ renderAdminPanel(); }catch(e){}
       return merged;
     }
     return null;
@@ -4789,14 +4787,17 @@ function shareHistEmail(){
 /* ═══════════════════════════════════════════
    ADMIN PANEL
 ═══════════════════════════════════════════ */
-function renderAdminPanel(){
+async function renderAdminPanel(){
   if(!isAdmin){ return; }
   var body = document.getElementById('admin-panel-body');
   if(!body){ return; }
-  // Always pull latest agent list from Sheets when admin opens this panel
-  fetchAgentsFromSheets().then(function(fresh){
-    if(fresh) saveAgents(fresh);
-  }).catch(function(){});
+
+  // Show loading state
+  body.innerHTML = '<p style="font-size:12px;color:#888;padding:12px 0;text-align:center">🔄 Loading agents…</p>';
+
+  // Fetch latest from Sheets first — then render with fresh data
+  try { await fetchAgentsFromSheets(); } catch(e){}
+
   var agents = getAgents();
   var entries = Object.entries(agents).filter(function(e){ return e[0] !== 'VLA Admin'; });
 
