@@ -430,6 +430,10 @@ input:checked+.tog-trk:before{transform:translateX(17px)}
     <div class="login-err" id="l-err">Invalid username or PIN. Please try again.</div>
     <div class="login-err" id="l-lic-err" style="display:none;background:#7f1d1d;border-radius:8px;padding:12px 14px;margin-top:8px;font-size:13px;line-height:1.5;color:#fecaca;text-align:center"></div>
     <div class="login-version">VLA Sales App v2.0 · Powered by Vanguard Life</div>
+    <!-- Emergency reset — clears local agent cache so fresh data loads from Sheets -->
+    <div style="text-align:center;margin-top:14px">
+      <span onclick="emergencyReset()" style="font-size:11px;color:#bbb;cursor:pointer;text-decoration:underline">Having trouble signing in? Tap here to reset</span>
+    </div>
   </div>
 </div>
 
@@ -3054,6 +3058,15 @@ setInterval(()=>{
   }catch(e){}
 }, 5 * 60 * 1000);
 
+/* Emergency login reset — clears ONLY the agent cache (not quotes or history)
+   so the app re-seeds from defaults and fetches fresh from Sheets on next login */
+function emergencyReset(){
+  try { localStorage.removeItem(AGENTS_KEY); } catch(e){}
+  try { localStorage.removeItem(SESSION_KEY); } catch(e){}
+  showToast('Reset done — please sign in again', 3000);
+  setTimeout(()=> window.location.reload(), 1500);
+}
+
 /* ── Agent store: localStorage cache + Sheets source of truth ── */
 const SESSION_KEY   = 'vla_session_v1';
 
@@ -3505,16 +3518,19 @@ async function doLogin(){
   licErr.style.display='none';
   err.style.display='none';
 
-  // ── Always use locally cached agents for login — never fetch from Sheets here.
-  //    Sheets sync happens in the background after login, never during it.
   const agents = getAgents();
   const agent  = agents[user];
-  // Support both formats:
-  //   Old: agents[name] = '1625'  (PIN string)
-  //   New: agents[name] = {pin:'1625', role:'agent', active:true}
+
+  // Debug — visible in Console tab
+  console.log('[LOGIN] user:', user);
+  console.log('[LOGIN] agent raw:', JSON.stringify(agent));
+  console.log('[LOGIN] pin entered:', pin);
+
   const agentPin    = typeof agent === 'object' ? agent.pin    : agent;
   const agentActive = typeof agent === 'object' ? agent.active : true;
   const agentRole   = typeof agent === 'object' ? agent.role   : 'agent';
+
+  console.log('[LOGIN] agentPin:', agentPin, '| agentActive:', agentActive, '| match:', agentPin===pin);
   if(agent && agentActive !== false && agentPin === pin){
 
     // ── Licence check — must pass before granting access ──
