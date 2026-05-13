@@ -3129,21 +3129,26 @@ async function fetchAgentsFromSheets(){
   const url = localStorage.getItem(SHEETS_URL_KEY) || APPS_SCRIPT_URL;
   if(!url) return null;
   try {
-    const fetchPromise = fetch(url + '?action=getAgents', {cache:'no-store'});
-    const timeoutPromise = new Promise((_,rej) => setTimeout(()=>rej(new Error('timeout')), 4000));
+    const fetchPromise = fetch(url + '?action=getAgents', {
+      cache:'no-store',
+      redirect:'follow',
+      mode:'cors'
+    });
+    const timeoutPromise = new Promise((_,rej) => setTimeout(()=>rej(new Error('timeout')), 6000));
     const res = await Promise.race([fetchPromise, timeoutPromise]);
-    const data = await res.json();
+    if(!res.ok && res.type !== 'opaque') throw new Error('HTTP '+res.status);
+    const text = await res.text();
+    const data = JSON.parse(text);
     if(data.status === 'ok' && data.agents && typeof data.agents === 'object' && !Array.isArray(data.agents)){
       const local = getAgents();
-      // ── Sheets is the authority for agent state ──
-      // Sheets agents overwrite local (so disable/enable/add on any device propagates everywhere)
-      // Local-only agents (added offline, not yet in Sheets) are preserved
       const merged = Object.assign({}, local, data.agents);
       saveAgents(merged);
       return merged;
     }
+    console.warn('[AGENTS] Bad response:', text.slice(0,200));
     return null;
   } catch(e){
+    console.warn('[AGENTS] Fetch failed:', e.message);
     return null;
   }
 }
@@ -3516,24 +3521,33 @@ async function doLogin(){
   licErr.style.display='none';
   err.style.display='none';
 
-  // ── Always try to get fresh agents from Sheets before checking credentials ──
-  // This ensures phones always use the latest agent list even after a data clear.
-  // Falls back to local cache silently if Sheets is unreachable.
+  // ── Fetch fresh agents from Sheets before checking credentials ──
   btn.textContent='Checking…'; btn.disabled=true;
-  try { await fetchAgentsFromSheets(); } catch(e){}
+  let sheetsResult = null;
+  try { sheetsResult = await fetchAgentsFromSheets(); } catch(e){}
   btn.textContent='Sign In →'; btn.disabled=false;
 
   const agents = getAgents();
   const agent  = agents[user];
 
-  // Debug — visible in Console tab
-  console.log('[LOGIN] user:', user);
+  // ── Diagnostic: show what was fetched (visible on screen, not just console) ──
+  const agentNames = Object.keys(agents).join(', ');
+  console.log('[LOGIN] Sheets fetch result:', sheetsResult ? 'OK - '+Object.keys(sheetsResult).join(', ') : 'FAILED/NULL');
+  console.log('[LOGIN] Local agents after fetch:', agentNames);
+  console.log('[LOGIN] Looking for user:', user, '| found:', !!agent);
   console.log('[LOGIN] agent raw:', JSON.stringify(agent));
-  console.log('[LOGIN] pin entered:', pin);
+
+  // Show on screen briefly so we can see it on phone without DevTools
+  licErr.innerHTML = '🔍 Agents loaded: ' + agentNames + '<br>Sheets: ' + (sheetsResult ? '✅ '+Object.keys(sheetsResult).length+' agents' : '❌ Failed — check Console for [AGENTS] error');
+  licErr.style.display = 'block';
+  licErr.style.background = '#1a3a1a';
+  licErr.style.color = '#90ee90';
 
   const agentPin    = typeof agent === 'object' ? agent.pin    : agent;
   const agentActive = typeof agent === 'object' ? agent.active : true;
   const agentRole   = typeof agent === 'object' ? agent.role   : 'agent';
+
+  console.log('[LOGIN] agentPin:', agentPin, '| entered:', pin, '| match:', agentPin===pin);
 
   console.log('[LOGIN] agentPin:', agentPin, '| agentActive:', agentActive, '| match:', agentPin===pin);
   if(agent && agentActive !== false && agentPin === pin){
@@ -3556,6 +3570,7 @@ async function doLogin(){
     if(lic.expiringSoon){
       showToast('⚠️ App licence expires in '+lic.daysLeft+' day'+(lic.daysLeft===1?'':'s'), 6000);
     }
+    licErr.style.display='none'; // hide diagnostic panel
     currentAgent=user;
     isAdmin=(agentRole==='admin');
     // Persist session so a pull-to-refresh doesn't log the agent out
@@ -4945,6 +4960,15 @@ async function renderAdminPanel(){
       '</div>';
   }
 
+  // SYNC AGENTS card
+  html +=
+    '<div class="card" style="margin-bottom:14px;background:#f5e0e0;border:1px solid #d4b8b8">' +
+      '<div class="sec-lbl" style="color:var(--M)">Sync Agents to Google Sheets</div>' +
+      '<p style="font-size:12px;color:#641414;margin:4px 0 10px">Push all agents on this device to Google Sheets so every other device gets the latest agent list on next login.</p>' +
+      '<button class="btn-primary" style="padding:10px;font-size:13px;width:100%;background:var(--M)" onclick="syncAllAgentsToSheets()">📤 Push All Agents to Sheets</button>' +
+      '<div id="agent-sync-status" style="font-size:11px;text-align:center;margin-top:6px;color:#641414"></div>' +
+    '</div>';
+
   // STATS card
   html +=
     '<div class="card" style="margin-bottom:14px">' +
@@ -4956,6 +4980,28 @@ async function renderAdminPanel(){
   html += '<button class="btn-primary btn-secondary" style="margin-top:4px;width:100%;margin-bottom:20px" onclick="doLogout()">Sign Out</button>';
 
   body.innerHTML = html;
+}
+
+async function syncAllAgentsToSheets(){
+  const statusEl = document.getElementById('agent-sync-status');
+  if(statusEl) statusEl.textContent = '⏳ Syncing…';
+  const agents = getAgents();
+  const entries = Object.entries(agents);
+  let ok = 0, fail = 0;
+  for(const [name, data] of entries){
+    if(name === 'VLA Admin') continue; // skip built-in admin
+    const pin    = typeof data === 'object' ? data.pin    : data;
+    const role   = typeof data === 'object' ? data.role   : 'agent';
+    const active = typeof data === 'object' ? data.active : true;
+    try {
+      await pushAgentToSheets(name, pin, role, active);
+      ok++;
+    } catch(e){ fail++; }
+    await new Promise(r=>setTimeout(r,200)); // small delay between calls
+  }
+  const msg = '✅ ' + ok + ' agent'+(ok!==1?'s':'')+' synced'+(fail>0?' · '+fail+' failed':'');
+  if(statusEl) statusEl.textContent = msg;
+  showToast(msg, 4000);
 }
 
 async function addAgent(){
