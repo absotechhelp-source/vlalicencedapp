@@ -485,11 +485,11 @@ input:checked+.tog-trk:before{transform:translateX(17px)}
 <div id="screen-app" class="screen">
 
   <!-- ── App update notification banner ── -->
-  <div id="update-banner" style="display:none;position:fixed;top:0;left:0;right:0;z-index:8000;background:#641414;color:#D8C9B4;padding:10px 16px;font-size:13px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,.3)">
-    <span id="update-banner-msg">📲 App updated to latest version</span>
-    <div style="font-size:11px;opacity:.85;margin-top:2px">Reloading in <span id="update-countdown">5</span>s…
-      <button onclick="window.location.reload()" style="margin-left:10px;background:rgba(216,201,180,.25);border:1px solid rgba(216,201,180,.4);color:#D8C9B4;padding:2px 10px;border-radius:10px;font-size:11px;cursor:pointer">Reload now</button>
-      <button id="update-dismiss-btn" style="margin-left:6px;background:none;border:none;color:rgba(216,201,180,.7);font-size:11px;cursor:pointer">Later</button>
+  <div id="update-banner" style="display:none;position:fixed;top:0;left:0;right:0;z-index:8000;background:#fff;color:#641414;padding:10px 16px;font-size:13px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,.15);border-bottom:2px solid #641414">
+    <span id="update-banner-msg" style="font-weight:600">📲 App updated to latest version</span>
+    <div style="font-size:11px;color:#641414;opacity:.8;margin-top:2px">Reloading in <span id="update-countdown">5</span>s…
+      <button onclick="window.location.reload()" style="margin-left:10px;background:#641414;border:none;color:#D8C9B4;padding:2px 12px;border-radius:10px;font-size:11px;cursor:pointer;font-weight:600">Reload now</button>
+      <button id="update-dismiss-btn" style="margin-left:6px;background:none;border:none;color:#641414;font-size:11px;cursor:pointer;opacity:.7">Later</button>
     </div>
   </div>
 
@@ -4240,6 +4240,7 @@ function generateQuote(){
   const gb=document.getElementById('gen-btn');if(gb)gb.style.display='none';
   saveQuoteLocally(quoteData);
   syncToSheets(quoteData);
+  try{renderRecentQuotes();}catch(e){}
   // Set page title to quote ref — ensures PDF filename is correct on ALL browsers/devices
   document.title = 'VLA-Quote-' + quoteData.ref;
 }
@@ -6175,6 +6176,7 @@ function myGenerateQuote(){
   const myHistory=JSON.parse(localStorage.getItem('vla_my_quotes')||'[]');
   myHistory.unshift({...myQuoteData, savedAt:new Date().toISOString()});
   localStorage.setItem('vla_my_quotes',JSON.stringify(myHistory.slice(0,200)));
+  try{renderRecentQuotes();}catch(e){}
   mySyncToSheets(myQuoteData);
 }
 function myRenderQuoteDoc(q){
@@ -7763,6 +7765,7 @@ function phinduSaveSync(){
     quotes.unshift(phinduQuoteData);
     localStorage.setItem(PHINDU_QUOTES_KEY,JSON.stringify(quotes));
     sessionQuoteCount=(sessionQuoteCount||0)+1;
+    try{renderRecentQuotes();}catch(e){}
   }
   const url=localStorage.getItem(SHEETS_URL_KEY)||APPS_SCRIPT_URL;
   if(!url)return;
@@ -8820,6 +8823,7 @@ function eduGenerate(){
   };
 
   saveQuoteLocally({...eduCurrentQuote, product:'Educational Plans', clientName:parentFullName});
+  try{renderRecentQuotes();}catch(e){}
   document.title = 'VLA-Quote-'+ref;
 
   /* Auto-sync to Google Sheets */
