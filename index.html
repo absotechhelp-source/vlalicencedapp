@@ -80,7 +80,7 @@ input.f-inp:focus,select.f-inp:focus{border-color:var(--M);box-shadow:0 0 0 3px 
 .anb-ok{background:var(--ML);color:var(--M)}
 .anb-err{background:#fee2e2;color:#991b1b}
 .occ-info{display:none;margin-top:6px;background:var(--ML);border-radius:var(--RA);padding:8px 10px;font-size:12px;color:var(--M)}
-.occ-warn{background:#fff7ed;color:#92400e}
+.occ-warn{background:var(--ML);color:var(--M)}
 .mode-tabs{display:flex;border:1.5px solid var(--M);border-radius:var(--RB);overflow:hidden;margin-bottom:14px}
 .mode-tab{flex:1;padding:10px 6px;text-align:center;font-size:13px;font-weight:500;cursor:pointer;background:var(--W);color:var(--M);border:none;font-family:'DM Sans',sans-serif;transition:all .15s;line-height:1.3}
 .mode-tab.active{background:var(--M);color:var(--W)}
@@ -99,7 +99,7 @@ input:checked+.tog-trk:before{transform:translateX(17px)}
 .btn-wa{background:#25D366;color:#fff}
 .btn-email-btn{background:var(--M);color:#fff}
 .btn-pdf{background:var(--CR);color:var(--M)}
-.btn-sms{background:#e0f2fe;color:#0369a1}
+.btn-sms{background:var(--ML);color:var(--M)}
 .btn-outline{background:transparent;border:1.5px solid var(--BD);color:var(--T2)}
 .action-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
 .action-row .btn-sm{flex:1;min-width:100px;justify-content:center}
@@ -174,7 +174,7 @@ input:checked+.tog-trk:before{transform:translateX(17px)}
 .hist-date{font-size:10px;color:var(--T2);text-align:right;margin-top:2px}
 .hist-actions{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}
 .hist-tag{display:inline-block;font-size:9px;font-weight:700;padding:2px 7px;border-radius:20px;background:var(--ML);color:var(--M);text-transform:uppercase;letter-spacing:.04em}
-.hist-tag.admin-tag{background:#e0f2fe;color:#075985}
+.hist-tag.admin-tag{background:var(--ML);color:var(--M)}
 .empty-state{text-align:center;padding:48px 24px;color:var(--T2)}
 .empty-state svg{width:48px;height:48px;stroke:var(--BD);margin-bottom:12px}
 .empty-state p{font-size:13px}
@@ -188,7 +188,7 @@ input:checked+.tog-trk:before{transform:translateX(17px)}
 .modal-close{background:rgba(255,255,255,.15);border:none;border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--CR);font-size:18px;line-height:1}
 
 /* ── ADMIN PANEL ── */
-.admin-badge{background:#7c3aed;color:#fff;font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;letter-spacing:.04em}
+.admin-badge{background:var(--M);color:var(--CR);font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;letter-spacing:.04em}
 .agent-row{background:var(--W);border:1px solid var(--BD);border-radius:var(--RB);padding:10px 14px;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;gap:10px}
 .agent-info{flex:1}
 .agent-name{font-size:13px;font-weight:600;color:var(--T)}
@@ -201,8 +201,8 @@ input:checked+.tog-trk:before{transform:translateX(17px)}
 /* ── SYNC STATUS ── */
 .sync-pill{display:inline-flex;align-items:center;gap:5px;font-size:11px;padding:3px 10px;border-radius:20px;margin-bottom:10px}
 .sync-ok{background:var(--ML);color:var(--M)}
-.sync-fail{background:#fee2e2;color:#991b1b}
-.sync-pending{background:#fef3c7;color:#92400e}
+.sync-fail{background:rgba(100,20,20,.12);color:var(--M)}
+.sync-pending{background:var(--ML);color:var(--M)}
 .sync-dot{width:6px;height:6px;border-radius:50%;background:currentColor}
 
 /* ── POLICY TABLE ── */
@@ -317,11 +317,20 @@ input:checked+.tog-trk:before{transform:translateX(17px)}
 .stat-card-icon{width:34px;height:34px;border-radius:var(--RB);background:var(--ML);display:flex;align-items:center;justify-content:center;margin-bottom:8px}
 .stat-card-icon svg{width:16px;height:16px}
 .stat-trend{position:absolute;top:10px;right:10px;font-size:10px;font-weight:700;display:flex;align-items:center;gap:2px}
-.stat-trend.up{color:#16a34a}
+.stat-trend.up{color:var(--M)}
 .stat-trend.down{color:#dc2626}
 .stat-val{font-size:22px;font-weight:800;color:var(--M);line-height:1;margin-bottom:2px}
 .stat-lbl{font-size:10px;color:var(--T2);font-weight:500}
 .qa-section{padding:12px 14px 0}
+.rq-row{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:0.5px solid var(--BD)}
+.rq-row:last-child{border-bottom:none}
+.rq-avatar{width:34px;height:34px;border-radius:50%;background:var(--ML);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;color:var(--M);flex-shrink:0}
+.rq-info{flex:1;min-width:0}
+.rq-name{font-size:13px;font-weight:500;color:var(--T1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rq-meta{font-size:10px;color:var(--T2)}
+.rq-right{text-align:right;flex-shrink:0}
+.rq-prem{font-size:12px;font-weight:600;color:var(--M)}
+.rq-badge{font-size:9px;font-weight:700;padding:1px 5px;border-radius:5px;background:var(--ML);color:var(--M)}
 .qa-title{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--M);margin-bottom:10px;padding-bottom:5px;border-bottom:1px solid var(--ML)}
 .qa-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
 .qa-tile{background:var(--W);border:1px solid var(--BD);border-radius:var(--RC);padding:14px 6px 10px;display:flex;flex-direction:column;align-items:center;gap:7px;cursor:pointer;transition:box-shadow .15s,border-color .15s;position:relative}
@@ -354,7 +363,7 @@ input:checked+.tog-trk:before{transform:translateX(17px)}
 .more-item-desc{font-size:11px;color:var(--T2);margin-top:1px}
 .more-item-arrow{margin-left:auto;color:var(--BD);font-size:18px}
 .more-divider{height:1px;background:var(--OW);margin:4px 18px}
-.more-admin-badge{background:#ede9fe;color:#6d28d9;font-size:9px;font-weight:700;padding:2px 7px;border-radius:20px;margin-left:8px}
+.more-admin-badge{background:var(--ML);color:var(--M);font-size:9px;font-weight:700;padding:2px 7px;border-radius:20px;margin-left:8px}
 
 /* ── BUSINESS CARD SCREEN ── */
 .bcard-wrap{padding:16px}
@@ -382,7 +391,7 @@ input:checked+.tog-trk:before{transform:translateX(17px)}
 .product-body{padding:0 16px 14px;font-size:12px;color:var(--T2);line-height:1.6}
 .product-footer{border-top:1px solid var(--OW);padding:10px 16px;display:flex;gap:8px}
 .product-live-badge{background:var(--ML);color:var(--M);font-size:9px;font-weight:700;padding:2px 8px;border-radius:20px;letter-spacing:.04em}
-.product-coming-badge{background:#fef3c7;color:#92400e;font-size:9px;font-weight:700;padding:2px 8px;border-radius:20px;letter-spacing:.04em}
+.product-coming-badge{background:var(--ML);color:var(--M);font-size:9px;font-weight:700;padding:2px 8px;border-radius:20px;letter-spacing:.04em}
 
 /* ── CLAIMS SCREEN ── */
 .claim-success{background:var(--ML);border:1px solid var(--RS);border-radius:var(--RB);padding:16px;text-align:center;display:none}
@@ -611,6 +620,18 @@ input:checked+.tog-trk:before{transform:translateX(17px)}
         </div>
       </div>
 
+
+      <!-- ── RECENT QUOTES ── -->
+      <div class="qa-section" style="padding-bottom:14px">
+        <div class="qa-title" style="display:flex;align-items:center;justify-content:space-between">
+          <span>Recent Quotes</span>
+          <span onclick="switchTab('history')" style="font-size:11px;font-weight:400;color:var(--M);cursor:pointer">See all ›</span>
+        </div>
+        <div id="home-recent-list">
+          <div style="text-align:center;padding:18px 0;font-size:12px;color:var(--T2)">No quotes yet</div>
+        </div>
+      </div>
+
     </div><!-- /tab-home -->
 
 
@@ -636,11 +657,11 @@ input:checked+.tog-trk:before{transform:translateX(17px)}
           <span class="dash-stat-val" id="dash-total-count">0</span>
         </div>
         <!-- Offline sync queue pill -->
-        <div id="sync-queue-pill" onclick="flushSyncQueue(false)" style="display:none;cursor:pointer;align-items:center;gap:8px;background:#fef3c7;border:1px solid #fbbf24;border-radius:10px;padding:10px 14px;margin-bottom:16px">
-          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#92400e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.88"/></svg>
+        <div id="sync-queue-pill" onclick="flushSyncQueue(false)" style="display:none;cursor:pointer;align-items:center;gap:8px;background:var(--ML);border:1px solid var(--M);border-radius:10px;padding:10px 14px;margin-bottom:16px">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="var(--M)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.88"/></svg>
           <div style="flex:1;min-width:0">
-            <div style="font-size:12px;font-weight:700;color:#78350f"><span class="sq-count">0</span> quote(s) not yet synced to Sheets</div>
-            <div style="font-size:10px;color:#92400e;margin-top:1px">Tap to sync now · Auto-syncs when online</div>
+            <div style="font-size:12px;font-weight:700;color:var(--M)"><span class="sq-count">0</span> quote(s) not yet synced to Sheets</div>
+            <div style="font-size:10px;color:var(--M);margin-top:1px">Tap to sync now · Auto-syncs when online</div>
           </div>
           <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#b45309" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
         </div>
@@ -674,20 +695,20 @@ input:checked+.tog-trk:before{transform:translateX(17px)}
         </div>
 
         <!-- Phindu Savings Plan -->
-        <div class="card" onclick="switchTab('phindu')" style="cursor:pointer;display:flex;align-items:center;justify-content:space-between;padding:14px 16px;margin-bottom:10px;border:1.5px solid #f59e0b;background:linear-gradient(135deg,#fffbeb 0%,#fff 100%)">
+        <div class="card" onclick="switchTab('phindu')" style="cursor:pointer;display:flex;align-items:center;justify-content:space-between;padding:14px 16px;margin-bottom:10px;border:1.5px solid var(--M);background:linear-gradient(135deg,var(--ML) 0%,var(--W) 100%)">
           <div style="display:flex;align-items:center;gap:12px">
-            <div style="width:40px;height:40px;border-radius:10px;background:#fef3c7;display:flex;align-items:center;justify-content:center;flex-shrink:0">
-              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#92400e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <div style="width:40px;height:40px;border-radius:10px;background:var(--ML);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="var(--M)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/>
                 <line x1="6" y1="20" x2="6" y2="14"/><line x1="2" y1="20" x2="22" y2="20"/>
               </svg>
             </div>
             <div>
-              <div style="font-size:14px;font-weight:600;color:#78350f">Phindu Savings Plan</div>
+              <div style="font-size:14px;font-weight:600;color:var(--M)">Phindu Savings Plan</div>
               <div style="font-size:11px;color:var(--T2);margin-top:2px">10-Year Endowment · Growth + Protection</div>
             </div>
           </div>
-          <span style="color:#f59e0b;font-size:20px">›</span>
+          <span style="color:var(--M);font-size:20px">›</span>
         </div>
 
         <!-- Educational Plans -->
@@ -708,8 +729,8 @@ input:checked+.tog-trk:before{transform:translateX(17px)}
         <div class="dash-quick-title" style="margin-bottom:8px">History</div>
         <div class="card" onclick="switchTab('history')" style="cursor:pointer;display:flex;align-items:center;justify-content:space-between;padding:14px 16px">
           <div style="display:flex;align-items:center;gap:12px">
-            <div style="width:40px;height:40px;border-radius:10px;background:#e0f2fe;display:flex;align-items:center;justify-content:center;flex-shrink:0">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0369a1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            <div style="width:40px;height:40px;border-radius:10px;background:var(--ML);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--M)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
             </div>
             <div>
               <div style="font-size:14px;font-weight:600;color:var(--T)">Quote history</div>
@@ -1061,9 +1082,7 @@ input:checked+.tog-trk:before{transform:translateX(17px)}
 
           <!-- Top row: MY logo + Name block -->
           <div style="display:flex;align-items:flex-start;gap:10px;margin-bottom:8px">
-            <div style="background:#fff;border-radius:5px;padding:4px;flex-shrink:0;width:50px;height:50px;display:flex;align-items:center;justify-content:center">
-              <img src="data:image/png;base64,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" style="width:42px;height:42px;object-fit:contain" alt="Manga Yako">
-            </div>
+            <div style="display:flex;align-items:center;justify-content:center;flex-shrink:0;width:44px;height:44px"><img src="data:image/png;base64,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" alt="VLA" style="width:44px;height:44px;object-fit:contain;filter:brightness(0) invert(1) sepia(1) saturate(0) brightness(2)"></div>
             <div style="flex:1;min-width:0">
               <div id="bc-name" style="font-family:'Playfair Display',serif;font-size:17px;font-weight:700;color:#fff;line-height:1.15;margin-bottom:2px">Agent Name</div>
               <div id="bc-role-display" style="font-size:9px;font-weight:700;color:#D8C9B4;letter-spacing:.08em;text-transform:uppercase">Sales Agent</div>
@@ -1150,13 +1169,13 @@ input:checked+.tog-trk:before{transform:translateX(17px)}
         </div>
 
         <!-- Phindu Savings Plan — LIVE -->
-        <div class="product-card" style="border:1.5px solid #f59e0b;background:linear-gradient(135deg,#fffbeb 0%,#fff 100%)">
+        <div class="product-card" style="border:1.5px solid var(--M);background:linear-gradient(135deg,var(--ML) 0%,var(--W) 100%)">
           <div class="product-header">
-            <div class="product-icon" style="background:#fef3c7">
-              <svg viewBox="0 0 24 24" fill="none" stroke="#92400e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/><line x1="2" y1="20" x2="22" y2="20"/></svg>
+            <div class="product-icon" style="background:var(--ML)">
+              <svg viewBox="0 0 24 24" fill="none" stroke="var(--M)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/><line x1="2" y1="20" x2="22" y2="20"/></svg>
             </div>
             <div>
-              <div class="product-name" style="color:#78350f">Phindu Savings Plan</div>
+              <div class="product-name" style="color:var(--M)">Phindu Savings Plan</div>
               <div class="product-type">10-Year Endowment · With Profits</div>
             </div>
           </div>
@@ -1438,20 +1457,20 @@ input:checked+.tog-trk:before{transform:translateX(17px)}
         </div>
 
         <!-- Phindu Savings Plan -->
-        <div class="card" onclick="switchTab('phindu-proposal')" style="cursor:pointer;display:flex;align-items:center;justify-content:space-between;padding:14px 16px;margin-bottom:10px;border:1.5px solid #f59e0b;background:linear-gradient(135deg,#fffbeb 0%,#fff 100%)">
+        <div class="card" onclick="switchTab('phindu-proposal')" style="cursor:pointer;display:flex;align-items:center;justify-content:space-between;padding:14px 16px;margin-bottom:10px;border:1.5px solid var(--M);background:linear-gradient(135deg,var(--ML) 0%,var(--W) 100%)">
           <div style="display:flex;align-items:center;gap:12px">
-            <div style="width:40px;height:40px;border-radius:10px;background:#fef3c7;display:flex;align-items:center;justify-content:center;flex-shrink:0">
-              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#92400e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <div style="width:40px;height:40px;border-radius:10px;background:var(--ML);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="var(--M)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/>
                 <line x1="6" y1="20" x2="6" y2="14"/><line x1="2" y1="20" x2="22" y2="20"/>
               </svg>
             </div>
             <div>
-              <div style="font-size:14px;font-weight:600;color:#78350f">Phindu Savings Plan</div>
+              <div style="font-size:14px;font-weight:600;color:var(--M)">Phindu Savings Plan</div>
               <div style="font-size:11px;color:var(--T2);margin-top:2px">10-Year Endowment · Growth + Protection</div>
             </div>
           </div>
-          <span style="color:#f59e0b;font-size:20px">›</span>
+          <span style="color:var(--M);font-size:20px">›</span>
         </div>
 
         <!-- History -->
@@ -1486,7 +1505,7 @@ input:checked+.tog-trk:before{transform:translateX(17px)}
       </div>
 
       <!-- USD 500 warning -->
-      <div id="prop-500-warn" style="display:none;background:#fef3c7;border-left:4px solid #d97706;padding:10px 14px;margin:8px 14px;border-radius:var(--RB);font-size:12px;color:#92400e">
+      <div id="prop-500-warn" style="display:none;background:var(--ML);border-left:4px solid var(--M);padding:10px 14px;margin:8px 14px;border-radius:var(--RB);font-size:12px;color:var(--M)">
         ⚠️ <strong>Premium exceeds USD 500/month.</strong> Attach proof of income and residence (payslip or employer letter + utility bill).
       </div>
 
@@ -2129,15 +2148,15 @@ input:checked+.tog-trk:before{transform:translateX(17px)}
               <div style="font-size:13px;color:#555;line-height:1.6;margin-bottom:18px">This will sync all locally stored quotes and proposals to Google Sheets.<br><br>The app automatically checks what's already in Sheets and <strong>only uploads records that are missing</strong>. Duplicates are prevented. Safe to run anytime.</div>
               <div style="display:flex;gap:10px;justify-content:flex-end">
                 <button onclick="document.getElementById('retro-sync-modal').style.display='none'" style="padding:9px 18px;border-radius:8px;border:1px solid #ccc;background:none;font-size:13px;cursor:pointer">Cancel</button>
-                <button onclick="document.getElementById('retro-sync-modal').style.display='none';retroSyncAllQuotes()" style="padding:9px 18px;border-radius:8px;border:none;background:#92400e;color:#fff;font-size:13px;font-weight:600;cursor:pointer">Sync Now</button>
+                <button onclick="document.getElementById('retro-sync-modal').style.display='none';retroSyncAllQuotes()" style="padding:9px 18px;border-radius:8px;border:none;background:var(--M);color:var(--CR);font-size:13px;font-weight:600;cursor:pointer">Sync Now</button>
               </div>
             </div>
           </div>
         </div>
 
         <!-- Pending Sync -->
-        <div class="card" id="sync-queue-card" style="display:none;border:1.5px solid #fbbf24;background:#fffbeb">
-          <div class="sec-lbl" style="color:#92400e">⏳ Pending Sync</div>
+        <div class="card" id="sync-queue-card" style="display:none;border:1.5px solid var(--M);background:var(--ML)">
+          <div class="sec-lbl" style="color:var(--M)">⏳ Pending Sync</div>
           <div id="sync-queue-profile"></div>
         </div>
 
@@ -2363,7 +2382,7 @@ input:checked+.tog-trk:before{transform:translateX(17px)}
             </div>
           </div>
           <div id="phindu-age-err" style="display:none;color:#dc2626;font-size:12px;margin-top:4px">Age must be between 18 and 65</div>
-          <div id="phindu-anb-pill" style="display:none;background:#fef3c7;color:#92400e;border-radius:20px;padding:4px 12px;font-size:12px;margin-top:6px;text-align:center;font-weight:600"></div>
+          <div id="phindu-anb-pill" style="display:none;background:var(--ML);color:var(--M);border-radius:20px;padding:4px 12px;font-size:12px;margin-top:6px;text-align:center;font-weight:600"></div>
         </div>
 
         <!-- Contact & Location -->
@@ -2481,13 +2500,13 @@ input:checked+.tog-trk:before{transform:translateX(17px)}
       </div>
       <div style="padding:14px">
 
-        <div id="phindu-prop-prefill-notice" style="display:none;background:#fef3c7;border:1px solid #f59e0b;border-radius:8px;padding:10px 12px;margin-bottom:12px;font-size:12px;color:#78350f">
+        <div id="phindu-prop-prefill-notice" style="display:none;background:var(--ML);border:1px solid var(--M);border-radius:8px;padding:10px 12px;margin-bottom:12px;font-size:12px;color:var(--M)">
           ✓ Pre-filled from your Phindu quote. Please review all fields.
         </div>
 
         <!-- Section A: Policyholder -->
         <div class="card" style="margin-bottom:12px">
-          <div class="f-sec-title" style="color:#78350f">A · Policyholder Details</div>
+          <div class="f-sec-title" style="color:var(--M)">A · Policyholder Details</div>
           <div class="f-row">
             <div class="f-col"><label class="f-lbl">First Name *</label><input id="pp-fname" class="f-inp" type="text" placeholder="First name"></div>
             <div class="f-col"><label class="f-lbl">Middle Name</label><input id="pp-mname" class="f-inp" type="text" placeholder="Optional"></div>
@@ -2518,7 +2537,7 @@ input:checked+.tog-trk:before{transform:translateX(17px)}
 
         <!-- Section B: Policy Details -->
         <div class="card" style="margin-bottom:12px">
-          <div class="f-sec-title" style="color:#78350f">B · Policy Details</div>
+          <div class="f-sec-title" style="color:var(--M)">B · Policy Details</div>
           <div class="f-row">
             <div class="f-col">
               <label class="f-lbl">Monthly Premium (MWK) *</label>
@@ -2552,7 +2571,7 @@ input:checked+.tog-trk:before{transform:translateX(17px)}
 
         <!-- Section C: Beneficiary -->
         <div class="card" style="margin-bottom:12px">
-          <div class="f-sec-title" style="color:#78350f">C · Beneficiary Details</div>
+          <div class="f-sec-title" style="color:var(--M)">C · Beneficiary Details</div>
           <div id="pp-benef-container"></div>
           <button id="pp-add-benef-btn" onclick="phinduAddBenef()" class="btn-sm btn-outline" style="width:100%;margin-top:6px;justify-content:center">+ Add Beneficiary</button>
           <div id="pp-share-total" style="font-size:11px;color:#6b7280;margin-top:6px;text-align:center"></div>
@@ -2560,13 +2579,13 @@ input:checked+.tog-trk:before{transform:translateX(17px)}
 
         <!-- Section D: Declarations -->
         <div class="card" style="margin-bottom:14px">
-          <div class="f-sec-title" style="color:#78350f">D · Declarations</div>
+          <div class="f-sec-title" style="color:var(--M)">D · Declarations</div>
           <div style="display:flex;align-items:flex-start;gap:10px;margin-bottom:10px">
-            <input type="checkbox" id="pp-decl-client" style="margin-top:2px;accent-color:#f59e0b;width:18px;height:18px;flex-shrink:0">
+            <input type="checkbox" id="pp-decl-client" style="margin-top:2px;accent-color:var(--M);width:18px;height:18px;flex-shrink:0">
             <label for="pp-decl-client" style="font-size:12px;color:var(--T);line-height:1.4">I declare that all information provided is true and accurate. I agree to the policy terms and conditions of the Phindu Savings Plan.</label>
           </div>
           <div style="display:flex;align-items:flex-start;gap:10px">
-            <input type="checkbox" id="pp-decl-agent" style="margin-top:2px;accent-color:#f59e0b;width:18px;height:18px;flex-shrink:0">
+            <input type="checkbox" id="pp-decl-agent" style="margin-top:2px;accent-color:var(--M);width:18px;height:18px;flex-shrink:0">
             <label for="pp-decl-agent" style="font-size:12px;color:var(--T);line-height:1.4">I, the agent, confirm I have explained the product benefits and the client has understood and consented to the proposal.</label>
           </div>
         </div>
@@ -2625,8 +2644,8 @@ input:checked+.tog-trk:before{transform:translateX(17px)}
               <div class="q-lh-divider"></div>
             </div>
             <div class="q-title-band" style="display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:12px;padding:10px 18px">
-              <div style="width:40px;height:40px;border-radius:8px;background:#fef3c7;display:flex;align-items:center;justify-content:center">
-                <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#92400e" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/><line x1="2" y1="20" x2="22" y2="20"/></svg>
+              <div style="width:40px;height:40px;border-radius:8px;background:var(--ML);display:flex;align-items:center;justify-content:center">
+                <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="var(--M)" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/><line x1="2" y1="20" x2="22" y2="20"/></svg>
               </div>
               <div style="text-align:center">
                 <div class="q-title-word" style="font-size:14px">Proposal Form</div>
@@ -2977,8 +2996,8 @@ input:checked+.tog-trk:before{transform:translateX(17px)}
     </div>
     <!-- Admin (admin only) -->
     <div class="more-item" id="more-admin-item" style="display:none" onclick="closeMore();switchTab('admin')">
-      <div class="more-item-icon" style="background:#ede9fe">
-        <svg viewBox="0 0 24 24" fill="none" stroke="#6d28d9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+      <div class="more-item-icon" style="background:var(--ML)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="var(--M)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
       </div>
       <div>
         <div class="more-item-label">Agent management <span class="more-admin-badge">ADMIN</span></div>
@@ -3054,6 +3073,7 @@ function enqueueSyncPayload(payload, label){
   });
   localStorage.setItem(SYNC_QUEUE_KEY, JSON.stringify(q));
   renderSyncBadge();
+  renderRecentQuotes();
 }
 
 function removeSyncQueueItem(ref){
@@ -3102,6 +3122,68 @@ async function flushSyncQueue(silent){
 }
 
 /* Render the pending-sync badge on home dashboard and profile tab */
+
+function renderRecentQuotes(){
+  const el = document.getElementById('home-recent-list');
+  if(!el) return;
+  // Gather last 4 quotes across all products, newest first
+  const _agentLower = (currentAgent||'').toLowerCase();
+  const psp = getLocalQuotes()
+    .filter(q=> isAdmin || (q.agent||'').toLowerCase()===_agentLower)
+    .map(q=>({
+      name: q.clientName||'—', ref: q.ref||'',
+      prem: q.totalP||q.totalPrem||0,
+      date: q.savedAt||q.doq||'',
+      badge:'PSP', product: q.product||'PSP'
+    }));
+  const my = getLocalMyQuotes()
+    .filter(q=> isAdmin || (q.agent||'').toLowerCase()===_agentLower)
+    .map(q=>({
+      name: q.clientName||'—', ref: q.ref||'',
+      prem: q.prem||0,
+      date: q.savedAt||q.doq||'',
+      badge:'MY'
+    }));
+  const ph = JSON.parse(localStorage.getItem(PHINDU_QUOTES_KEY)||'[]')
+    .filter(q=> isAdmin || (q.agent||'').toLowerCase()===_agentLower)
+    .map(q=>({
+      name: q.name||'—', ref: q.ref||'',
+      prem: q.premium||0,
+      date: q.savedAt||'',
+      badge:'PHINDU'
+    }));
+  const all = [...psp,...my,...ph]
+    .filter(q=>q.name&&q.name!=='—'||q.ref)
+    .sort((a,b)=>new Date(b.date)-new Date(a.date))
+    .slice(0,4);
+  if(!all.length){
+    el.innerHTML='<div style="text-align:center;padding:18px 0;font-size:12px;color:var(--T2)">No quotes yet</div>';
+    return;
+  }
+  const badgeStyle={
+    PSP:  'background:var(--ML);color:var(--M)',
+    MY:   'background:var(--ML);color:var(--M)',
+    PHINDU:'background:#D8C9B4;color:#641414',
+    EDU:  'background:rgba(100,20,20,.07);color:var(--M)'
+  };
+  el.innerHTML = all.map(q=>{
+    const initials = (q.name||'?').trim().split(/\s+/).map(w=>w[0]||'').join('').slice(0,2).toUpperCase();
+    const bs = badgeStyle[q.badge]||badgeStyle.PSP;
+    const freq = (q.product==='Pure Savings Plan'||!q.product||q.product==='PSP') ? '/mo' : '';
+    return `<div class="rq-row" onclick="switchTab('history')">`
+      +`<div class="rq-avatar">${initials}</div>`
+      +`<div class="rq-info">`
+        +`<div class="rq-name">${q.name}</div>`
+        +`<div class="rq-meta"><span class="rq-badge" style="${bs}">${q.badge}</span>`
+        +(q.ref?` · ${q.ref}`:'')+`</div>`
+      +`</div>`
+      +`<div class="rq-right">`
+        +`<div class="rq-prem">${q.prem>0?'MK '+Math.round(q.prem).toLocaleString()+freq:'—'}</div>`
+      +`</div>`
+    +`</div>`;
+  }).join('');
+}
+
 function renderSyncBadge(){
   const count = getSyncQueue().length;
 
@@ -3123,12 +3205,12 @@ function renderSyncBadge(){
     if(count > 0){
       profBadge.innerHTML =
         '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">'+
-          '<span style="font-size:12px;color:#92400e">'+count+' quote'+(count>1?'s':'')+' waiting to sync</span>'+
+          '<span style="font-size:12px;color:var(--M)">'+count+' quote'+(count>1?'s':'')+' waiting to sync</span>'+
           '<button class="btn-sm" style="background:var(--M);color:#fff;border:none;padding:5px 12px;border-radius:6px;font-size:12px;cursor:pointer" onclick="flushSyncQueue(false)">Sync Now</button>'+
         '</div>'+
         getSyncQueue().map(item=>
-          '<div style="font-size:11px;padding:4px 0;border-bottom:1px solid #fde68a;display:flex;justify-content:space-between;align-items:center">'+
-            '<span><strong style="color:var(--T)">'+item.label+'</strong><br><span style="color:#92400e;font-size:10px">'+item.ref+'</span></span>'+
+          '<div style="font-size:11px;padding:4px 0;border-bottom:1px solid var(--ML);display:flex;justify-content:space-between;align-items:center">'+
+            '<span><strong style="color:var(--T)">'+item.label+'</strong><br><span style="color:var(--M);font-size:10px">'+item.ref+'</span></span>'+
             '<span style="color:#a16207;font-size:10px">'+fmtDate(item.enqueuedAt.split('T')[0])+'</span>'+
           '</div>'
         ).join('');
@@ -3656,8 +3738,8 @@ window.addEventListener('DOMContentLoaded', async ()=>{
         _set('topbar-agent-name','textContent','VLA Sales App · '+currentAgent+(isAdmin?' [Admin]':''));
         _set('set-agentname','textContent',currentAgent);
         _set('set-role','textContent',isAdmin?'Administrator':'Sales Agent');
-        _style('set-role','background',isAdmin?'#ede9fe':'');
-        _style('set-role','color',isAdmin?'#6d28d9':'');
+        _style('set-role','background',isAdmin?'var(--ML)':'');
+        _style('set-role','color',isAdmin?'var(--M)':'');
         const moreAdmin=document.getElementById('more-admin-item');
         if(moreAdmin) moreAdmin.style.display=isAdmin?'flex':'none';
         try { loadProfileData(); } catch(e){}
@@ -3739,7 +3821,7 @@ async function doLogin(){
     const _agentName=document.getElementById('set-agentname');
     if(_agentName) _agentName.textContent=user;
     const _setRole=document.getElementById('set-role');
-    if(_setRole){_setRole.textContent=isAdmin?'Administrator':'Sales Agent';_setRole.style.background=isAdmin?'#ede9fe':'';_setRole.style.color=isAdmin?'#6d28d9':'';}
+    if(_setRole){_setRole.textContent=isAdmin?'Administrator':'Sales Agent';_setRole.style.background=isAdmin?'var(--ML)':'';_setRole.style.color=isAdmin?'var(--M)':'';}
     // Show admin option in More menu
     const moreAdmin=document.getElementById('more-admin-item');
     if(moreAdmin)moreAdmin.style.display=isAdmin?'flex':'none';
@@ -4802,7 +4884,7 @@ function saveSheetURL(){
         showToast('✓ Google Sheets connected');
       } else {
         s.textContent='✓ URL reachable but returned: '+JSON.stringify(data);
-        s.style.color='#d97706';
+        s.style.color='var(--M)';
       }
     })
     .catch(()=>{
@@ -4891,12 +4973,12 @@ function renderHistory(){
     const agentLabel = isAdmin ? `<span class="hist-tag admin-tag">${q.agent||'Unknown'}</span> ` : '';
     /* Badge */
     const eduPlanBadge = q._product==='EDU'
-      ? `<span style='font-size:9px;background:#e0f2fe;color:#075985;padding:1px 6px;border-radius:8px;font-weight:700;margin-left:5px'>${(q.plan||'EDU').toUpperCase()}</span>`
+      ? `<span style='font-size:9px;background:rgba(100,20,20,.07);color:var(--M);padding:1px 6px;border-radius:8px;font-weight:700;margin-left:5px'>${(q.plan||'EDU').toUpperCase()}</span>`
       : '';
     const badge = q._product==='MY'
       ? `<span style='font-size:9px;background:var(--ML);color:var(--M);padding:1px 6px;border-radius:8px;font-weight:700;margin-left:5px'>MY</span>`
       : q._product==='PHINDU'
-      ? `<span style='font-size:9px;background:#fef3c7;color:#92400e;padding:1px 6px;border-radius:8px;font-weight:700;margin-left:5px'>PHINDU</span>`
+      ? `<span style='font-size:9px;background:#D8C9B4;color:#641414;padding:1px 6px;border-radius:8px;font-weight:700;margin-left:5px'>PHINDU</span>`
       : eduPlanBadge;
     /* Meta line */
     const meta = q._product==='MY'    ? '15 yrs · Monthly'
@@ -6848,9 +6930,9 @@ function renderPropHistory(){
 
   list.innerHTML = myProps.map(p=>{
     const isPhindu = p._ptype==='PHINDU';
-    const statusColor = p.status==='Approved'?'var(--M)':p.status==='Declined'?'#dc2626':'#d97706';
+    const statusColor = p.status==='Approved'?'var(--M)':p.status==='Declined'?'#dc2626':'#92400e';
     const productBadge = isPhindu
-      ? `<span style="font-size:9px;background:#fef3c7;color:#92400e;padding:1px 6px;border-radius:8px;font-weight:700;margin-left:5px">PHINDU</span>`
+      ? `<span style="font-size:9px;background:#D8C9B4;color:#641414;padding:1px 6px;border-radius:8px;font-weight:700;margin-left:5px">PHINDU</span>`
       : `<span style="font-size:9px;background:#fff5f5;color:#be123c;padding:1px 6px;border-radius:8px;font-weight:700;margin-left:5px">MY</span>`;
     const premLine = isPhindu
       ? `MWK ${parseFloat(p.monthlyPremium||0).toLocaleString('en')}/mo`
@@ -6860,7 +6942,7 @@ function renderPropHistory(){
       <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap">
         <button onclick="event.stopPropagation();${isPhindu?'propUpdatePhinduStatus':'propUpdateStatus'}('${p.ref}','Approved')" style="font-size:10px;padding:3px 10px;background:var(--ML);color:var(--M);border:1px solid var(--RS);border-radius:12px;cursor:pointer">✓ Approve</button>
         <button onclick="event.stopPropagation();${isPhindu?'propUpdatePhinduStatus':'propUpdateStatus'}('${p.ref}','Declined')" style="font-size:10px;padding:3px 10px;background:#fee2e2;color:#dc2626;border:1px solid #fca5a5;border-radius:12px;cursor:pointer">✕ Decline</button>
-        <button onclick="event.stopPropagation();${isPhindu?'propUpdatePhinduStatus':'propUpdateStatus'}('${p.ref}','Pending')" style="font-size:10px;padding:3px 10px;background:#fef3c7;color:#d97706;border:1px solid #fde68a;border-radius:12px;cursor:pointer">⏳ Pending</button>
+        <button onclick="event.stopPropagation();${isPhindu?'propUpdatePhinduStatus':'propUpdateStatus'}('${p.ref}','Pending')" style="font-size:10px;padding:3px 10px;background:var(--ML);color:var(--M);border:1px solid var(--M);border-radius:12px;cursor:pointer">⏳ Pending</button>
       </div>`:'';
     const clickHandler = isPhindu
       ? `onclick="openPhinduPropFromHistory('${p.ref}')" style="cursor:pointer"`
@@ -6895,7 +6977,7 @@ function openPropFromHistory(ref){
     if(ss) ss.style.display='none';
     document.getElementById('prop-success').style.display='block';
     // Update banner text via IDs — never corrupts future submissions
-    const statusColor = p.status==='Approved'?'var(--M)':p.status==='Declined'?'#dc2626':'#d97706';
+    const statusColor = p.status==='Approved'?'var(--M)':p.status==='Declined'?'#dc2626':'#92400e';
     const titleEl = document.getElementById('prop-success-title');
     const subEl   = document.getElementById('prop-success-sub');
     if(titleEl){ titleEl.textContent='Viewing Saved Proposal'; titleEl.style.color=statusColor; }
@@ -6960,7 +7042,7 @@ function openPhinduPropFromHistory(ref){
     const notice=document.getElementById('phindu-prop-prefill-notice');
     if(notice)notice.style.display='none';
     /* Show success/view banner */
-    const statusColor = p.status==='Approved'?'var(--M)':p.status==='Declined'?'#dc2626':'#d97706';
+    const statusColor = p.status==='Approved'?'var(--M)':p.status==='Declined'?'#dc2626':'#92400e';
     const titleEl=document.getElementById('pp-success-title');
     const subEl=document.getElementById('pp-success-sub');
     if(titleEl){titleEl.textContent='Viewing Saved Proposal';titleEl.style.color=statusColor;}
@@ -7672,7 +7754,7 @@ function phinduSaveSync(){
   fetch(url,{method:'POST',mode:'no-cors',body:JSON.stringify(payload)})
     .then(()=>{if(ss){ss.textContent='\u2713 Saved to Google Sheets';ss.style.color='var(--M)';ss.style.display='block';}})
     .catch(()=>{
-      if(ss){ss.textContent='\u26a0 Saved locally \u2014 will sync when online';ss.style.color='#d97706';ss.style.display='block';}
+      if(ss){ss.textContent='\u26a0 Saved locally \u2014 will sync when online';ss.style.color='var(--M)';ss.style.display='block';}
       enqueueSyncPayload(payload, 'Phindu · '+(q.name||q.ref||''));
     });
 }
@@ -7759,7 +7841,7 @@ function renderPhinduHistory(){
   if(!mine.length){list.innerHTML='<div class="empty-state"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/><line x1="2" y1="20" x2="22" y2="20"/></svg><p>No Phindu quotes yet.</p></div>';return;}
   const f=v=>'MWK '+Math.round(v).toLocaleString();
   list.innerHTML=mine.map(q=>{
-    const badge='<span style="font-size:10px;padding:2px 8px;border-radius:10px;font-weight:600;background:#fef3c7;color:#92400e">'+q.mt+'% MT</span>';
+    const badge='<span style="font-size:10px;padding:2px 8px;border-radius:10px;font-weight:600;background:#D8C9B4;color:#641414">'+q.mt+'% MT</span>';
     return '<div class="hist-item" onclick="openPhinduHist(\''+q.ref+'\')" style="cursor:pointer">'+
       '<div style="flex:1">'+
         '<div style="font-size:13px;font-weight:700;color:var(--T);margin-bottom:2px">'+q.name+'</div>'+
@@ -7983,7 +8065,7 @@ function phinduPropBuildDoc(d){
     html+='<div style="font-size:11px;color:#888">No beneficiaries recorded.</div>';
   }
 
-  const statusColor=d.status==='Approved'?'var(--M)':d.status==='Declined'?'#dc2626':'#d97706';
+  const statusColor=d.status==='Approved'?'var(--M)':d.status==='Declined'?'#dc2626':'#92400e';
   html+=`<div style="margin-top:10px;font-size:10px;color:#888;border-top:1px solid #e8ddd4;padding-top:8px">
     <strong>Agent:</strong> ${d.agent} &nbsp;|&nbsp; <strong>Date:</strong> ${fmtDate((d.submittedAt||'').split('T')[0])} &nbsp;|&nbsp; <strong>Status:</strong> <span style="color:${statusColor}">${d.status||'Pending'}</span>
   </div>`;
