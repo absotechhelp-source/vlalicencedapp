@@ -4103,6 +4103,7 @@ function generateQuote(){
   const occ=document.getElementById('c-occ').value.trim();
   quoteData={
     ref,agent:currentAgent,
+    product:'Pure Savings Plan',planName:'Pure Savings Plan',
     clientName:name,clientFirstName:fname,clientMiddleName:mname,clientLastName:lname,
     clientEmail:email,clientPhone:phone,
     clientArea:area,clientCity:city,clientDistrict:district,clientAddress:address,
@@ -4240,7 +4241,7 @@ function getLocalMyQuotes(){return JSON.parse(localStorage.getItem('vla_my_quote
 async function restoreHistoryFromSheets(agentName, showFeedback){
   const url = localStorage.getItem(SHEETS_URL_KEY) || APPS_SCRIPT_URL;
   if(!url || !agentName) return;
-  if(showFeedback) showToast('📋 Checking Sheets for your quotes…', 3000);
+  showToast('📋 Checking Sheets for your quotes…', 2500);
   try {
     const fetchPromise = fetch(url + '?action=getQuotes&agent=' + encodeURIComponent(agentName), {
       cache:'no-store', redirect:'follow', mode:'cors'
@@ -4250,7 +4251,7 @@ async function restoreHistoryFromSheets(agentName, showFeedback){
     const data = await res.json();
     console.log('[RESTORE] Sheets returned', data.quotes ? data.quotes.length : 0, 'quotes for', agentName);
     if(data.status !== 'ok' || !Array.isArray(data.quotes) || !data.quotes.length){
-      if(showFeedback) showToast('⚠️ No quotes found in Sheets for this agent', 4000);
+      showToast('⚠️ No quotes found in Sheets for this agent', 4000);
       return;
     }
 
@@ -4258,7 +4259,9 @@ async function restoreHistoryFromSheets(agentName, showFeedback){
 
     // ── Helper: map a Sheets row back to the local quote format ──
     function mapSheetQuote(r){
+      const _isMo = (r['Frequency']||'').toLowerCase() === 'monthly';
       return {
+        // ── Core ──────────────────────────────────────────────────────
         ref:        r['Reference']         || r['ref']         || '',
         agent:      r['Agent']             || '',
         doq:        r['Quote Date']        || '',
@@ -4266,42 +4269,48 @@ async function restoreHistoryFromSheets(agentName, showFeedback){
         product:    r['Product']           || '',
         planName:   r['Plan Name']         || '',
         plan:       r['Plan Code']         || '',
-        clientName: r['Full Name']         || r['clientName']  || '',
-        clientFirstName: r['First Name']   || '',
-        clientMiddleName:r['Middle Name']  || '',
-        clientLastName:  r['Last Name']    || '',
-        gender:     r['Gender']            || '',
-        dob:        r['DOB']               || '',
-        anb:        r['ANB']               || '',
-        clientPhone:r['Phone']             || '',
-        clientEmail:r['Email']             || '',
-        clientCity: r['Town / City']       || '',
-        clientDistrict: r['District / Country'] || '',
-        occupation: r['Occupation']        || '',
-        occClass:   r['Occupation Class']  || '',
-        // PSP fields
-        SA:     Number(r['Sum Assured (MK)']   || 0),
-        totalP: Number(r['Monthly Premium (MK)']|| r['Total Premium (MK)'] || 0),
-        basicP: Number(r['Basic Premium (MK)'] || 0),
-        dabP:   Number(r['DAB Premium (MK)']   || 0),
-        projM:  Number(r['Projected SA (MK)']  || r['Sum Assured (MK)'] || 0),
-        term:   r['Premium Term (yrs)']        || '',
-        freq:   r['Frequency']                 || '',
-        // Edu fields
-        totalSA:    Number(r['Sum Assured (MK)']          || 0),
-        totalPrem:  Number(r['Total Premium (MK)']        || 0),
-        basicPrem:  Number(r['Basic Premium (MK)']        || 0),
-        colPrem:    Number(r['College Premium (MK)']      || 0),
-        colSA:      Number(r['College Benefit SA (MK)']   || 0),
-        hasCollege: r['Has College Benefit'] === 'Yes',
-        premTerm:   r['Premium Term (yrs)']               || '',
-        occCls:     r['Occupation Class']                 || '',
-        isMo:       (r['Frequency']||'').toLowerCase() === 'monthly',
-        // MY fields
-        prem:   Number(r['Monthly Premium (MK)']          || 0),
-        tmv:    Number(r['Target Maturity Value (MK)']    || 0),
-        totalContrib: Number(r['Total Contributions (MK)']|| 0),
-        clientCountry: r['District / Country']            || '',
+        // ── Client ────────────────────────────────────────────────────
+        clientName:      r['Full Name']            || r['clientName'] || '',
+        clientFirstName: r['First Name']           || '',
+        clientMiddleName:r['Middle Name']          || '',
+        clientLastName:  r['Last Name']            || '',
+        gender:          r['Gender']               || '',
+        dob:             r['DOB']                  || '',
+        anb:             r['ANB']                  || '',
+        clientPhone:     r['Phone']                || '',
+        clientEmail:     r['Email']                || '',
+        clientCity:      r['Town / City']          || '',
+        clientDistrict:  r['District / Country']   || '',
+        clientCountry:   r['District / Country']   || '',
+        occupation:      r['Occupation']           || '',
+        occClass:        r['Occupation Class']     || '',
+        occCls:          r['Occupation Class']     || '',
+        // ── PSP fields ────────────────────────────────────────────────
+        SA:        Number(r['Sum Assured (MK)']    || 0),
+        isMo:      _isMo,
+        freq:      (r['Frequency']||'').toLowerCase() || '',
+        totalP:    _isMo
+                     ? Number(r['Monthly Premium (MK)'] || 0)
+                     : Number(r['Annual Premium (MK)']  || r['Total Premium (MK)'] || 0),
+        basicP:    Number(r['Basic Premium (MK)']  || 0),
+        dabP:      Number(r['DAB Premium (MK)']    || 0),
+        policyFee: Number(r['Policy Fee (MK)']     || 0),
+        projM:     Number(r['Projected SA (MK)']   || r['Sum Assured (MK)'] || 0),
+        term:      r['Premium Term (yrs)']         || '',
+        mode:      r['Mode']                       || 'sa',
+        dabIncluded: (r['Riders']||'').includes('DAB'),
+        // ── Edu fields ────────────────────────────────────────────────
+        totalSA:   Number(r['Sum Assured (MK)']          || 0),
+        totalPrem: Number(r['Total Premium (MK)']        || 0),
+        basicPrem: Number(r['Basic Premium (MK)']        || 0),
+        colPrem:   Number(r['College Premium (MK)']      || 0),
+        colSA:     Number(r['College Benefit SA (MK)']   || 0),
+        hasCollege:r['Has College Benefit'] === 'Yes',
+        premTerm:  r['Premium Term (yrs)']               || '',
+        // ── Manga Yako fields ─────────────────────────────────────────
+        prem:        Number(r['Monthly Premium (MK)']          || 0),
+        tmv:         Number(r['Target Maturity Value (MK)']    || 0),
+        totalContrib:Number(r['Total Contributions (MK)']      || 0),
       };
     }
 
@@ -4401,14 +4410,14 @@ async function restoreHistoryFromSheets(agentName, showFeedback){
 
     if(totalRestored > 0){
       showToast('📋 '+totalRestored+' quote'+(totalRestored>1?'s':'')+' restored from Sheets', 5000);
-      // Re-render history if it's currently visible
       try{ renderHistory(); }catch(e){}
-    } else if(showFeedback) {
-      showToast('✅ All quotes already up to date on this device', 4000);
+      try{ renderHomeDash(); }catch(e){}
+    } else {
+      showToast('✅ Quotes up to date on this device', 3500);
     }
   } catch(e){
     console.warn('[RESTORE] Failed:', e.message);
-    if(showFeedback) showToast('⚠️ Could not reach Sheets — check connection', 4000);
+    showToast('⚠️ Could not reach Sheets — check connection', 4000);
   }
 }
 
@@ -4474,14 +4483,15 @@ async function syncToSheets(q){
 
 async function twoWaySync(){
   if(!currentAgent){ showToast('Please sign in first', 3000); return; }
-  showToast('🔄 Syncing quotes with Sheets…', 3000);
+  showToast('🔄 Syncing with Sheets…', 2500);
   // Step 1: Flush any pending queue (failed live syncs)
   try{ await flushSyncQueue(true); }catch(e){}
   // Step 2: Push missing local quotes up to Sheets
   await retroSyncAllQuotes(true);
-  // Step 3: Pull missing Sheets quotes down to device
-  await restoreHistoryFromSheets(currentAgent, false);
+  // Step 3: Pull missing Sheets quotes down to this device
+  await restoreHistoryFromSheets(currentAgent, true);
   try{ renderHistory(); }catch(e){}
+  try{ renderHomeDash(); }catch(e){}
 }
 
 function showRetroSyncModal(){
@@ -4510,7 +4520,7 @@ async function retroSyncAllQuotes(silent){
     const agentParam = isAdmin ? '' : '&agent='+encodeURIComponent(currentAgent);
     try {
       const res = await Promise.race([
-        fetch(url+'?action='+action+agentParam, {cache:'no-store'}),
+        fetch(url+'?action='+action+agentParam, {cache:'no-store',redirect:'follow',mode:'cors'}),
         new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')),8000))
       ]);
       const data = await res.json();
@@ -4605,13 +4615,14 @@ async function retroSyncAllQuotes(silent){
         Town:q.clientCity||q.clientArea||'', District:q.clientDistrict||'',
         Occupation:q.occupation||'',      OccClass:q.occClass||'Standard',
         SumAssured:Math.round(q.SA||0),
-        AnnualPremium:Math.round((q.totalP||0)*12),
-        MonthlyPremium:Math.round(q.totalP||0),
+        AnnualPremium:q.isMo?Math.round((q.totalP||0)*12):Math.round(q.totalP||0),
+        MonthlyPremium:q.isMo?Math.round(q.totalP||0):Math.round((q.totalP||0)/12),
         BasicPremium:Math.round(q.basicP||0),
         DABPremium:Math.round(q.dabP||0), TotalPremium:Math.round(q.totalP||0),
+        PolicyFee:Math.round(q.policyFee||0),
         ProjectedMaturity:Math.round(q.projM||0),
         DABIncluded:q.dabIncluded?'Yes':'No',
-        PremiumTerm:String(q.term||''),   Frequency:q.freq||'Monthly',
+        PremiumTerm:String(q.term||''),   Frequency:q.isMo?'Monthly':'Annual',
         Smoker:'Non-Smoker',              Mode:q.mode==='sa'?'SA to Premium':'Premium to SA'
       });
     }
