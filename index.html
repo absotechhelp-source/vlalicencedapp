@@ -3126,104 +3126,91 @@ async function flushSyncQueue(silent){
 function renderRecentQuotes(){
   const el = document.getElementById('home-recent-list');
   if(!el) return;
-  const _agentLower = (currentAgent||'').toLowerCase();
-  const now = Date.now();
-  const oneWeekMs = 7*24*60*60*1000;
+  try{
+    const _agentLower = (currentAgent||'').toLowerCase();
+    const now = Date.now();
 
-  // ── Fix 1: Correctly split PSP vs EDU from vla_quotes ──
-  const rawLocal = getLocalQuotes()
-    .filter(q => isAdmin || (q.agent||'').toLowerCase()===_agentLower);
-  const psp = rawLocal
-    .filter(q => !q.product || q.product==='PSP' || q.product==='Pure Savings Plan' || q.product==='Pure Savings' || q.product==='Conventional Plans')
-    .map(q=>({
-      name: q.clientName||'—', ref: q.ref||'',
-      prem: q.totalP||0,           // Fix 2: PSP stores premium as totalP
-      freq: q.isMo===false ? '/yr' : '/mo',
-      date: q.savedAt||q.doq||'',
-      badge:'PSP', product: q.product||'PSP'
-    }));
-  const edu = rawLocal
-    .filter(q => q.product==='Educational Plans')
-    .map(q=>({
-      name: q.clientName||q.parentName||'—', ref: q.ref||'',
-      prem: q.totalPrem||0,
-      freq: q.isMo===false ? '/yr' : '/mo',
-      date: q.savedAt||q.doq||'',
-      badge:'EDU', product:'Educational Plans'
-    }));
-  const my = getLocalMyQuotes()
-    .filter(q => isAdmin || (q.agent||'').toLowerCase()===_agentLower)
-    .map(q=>({
-      name: q.clientName||'—', ref: q.ref||'',
-      prem: q.prem||0,
-      freq: '/mo',
-      date: q.savedAt||q.doq||'',
-      badge:'MY', product:'Manga Yako'
-    }));
-  const ph = JSON.parse(localStorage.getItem(PHINDU_QUOTES_KEY)||'[]')
-    .filter(q => isAdmin || (q.agent||'').toLowerCase()===_agentLower)
-    .map(q=>({
-      name: q.name||'—', ref: q.ref||'',
-      prem: q.premium||0,
-      freq: '/mo',
-      date: q.savedAt||'',
-      badge:'PHINDU', product:'Phindu'
-    }));
+    const rawPspEdu = getLocalQuotes();
+    const rawMy     = getLocalMyQuotes();
+    const rawPhindu = JSON.parse(localStorage.getItem(PHINDU_QUOTES_KEY)||'[]');
 
-  const all = [...psp,...edu,...my,...ph]
-    .filter(q => (q.name && q.name!=='—') || q.ref)
-    .sort((a,b) => new Date(b.date)-new Date(a.date))
-    .slice(0,4);
+    console.log('[RQ] localStorage — PSP/EDU:'+rawPspEdu.length+' MY:'+rawMy.length+' Phindu:'+rawPhindu.length+' agent:'+currentAgent+' isAdmin:'+isAdmin);
 
-  if(!all.length){
+    const psp = rawPspEdu
+      .filter(q => q && (!q.product||q.product==='PSP'||q.product==='Pure Savings Plan'||q.product==='Pure Savings'||q.product==='Conventional Plans'))
+      .map(q=>({ name:q.clientName||'—', ref:q.ref||'', prem:q.totalP||0, freq:q.isMo===false?'/yr':'/mo', date:q.savedAt||q.doq||'', badge:'PSP', agent:q.agent||'' }));
+
+    const edu = rawPspEdu
+      .filter(q => q && q.product==='Educational Plans')
+      .map(q=>({ name:q.clientName||q.parentName||'—', ref:q.ref||'', prem:q.totalPrem||0, freq:q.isMo===false?'/yr':'/mo', date:q.savedAt||q.doq||'', badge:'EDU', agent:q.agent||'' }));
+
+    const my = rawMy
+      .filter(q => q)
+      .map(q=>({ name:q.clientName||'—', ref:q.ref||'', prem:q.prem||0, freq:'/mo', date:q.savedAt||q.doq||'', badge:'MY', agent:q.agent||'' }));
+
+    const ph = rawPhindu
+      .filter(q => q)
+      .map(q=>({ name:q.name||'—', ref:q.ref||'', prem:q.premium||0, freq:'/mo', date:q.savedAt||'', badge:'PHINDU', agent:q.agent||'' }));
+
+    let all = [...psp,...edu,...my,...ph].filter(q => q.name!=='—' || q.ref);
+    const beforeAgent = all.length;
+    if(!isAdmin && _agentLower){
+      all = all.filter(q => (q.agent||'').toLowerCase()===_agentLower || q.agent===currentAgent);
+    }
+    console.log('[RQ] before agent filter:'+beforeAgent+' after:'+all.length);
+
+    all = all
+      .sort((a,b)=>{ const da=new Date(b.date),db=new Date(a.date); return isNaN(da)?1:isNaN(db)?-1:da-db; })
+      .slice(0,4);
+
+    if(!all.length){
+      el.innerHTML='<div style="text-align:center;padding:18px 0;font-size:12px;color:var(--T2)">No quotes yet</div>';
+      return;
+    }
+
+    const badgeStyle={
+      PSP:    'background:var(--ML);color:var(--M)',
+      MY:     'background:var(--ML);color:var(--M)',
+      PHINDU: 'background:#D8C9B4;color:#641414',
+      EDU:    'background:rgba(100,20,20,.07);color:var(--M)'
+    };
+
+    function timeLabel(dateStr){
+      if(!dateStr) return '';
+      const ms = now - new Date(dateStr).getTime();
+      if(isNaN(ms)||ms<0) return 'Today';
+      if(ms<120000)   return 'Just now';
+      if(ms<3600000)  return Math.floor(ms/60000)+'m ago';
+      if(ms<86400000) return Math.floor(ms/3600000)+'h ago';
+      if(ms<172800000)return 'Yesterday';
+      if(ms<604800000)return Math.floor(ms/86400000)+'d ago';
+      return new Date(dateStr).toLocaleDateString('en-GB',{day:'numeric',month:'short'});
+    }
+
+    el.innerHTML = all.map(q => {
+      const initials = (q.name||'?').trim().split(/\s+/).map(w=>w[0]||'').join('').slice(0,2).toUpperCase();
+      const bs   = badgeStyle[q.badge]||badgeStyle.PSP;
+      const lbl  = timeLabel(q.date);
+      const ref  = q.ref ? ' · '+q.ref : '';
+      const prem = q.prem>0 ? 'MK '+Math.round(q.prem).toLocaleString()+q.freq : '—';
+      return '<div class="rq-row" onclick="switchTab(\'history\');setTimeout(()=>openHistModal(\''+q.ref+'\'),120)">'+
+        '<div class="rq-avatar">'+initials+'</div>'+
+        '<div class="rq-info">'+
+          '<div class="rq-name">'+q.name+'</div>'+
+          '<div class="rq-meta"><span class="rq-badge" style="'+bs+'">'+q.badge+'</span>'+ref+'</div>'+
+        '</div>'+
+        '<div class="rq-right">'+
+          '<div class="rq-prem">'+prem+'</div>'+
+          '<div style="font-size:10px;color:var(--T2);margin-top:1px">'+lbl+'</div>'+
+        '</div>'+
+      '</div>';
+    }).join('');
+
+  } catch(err){
+    console.error('[RQ] error:', err);
     el.innerHTML='<div style="text-align:center;padding:18px 0;font-size:12px;color:var(--T2)">No quotes yet</div>';
-    return;
   }
-
-  const badgeStyle={
-    PSP:    'background:var(--ML);color:var(--M)',
-    MY:     'background:var(--ML);color:var(--M)',
-    PHINDU: 'background:#D8C9B4;color:#641414',
-    EDU:    'background:rgba(100,20,20,.07);color:var(--M)'
-  };
-
-  // Fix 3: time label — show relative age
-  function timeLabel(dateStr){
-    if(!dateStr) return '';
-    const ms = now - new Date(dateStr).getTime();
-    if(ms < 0) return 'Today';
-    const mins = Math.floor(ms/60000);
-    const hrs  = Math.floor(ms/3600000);
-    const days = Math.floor(ms/86400000);
-    if(mins < 2)   return 'Just now';
-    if(mins < 60)  return mins+'m ago';
-    if(hrs  < 24)  return hrs+'h ago';
-    if(days === 1) return 'Yesterday';
-    if(days <  7)  return days+'d ago';
-    return new Date(dateStr).toLocaleDateString('en-GB',{day:'numeric',month:'short'});
-  }
-
-  // Fix 4: tap opens the specific quote modal directly
-  el.innerHTML = all.map(q => {
-    const initials = (q.name||'?').trim().split(/\s+/).map(w=>w[0]||'').join('').slice(0,2).toUpperCase();
-    const bs   = badgeStyle[q.badge]||badgeStyle.PSP;
-    const lbl  = timeLabel(q.date);
-    const ref  = q.ref ? ` · ${q.ref}` : '';
-    const prem = q.prem>0 ? 'MK '+Math.round(q.prem).toLocaleString()+q.freq : '—';
-    return `<div class="rq-row" onclick="switchTab('history');setTimeout(()=>openHistModal('${q.ref}'),120)">`
-      +`<div class="rq-avatar">${initials}</div>`
-      +`<div class="rq-info">`
-        +`<div class="rq-name">${q.name}</div>`
-        +`<div class="rq-meta"><span class="rq-badge" style="${bs}">${q.badge}</span>${ref}</div>`
-      +`</div>`
-      +`<div class="rq-right">`
-        +`<div class="rq-prem">${prem}</div>`
-        +`<div style="font-size:10px;color:var(--T2);margin-top:1px">${lbl}</div>`
-      +`</div>`
-    +`</div>`;
-  }).join('');
 }
-
 function renderSyncBadge(){
   const count = getSyncQueue().length;
 
@@ -3827,6 +3814,14 @@ async function doLogin(){
 
 
   console.log('[LOGIN] agentPin:', agentPin, '| agentActive:', agentActive, '| match:', agentPin===pin);
+  // If agentPin is empty it means Sheets returned blank PIN — show specific error
+  if(agent && agentActive && !agentPin){
+    err.textContent='Your PIN has not been set up yet. Ask your administrator to reset your PIN.';
+    err.style.display='block';
+    document.getElementById('l-pin').value='';
+    document.getElementById('l-pin').focus();
+    return;
+  }
   if(agent && agentActive !== false && agentPin === pin){
 
     // ── Licence check — must pass before granting access ──
@@ -3852,6 +3847,8 @@ async function doLogin(){
     isAdmin=(agentRole==='admin');
     // Persist session so a pull-to-refresh doesn't log the agent out
     try { localStorage.setItem(SESSION_KEY, JSON.stringify({agent:user, isAdmin:isAdmin})); } catch(e){}
+    // Save PIN backup so login works offline if Sheets is unreachable
+    try { const _ab=JSON.parse(localStorage.getItem(AGENTS_KEY)||'{}'); if(_ab[user])_ab[user].pin=agentPin; localStorage.setItem(AGENTS_KEY,JSON.stringify(_ab)); } catch(e){}
     // Render home dashboard BEFORE screen becomes visible — prevents stale HTML flash
     renderHomeDash();
     err.style.display='none';
