@@ -485,11 +485,11 @@ input:checked+.tog-trk:before{transform:translateX(17px)}
 <div id="screen-app" class="screen">
 
   <!-- ── App update notification banner ── -->
-  <div id="update-banner" style="display:none;position:fixed;top:0;left:0;right:0;z-index:8000;background:#1a5c1a;color:#fff;padding:10px 16px;font-size:13px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,.3)">
+  <div id="update-banner" style="display:none;position:fixed;top:0;left:0;right:0;z-index:8000;background:#641414;color:#D8C9B4;padding:10px 16px;font-size:13px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,.3)">
     <span id="update-banner-msg">📲 App updated to latest version</span>
-    <div style="font-size:11px;opacity:.8;margin-top:2px">Reloading in <span id="update-countdown">5</span>s…
-      <button onclick="window.location.reload()" style="margin-left:10px;background:rgba(255,255,255,.25);border:none;color:#fff;padding:2px 10px;border-radius:10px;font-size:11px;cursor:pointer">Reload now</button>
-      <button id="update-dismiss-btn" style="margin-left:6px;background:none;border:none;color:rgba(255,255,255,.7);font-size:11px;cursor:pointer">Later</button>
+    <div style="font-size:11px;opacity:.85;margin-top:2px">Reloading in <span id="update-countdown">5</span>s…
+      <button onclick="window.location.reload()" style="margin-left:10px;background:rgba(216,201,180,.25);border:1px solid rgba(216,201,180,.4);color:#D8C9B4;padding:2px 10px;border-radius:10px;font-size:11px;cursor:pointer">Reload now</button>
+      <button id="update-dismiss-btn" style="margin-left:6px;background:none;border:none;color:rgba(216,201,180,.7);font-size:11px;cursor:pointer">Later</button>
     </div>
   </div>
 
@@ -3126,59 +3126,99 @@ async function flushSyncQueue(silent){
 function renderRecentQuotes(){
   const el = document.getElementById('home-recent-list');
   if(!el) return;
-  // Gather last 4 quotes across all products, newest first
   const _agentLower = (currentAgent||'').toLowerCase();
-  const psp = getLocalQuotes()
-    .filter(q=> isAdmin || (q.agent||'').toLowerCase()===_agentLower)
+  const now = Date.now();
+  const oneWeekMs = 7*24*60*60*1000;
+
+  // ── Fix 1: Correctly split PSP vs EDU from vla_quotes ──
+  const rawLocal = getLocalQuotes()
+    .filter(q => isAdmin || (q.agent||'').toLowerCase()===_agentLower);
+  const psp = rawLocal
+    .filter(q => !q.product || q.product==='PSP' || q.product==='Pure Savings Plan' || q.product==='Pure Savings' || q.product==='Conventional Plans')
     .map(q=>({
       name: q.clientName||'—', ref: q.ref||'',
-      prem: q.totalP||q.totalPrem||0,
+      prem: q.totalP||0,           // Fix 2: PSP stores premium as totalP
+      freq: q.isMo===false ? '/yr' : '/mo',
       date: q.savedAt||q.doq||'',
       badge:'PSP', product: q.product||'PSP'
     }));
+  const edu = rawLocal
+    .filter(q => q.product==='Educational Plans')
+    .map(q=>({
+      name: q.clientName||q.parentName||'—', ref: q.ref||'',
+      prem: q.totalPrem||0,
+      freq: q.isMo===false ? '/yr' : '/mo',
+      date: q.savedAt||q.doq||'',
+      badge:'EDU', product:'Educational Plans'
+    }));
   const my = getLocalMyQuotes()
-    .filter(q=> isAdmin || (q.agent||'').toLowerCase()===_agentLower)
+    .filter(q => isAdmin || (q.agent||'').toLowerCase()===_agentLower)
     .map(q=>({
       name: q.clientName||'—', ref: q.ref||'',
       prem: q.prem||0,
+      freq: '/mo',
       date: q.savedAt||q.doq||'',
-      badge:'MY'
+      badge:'MY', product:'Manga Yako'
     }));
   const ph = JSON.parse(localStorage.getItem(PHINDU_QUOTES_KEY)||'[]')
-    .filter(q=> isAdmin || (q.agent||'').toLowerCase()===_agentLower)
+    .filter(q => isAdmin || (q.agent||'').toLowerCase()===_agentLower)
     .map(q=>({
       name: q.name||'—', ref: q.ref||'',
       prem: q.premium||0,
+      freq: '/mo',
       date: q.savedAt||'',
-      badge:'PHINDU'
+      badge:'PHINDU', product:'Phindu'
     }));
-  const all = [...psp,...my,...ph]
-    .filter(q=>q.name&&q.name!=='—'||q.ref)
-    .sort((a,b)=>new Date(b.date)-new Date(a.date))
+
+  const all = [...psp,...edu,...my,...ph]
+    .filter(q => (q.name && q.name!=='—') || q.ref)
+    .sort((a,b) => new Date(b.date)-new Date(a.date))
     .slice(0,4);
+
   if(!all.length){
     el.innerHTML='<div style="text-align:center;padding:18px 0;font-size:12px;color:var(--T2)">No quotes yet</div>';
     return;
   }
+
   const badgeStyle={
-    PSP:  'background:var(--ML);color:var(--M)',
-    MY:   'background:var(--ML);color:var(--M)',
-    PHINDU:'background:#D8C9B4;color:#641414',
-    EDU:  'background:rgba(100,20,20,.07);color:var(--M)'
+    PSP:    'background:var(--ML);color:var(--M)',
+    MY:     'background:var(--ML);color:var(--M)',
+    PHINDU: 'background:#D8C9B4;color:#641414',
+    EDU:    'background:rgba(100,20,20,.07);color:var(--M)'
   };
-  el.innerHTML = all.map(q=>{
+
+  // Fix 3: time label — show relative age
+  function timeLabel(dateStr){
+    if(!dateStr) return '';
+    const ms = now - new Date(dateStr).getTime();
+    if(ms < 0) return 'Today';
+    const mins = Math.floor(ms/60000);
+    const hrs  = Math.floor(ms/3600000);
+    const days = Math.floor(ms/86400000);
+    if(mins < 2)   return 'Just now';
+    if(mins < 60)  return mins+'m ago';
+    if(hrs  < 24)  return hrs+'h ago';
+    if(days === 1) return 'Yesterday';
+    if(days <  7)  return days+'d ago';
+    return new Date(dateStr).toLocaleDateString('en-GB',{day:'numeric',month:'short'});
+  }
+
+  // Fix 4: tap opens the specific quote modal directly
+  el.innerHTML = all.map(q => {
     const initials = (q.name||'?').trim().split(/\s+/).map(w=>w[0]||'').join('').slice(0,2).toUpperCase();
-    const bs = badgeStyle[q.badge]||badgeStyle.PSP;
-    const freq = (q.product==='Pure Savings Plan'||!q.product||q.product==='PSP') ? '/mo' : '';
-    return `<div class="rq-row" onclick="switchTab('history')">`
+    const bs   = badgeStyle[q.badge]||badgeStyle.PSP;
+    const lbl  = timeLabel(q.date);
+    const ref  = q.ref ? ` · ${q.ref}` : '';
+    const prem = q.prem>0 ? 'MK '+Math.round(q.prem).toLocaleString()+q.freq : '—';
+    return `<div class="rq-row" onclick="switchTab('history');setTimeout(()=>openHistModal('${q.ref}'),120)">`
       +`<div class="rq-avatar">${initials}</div>`
       +`<div class="rq-info">`
         +`<div class="rq-name">${q.name}</div>`
-        +`<div class="rq-meta"><span class="rq-badge" style="${bs}">${q.badge}</span>`
-        +(q.ref?` · ${q.ref}`:'')+`</div>`
+        +`<div class="rq-meta"><span class="rq-badge" style="${bs}">${q.badge}</span>${ref}</div>`
       +`</div>`
       +`<div class="rq-right">`
-        +`<div class="rq-prem">${q.prem>0?'MK '+Math.round(q.prem).toLocaleString()+freq:'—'}</div>`
+        +`<div class="rq-prem">${prem}</div>`
+        +`<div style="font-size:10px;color:var(--T2);margin-top:1px">${lbl}</div>`
       +`</div>`
     +`</div>`;
   }).join('');
