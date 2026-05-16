@@ -4316,8 +4316,14 @@ async function restoreHistoryFromSheets(agentName, showFeedback){
 
     // ── 1. PSP + Educational Plans → vla_quotes ──
     const pspEduRows = data.quotes.filter(r => {
-      const p = r['Product'] || '';
-      return p !== 'Manga Yako' && p !== 'Phindu';
+      const p   = r['Product']   || '';
+      const ref = r['Reference'] || '';
+      const ag  = r['Agent']     || '';
+      // exclude Manga Yako and Phindu (handled separately below)
+      // also exclude corrupt rows that have no Reference AND no Agent
+      if(p === 'Manga Yako' || p === 'Phindu') return false;
+      if(!ref.trim() && !ag.trim()) return false; // corrupt row
+      return true;
     });
     if(pspEduRows.length > 0){
       const local     = getLocalQuotes();
@@ -4541,7 +4547,26 @@ async function retroSyncAllQuotes(silent){
     await new Promise(r=>setTimeout(r,1500));
   }
 
-  // ── Step 2: Collect all local records ──
+  // ── Step 2: Purge corrupt local records before collecting ──
+  // A record with no ref AND no client name is a ghost — clean it out now
+  // so it never makes it to Sheets and never gets pushed again.
+  function isValidRecord(q){
+    const hasRef  = !!(q.ref||q.Reference||q.QuoteRef||q.Ref||'').trim();
+    const hasName = !!(q.clientName||q.name||q.clientFirstName||'').trim();
+    return hasRef || hasName; // keep if it has at least one identifier
+  }
+  (function purgeCorrupt(){
+    try{
+      const psp = getLocalQuotes().filter(isValidRecord);
+      localStorage.setItem('vla_quotes', JSON.stringify(psp));
+      const my  = getLocalMyQuotes().filter(isValidRecord);
+      localStorage.setItem('vla_my_quotes', JSON.stringify(my));
+      const ph  = JSON.parse(localStorage.getItem(PHINDU_QUOTES_KEY)||'[]').filter(isValidRecord);
+      localStorage.setItem(PHINDU_QUOTES_KEY, JSON.stringify(ph));
+    }catch(e){}
+  })();
+
+  // ── Collect all local records ──
   const pspEduQuotes    = getLocalQuotes();
   const myQuotes        = getLocalMyQuotes();
   const phinduQuotes    = JSON.parse(localStorage.getItem(PHINDU_QUOTES_KEY)||'[]');
@@ -4552,7 +4577,8 @@ async function retroSyncAllQuotes(silent){
   // Normalise to uppercase so VLA-001 and vla-001 are treated the same
   function notInSheets(q){
     const r = (q.ref||q.Reference||q.QuoteRef||q.Ref||'').trim().toUpperCase();
-    return !r || !existingRefs.has(r);
+    if(!r) return false; // no ref = corrupt record — never push to Sheets
+    return !existingRefs.has(r);
   }
 
   const toSyncPspEdu    = pspEduQuotes.filter(notInSheets);
