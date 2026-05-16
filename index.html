@@ -4295,7 +4295,7 @@ async function restoreHistoryFromSheets(agentName, showFeedback){
         basicP:    Number(r['Basic Premium (MK)']  || 0),
         dabP:      Number(r['DAB Premium (MK)']    || 0),
         policyFee: Number(r['Policy Fee (MK)']     || 0),
-        projM:     Number(r['Projected SA (MK)']   || r['Sum Assured (MK)'] || 0),
+        projM:     Number(r['Projected SA (MK)']   || 0),  // no SA fallback — recalculate below if zero
         term:      r['Premium Term (yrs)']         || '',
         mode:      r['Mode']                       || 'sa',
         dabIncluded: (r['Riders']||'').includes('DAB'),
@@ -4335,7 +4335,19 @@ async function restoreHistoryFromSheets(agentName, showFeedback){
           // If ref is empty, always include (can't dedup without ref)
           return !ref || !localRefs.has(ref);
         })
-        .map(mapSheetQuote);
+        .map(mapSheetQuote)
+        .map(q => {
+          // Recalculate projM for PSP quotes where Sheets had no Projected SA stored
+          if((!q.product||q.product==='Pure Savings Plan'||q.product==='PSP')
+             && q.SA>0 && q.term>0 && !q.projM){
+            try{
+              const _m=(typeof BONUS!=='undefined'&&BONUS[Number(q.term)])
+                        ?BONUS[Number(q.term)]:Math.pow(1.07,Number(q.term));
+              q.projM=Math.round(q.SA*_m);
+            }catch(e){}
+          }
+          return q;
+        });
       if(incoming.length > 0){
         const merged = [...incoming, ...local].slice(0, 200);
         localStorage.setItem('vla_quotes', JSON.stringify(merged));
@@ -5573,11 +5585,20 @@ function renderHomeDash(){
   const profRole=document.getElementById('prof-role');
   if(profRole)profRole.textContent=isAdmin?'Administrator':'Sales Agent';
 
-  // Stats tiles
-  const allQ = getLocalQuotes();
-  const myQ = isAdmin ? allQ : allQ.filter(q=>q.agent===currentAgent);
+  // Stats tiles — combine ALL product buckets
+  const _pspEdu  = getLocalQuotes();
+  const _myQ     = getLocalMyQuotes();
+  const _phindu  = JSON.parse(localStorage.getItem(PHINDU_QUOTES_KEY)||'[]');
+  // Normalise each bucket to {agent, doq/savedAt, totalP}
+  const _allNorm = [
+    ..._pspEdu.map(q=>({ agent:q.agent, savedAt:q.savedAt||q.doq||'', totalP:q.totalP||q.totalPrem||0 })),
+    ..._myQ.map(q=>({    agent:q.agent, savedAt:q.savedAt||q.doq||'', totalP:q.prem||0 })),
+    ..._phindu.map(q=>({ agent:q.agent, savedAt:q.savedAt||'',        totalP:q.premium||0 }))
+  ];
+  const _agentLower = (currentAgent||'').toLowerCase();
+  const myQ = isAdmin ? _allNorm : _allNorm.filter(q=>(q.agent||'').toLowerCase()===_agentLower);
   const oneWeekAgo = Date.now() - 7*24*60*60*1000;
-  const weekQ = myQ.filter(q=>{ try{ return new Date(q.date||q.doq||q.ref).getTime()>oneWeekAgo; }catch(e){ return false; }});
+  const weekQ = myQ.filter(q=>{ try{ return new Date(q.savedAt).getTime()>oneWeekAgo; }catch(e){ return false; }});
 
   const sqEl = document.getElementById('stat-total-quotes');
   if(sqEl) sqEl.textContent = myQ.length || '0';
@@ -5587,7 +5608,7 @@ function renderHomeDash(){
 
   const saEl = document.getElementById('stat-avg-prem');
   if(saEl){
-    const prems = myQ.map(q=>parseFloat(q.totalPrem||q.prem||0)).filter(p=>p>0);
+    const prems = myQ.map(q=>parseFloat(q.totalP||0)).filter(p=>p>0);
     if(prems.length){
       const avg = prems.reduce((a,b)=>a+b,0)/prems.length;
       saEl.textContent = 'MK '+Math.round(avg).toLocaleString();
