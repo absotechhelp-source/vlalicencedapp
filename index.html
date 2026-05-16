@@ -4823,7 +4823,11 @@ function renderHistory(){
   // Combine PSP + EDU + MY + Phindu quotes with product tag
   const rawLocal = getLocalQuotes();
   const pspQ = rawLocal
-    .filter(q => !q.product || q.product === 'PSP' || q.product === 'Conventional Plans')
+    .filter(q => !q.product
+              || q.product === 'PSP'
+              || q.product === 'Pure Savings Plan'
+              || q.product === 'Conventional Plans'
+              || q.product === 'Pure Savings')
     .map(q=>({...q, _product:'PSP'}));
   const eduQ = rawLocal
     .filter(q => q.product === 'Educational Plans')
