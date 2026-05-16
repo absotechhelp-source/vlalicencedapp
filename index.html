@@ -570,12 +570,18 @@ input:checked+.tog-trk:before{transform:translateX(17px)}
             <span class="qa-label">Manga Yako</span>
           </div>
 
-          <!-- Agents -->
+          <!-- Agents (admin) / Proposals (agent) — same slot, role-aware -->
           <div class="qa-tile" id="admin-home-tile" style="display:none" onclick="switchTab('admin')">
             <div class="qa-icon" style="background:var(--CRL)">
               <svg viewBox="0 0 24 24" fill="none" stroke="var(--M2)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
             </div>
             <span class="qa-label">Agents</span>
+          </div>
+          <div class="qa-tile" id="bcard-home-tile" style="display:none" onclick="switchTab('bcard')">
+            <div class="qa-icon" style="background:var(--ML)">
+              <svg viewBox="0 0 24 24" fill="none" stroke="var(--M)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="14" rx="2"/><path d="M8 11h.01"/><path d="M8 15h.01"/><path d="M12 11h4"/><path d="M12 15h4"/></svg>
+            </div>
+            <span class="qa-label">My Card</span>
           </div>
 
           <!-- Resources (Share) -->
@@ -5479,7 +5485,9 @@ function closeMore(){
 ═══════════════════════════════════════════ */
 function renderHomeDash(){
   var adminTile = document.getElementById('admin-home-tile');
+  var bcardTile  = document.getElementById('bcard-home-tile');
   if(adminTile) adminTile.style.display = isAdmin ? 'flex' : 'none';
+  if(bcardTile)  bcardTile.style.display  = isAdmin ? 'none' : 'flex';
 
   // Time-of-day greeting
   const hr = new Date().getHours();
