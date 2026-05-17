@@ -3039,7 +3039,7 @@ input:checked+.tog-trk:before{transform:translateX(17px)}
 ═══════════════════════════════════════════ */
 const AGENTS_KEY = 'vla_agents_v2';
 const SHEETS_URL_KEY = 'vla_sheets_url';
-const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx6CSWIiSQqwSLrzjbhde9opvruGqlRl1AoLrBVdb4GTn/exec';
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxzxBEO1bQ1O-uv0nEJeXlilxjmvq8H2y9-6lJEFtf9hQh_Oa/exec';
 const ADMIN_USER = 'VLA Admin';
 const ADMIN_PIN  = '9999';  // Admin PIN — change via admin panel
 
@@ -3127,40 +3127,29 @@ function renderRecentQuotes(){
   const el = document.getElementById('home-recent-list');
   if(!el) return;
   try{
-    const _agentLower = (currentAgent||'').toLowerCase();
     const now = Date.now();
-
-    const rawPspEdu = getLocalQuotes();
-    const rawMy     = getLocalMyQuotes();
-    const rawPhindu = JSON.parse(localStorage.getItem(PHINDU_QUOTES_KEY)||'[]');
-
-    console.log('[RQ] localStorage — PSP/EDU:'+rawPspEdu.length+' MY:'+rawMy.length+' Phindu:'+rawPhindu.length+' agent:'+currentAgent+' isAdmin:'+isAdmin);
-
-    const psp = rawPspEdu
-      .filter(q => q && (!q.product||q.product==='PSP'||q.product==='Pure Savings Plan'||q.product==='Pure Savings'||q.product==='Conventional Plans'))
-      .map(q=>({ name:q.clientName||'—', ref:q.ref||'', prem:q.totalP||0, freq:q.isMo===false?'/yr':'/mo', date:q.savedAt||q.doq||'', badge:'PSP', agent:q.agent||'' }));
-
-    const edu = rawPspEdu
-      .filter(q => q && q.product==='Educational Plans')
-      .map(q=>({ name:q.clientName||q.parentName||'—', ref:q.ref||'', prem:q.totalPrem||0, freq:q.isMo===false?'/yr':'/mo', date:q.savedAt||q.doq||'', badge:'EDU', agent:q.agent||'' }));
-
-    const my = rawMy
+    // Collect all quotes from every bucket on this device — no agent filter
+    // (quotes on this device already belong to this agent via save/restore)
+    const psp = getLocalQuotes()
+      .filter(q => q && q.product !== 'Educational Plans')
+      .map(q => ({ name:q.clientName||'—', ref:q.ref||'', prem:q.totalP||0, freq:q.isMo===false?'/yr':'/mo', date:q.savedAt||q.doq||'', badge:'PSP' }));
+    const edu = getLocalQuotes()
+      .filter(q => q && q.product === 'Educational Plans')
+      .map(q => ({ name:q.clientName||q.parentName||'—', ref:q.ref||'', prem:q.totalPrem||0, freq:q.isMo===false?'/yr':'/mo', date:q.savedAt||q.doq||'', badge:'EDU' }));
+    const my  = getLocalMyQuotes()
       .filter(q => q)
-      .map(q=>({ name:q.clientName||'—', ref:q.ref||'', prem:q.prem||0, freq:'/mo', date:q.savedAt||q.doq||'', badge:'MY', agent:q.agent||'' }));
-
-    const ph = rawPhindu
+      .map(q => ({ name:q.clientName||'—', ref:q.ref||'', prem:q.prem||0, freq:'/mo', date:q.savedAt||q.doq||'', badge:'MY' }));
+    const ph  = JSON.parse(localStorage.getItem(PHINDU_QUOTES_KEY)||'[]')
       .filter(q => q)
-      .map(q=>({ name:q.name||'—', ref:q.ref||'', prem:q.premium||0, freq:'/mo', date:q.savedAt||'', badge:'PHINDU', agent:q.agent||'' }));
+      .map(q => ({ name:q.name||'—', ref:q.ref||'', prem:q.premium||0, freq:'/mo', date:q.savedAt||'', badge:'PHINDU' }));
 
-    let all = [...psp,...edu,...my,...ph].filter(q => q.name!=='—' || q.ref);
-    const beforeAgent = all.length;
-    if(!isAdmin && _agentLower){
-      all = all.filter(q => (q.agent||'').toLowerCase()===_agentLower || q.agent===currentAgent);
-    }
-    console.log('[RQ] before agent filter:'+beforeAgent+' after:'+all.length);
-
-    all = all
-      .sort((a,b)=>{ const da=new Date(b.date),db=new Date(a.date); return isNaN(da)?1:isNaN(db)?-1:da-db; })
+    const all = [...psp,...edu,...my,...ph]
+      .filter(q => q.name !== '—' || q.ref)
+      .sort((a,b) => {
+        const ta = new Date(a.date).getTime();
+        const tb = new Date(b.date).getTime();
+        return (isNaN(tb)?0:tb) - (isNaN(ta)?0:ta);
+      })
       .slice(0,4);
 
     if(!all.length){
@@ -3168,47 +3157,53 @@ function renderRecentQuotes(){
       return;
     }
 
-    const badgeStyle={
+    const badgeStyle = {
       PSP:    'background:var(--ML);color:var(--M)',
       MY:     'background:var(--ML);color:var(--M)',
       PHINDU: 'background:#D8C9B4;color:#641414',
       EDU:    'background:rgba(100,20,20,.07);color:var(--M)'
     };
 
-    function timeLabel(dateStr){
-      if(!dateStr) return '';
-      const ms = now - new Date(dateStr).getTime();
+    function timeLabel(d){
+      if(!d) return '';
+      const ms = now - new Date(d).getTime();
       if(isNaN(ms)||ms<0) return 'Today';
-      if(ms<120000)   return 'Just now';
-      if(ms<3600000)  return Math.floor(ms/60000)+'m ago';
-      if(ms<86400000) return Math.floor(ms/3600000)+'h ago';
-      if(ms<172800000)return 'Yesterday';
-      if(ms<604800000)return Math.floor(ms/86400000)+'d ago';
-      return new Date(dateStr).toLocaleDateString('en-GB',{day:'numeric',month:'short'});
+      if(ms < 120000)    return 'Just now';
+      if(ms < 3600000)   return Math.floor(ms/60000)+'m ago';
+      if(ms < 86400000)  return Math.floor(ms/3600000)+'h ago';
+      if(ms < 172800000) return 'Yesterday';
+      if(ms < 604800000) return Math.floor(ms/86400000)+'d ago';
+      return new Date(d).toLocaleDateString('en-GB',{day:'numeric',month:'short'});
     }
 
-    el.innerHTML = all.map(q => {
-      const initials = (q.name||'?').trim().split(/\s+/).map(w=>w[0]||'').join('').slice(0,2).toUpperCase();
-      const bs   = badgeStyle[q.badge]||badgeStyle.PSP;
-      const lbl  = timeLabel(q.date);
-      const ref  = q.ref ? ' · '+q.ref : '';
-      const prem = q.prem>0 ? 'MK '+Math.round(q.prem).toLocaleString()+q.freq : '—';
-      return '<div class="rq-row" onclick="switchTab(\'history\');setTimeout(()=>openHistModal(\''+q.ref+'\'),120)">'+
-        '<div class="rq-avatar">'+initials+'</div>'+
-        '<div class="rq-info">'+
-          '<div class="rq-name">'+q.name+'</div>'+
-          '<div class="rq-meta"><span class="rq-badge" style="'+bs+'">'+q.badge+'</span>'+ref+'</div>'+
-        '</div>'+
-        '<div class="rq-right">'+
-          '<div class="rq-prem">'+prem+'</div>'+
-          '<div style="font-size:10px;color:var(--T2);margin-top:1px">'+lbl+'</div>'+
-        '</div>'+
-      '</div>';
+    el.innerHTML = all.map(function(q){
+      var initials = (q.name||'?').trim().split(/\s+/).map(function(w){return w[0]||'';}).join('').slice(0,2).toUpperCase();
+      var bs   = badgeStyle[q.badge] || badgeStyle.PSP;
+      var prem = q.prem > 0 ? 'MK '+Math.round(q.prem).toLocaleString()+q.freq : '—';
+      var lbl  = timeLabel(q.date);
+      var safeRef = (q.ref||'').replace(/"/g,'');
+      var row = document.createElement('div');
+      row.className = 'rq-row';
+      row.setAttribute('data-ref', safeRef);
+      row.addEventListener('click', function(){
+        switchTab('history');
+        var _r = this.getAttribute('data-ref');
+        setTimeout(function(){ openHistModal(_r); }, 120);
+      });
+      row.innerHTML = '<div class="rq-avatar">'+initials+'</div>'
+        +'<div class="rq-info">'
+          +'<div class="rq-name">'+q.name+'</div>'
+          +'<div class="rq-meta"><span class="rq-badge" style="'+bs+'">'+q.badge+'</span>'+(q.ref?' &middot; '+q.ref:'')+'</div>'
+        +'</div>'
+        +'<div class="rq-right">'
+          +'<div class="rq-prem">'+prem+'</div>'
+          +'<div style="font-size:10px;color:var(--T2);margin-top:1px">'+lbl+'</div>'
+        +'</div>';
+      return row.outerHTML;
     }).join('');
 
-  } catch(err){
-    console.error('[RQ] error:', err);
-    el.innerHTML='<div style="text-align:center;padding:18px 0;font-size:12px;color:var(--T2)">No quotes yet</div>';
+  }catch(err){
+    console.error('[RQ]',err);
   }
 }
 function renderSyncBadge(){
@@ -3310,7 +3305,7 @@ async function checkLicence(){
   return { allowed: true };
 }
 function getAgents(){
-  const DEFAULTS = {'VLA Agent':{pin:'1625',role:'agent',active:true},'VLA Admin':{pin:'9999',role:'admin',active:true}};
+  const DEFAULTS = {'VLA Agent':{pin:'1234',role:'agent',active:true},'VLA Admin':{pin:'1234',role:'admin',active:true}};
   try {
     const stored = localStorage.getItem(AGENTS_KEY);
     if(stored) {
@@ -3802,21 +3797,26 @@ async function doLogin(){
   try { sheetsResult = await fetchAgentsFromSheets(); } catch(e){}
   btn.textContent='Sign In →'; btn.disabled=false;
 
+  // getAgents() always returns DEFAULTS when localStorage empty — no seed needed
+
   const agents = getAgents();
   const agent  = agents[user];
-
-  const agentNames = Object.keys(agents).join(', ');
 
   const agentPin    = typeof agent === 'object' ? agent.pin    : agent;
   const agentActive = typeof agent === 'object' ? agent.active : true;
   const agentRole   = typeof agent === 'object' ? agent.role   : 'agent';
 
+  console.log('[LOGIN] agentPin:', agentPin, '| agentActive:', agentActive, '| match:', agentPin===pin, '| sheetsFailed:', sheetsResult===null);
 
-
-  console.log('[LOGIN] agentPin:', agentPin, '| agentActive:', agentActive, '| match:', agentPin===pin);
-  // If agentPin is empty it means Sheets returned blank PIN — show specific error
+  // Agent genuinely not found (not even in defaults) — wrong name typed
+  if(!agent){
+    err.textContent='Agent name not found. Check spelling or ask your administrator.';
+    err.style.display='block';
+    return;
+  }
+  // Agent found but PIN blank = PIN not set up in Sheets
   if(agent && agentActive && !agentPin){
-    err.textContent='Your PIN has not been set up yet. Ask your administrator to reset your PIN.';
+    err.textContent='Your PIN has not been set up. Ask your administrator to reset your PIN in the Admin panel.';
     err.style.display='block';
     document.getElementById('l-pin').value='';
     document.getElementById('l-pin').focus();
@@ -3872,7 +3872,7 @@ async function doLogin(){
     // Flush any quotes that were saved while offline
     setTimeout(()=>flushSyncQueue(true), 2000);
     // Restore any missing quote history from Sheets (survives data clears & new devices)
-    setTimeout(()=>{ try{ restoreHistoryFromSheets(user); }catch(e){} }, 3000);
+    setTimeout(()=>{ try{ restoreHistoryFromSheets(user, false); }catch(e){} }, 3000);
   } else {
     err.style.display='block';
     document.getElementById('l-pin').value='';
@@ -4361,7 +4361,7 @@ function getLocalMyQuotes(){return JSON.parse(localStorage.getItem('vla_my_quote
 async function restoreHistoryFromSheets(agentName, showFeedback){
   const url = localStorage.getItem(SHEETS_URL_KEY) || APPS_SCRIPT_URL;
   if(!url || !agentName) return;
-  showToast('📋 Checking Sheets for your quotes…', 2500);
+  if(showFeedback) showToast('📋 Checking Sheets for your quotes…', 2500);
   try {
     const fetchPromise = fetch(url + '?action=getQuotes&agent=' + encodeURIComponent(agentName), {
       cache:'no-store', redirect:'follow', mode:'cors'
@@ -4371,7 +4371,7 @@ async function restoreHistoryFromSheets(agentName, showFeedback){
     const data = await res.json();
     console.log('[RESTORE] Sheets returned', data.quotes ? data.quotes.length : 0, 'quotes for', agentName);
     if(data.status !== 'ok' || !Array.isArray(data.quotes) || !data.quotes.length){
-      showToast('⚠️ No quotes found in Sheets for this agent', 4000);
+      if(showFeedback) showToast('⚠️ No quotes found in Sheets for this agent', 4000);
       return;
     }
 
@@ -4555,7 +4555,7 @@ async function restoreHistoryFromSheets(agentName, showFeedback){
     }
   } catch(e){
     console.warn('[RESTORE] Failed:', e.message);
-    showToast('⚠️ Could not reach Sheets — check connection', 4000);
+    if(showFeedback) showToast('⚠️ Could not reach Sheets — check connection', 4000);
   }
 }
 
@@ -4621,6 +4621,9 @@ async function syncToSheets(q){
 
 async function twoWaySync(){
   if(!currentAgent){ showToast('Please sign in first', 3000); return; }
+  // Clear any stale connection status so it doesn't contradict sync result
+  const _cs=document.getElementById('conn-status');
+  if(_cs){ _cs.style.display='none'; _cs.textContent=''; }
   showToast('🔄 Syncing with Sheets…', 2500);
   // Step 1: Flush any pending queue (failed live syncs)
   try{ await flushSyncQueue(true); }catch(e){}
@@ -4917,9 +4920,11 @@ function saveSheetURL(){
     .then(r=>r.json())
     .then(data=>{
       if(data.status==='ok'){
-        s.textContent='✓ Connected successfully — Apps Script v'+( data.message||'').replace(/[^0-9.]/g,'')+' online';
+        s.textContent='✓ Connected — Apps Script v'+( data.message||'').replace(/[^0-9.]/g,'')+' online';
         s.style.color='var(--M)';
         showToast('✓ Google Sheets connected');
+        // Auto-clear after 8s so stale status doesn't confuse later operations
+        setTimeout(()=>{ s.style.display='none'; s.textContent=''; }, 8000);
       } else {
         s.textContent='✓ URL reachable but returned: '+JSON.stringify(data);
         s.style.color='var(--M)';
@@ -4929,9 +4934,10 @@ function saveSheetURL(){
       // GET failed (CORS or network) — try no-cors POST as fallback
       fetch(raw, {method:'POST', mode:'no-cors', body:JSON.stringify({action:'ping'})})
         .then(()=>{
-          s.textContent='✓ URL saved. Connection test passed (CORS mode).';
+          s.textContent='✓ URL saved. Connection test passed.';
           s.style.color='var(--M)';
           showToast('✓ Google Sheets URL saved');
+          setTimeout(()=>{ s.style.display='none'; s.textContent=''; }, 8000);
         })
         .catch(()=>{
           s.textContent='⚠️ Cannot reach this URL. Check: (1) deployed as web app, (2) access set to Anyone, (3) URL copied correctly.';
