@@ -3142,7 +3142,7 @@ function renderRecentQuotes(){
 
     const edu = rawPspEdu
       .filter(q => q && q.product==='Educational Plans')
-      .map(q=>({ name:q.clientName||q.parentName||'—', ref:q.ref||'', prem:q.totalPrem||0, freq:q.isMo===false?'/yr':'/mo', date:q.savedAt||q.doq||'', badge:'EDU', agent:q.agent||'' }));
+      .map(q=>({ name:q.clientName||q.parentName||'—', ref:q.ref||'', prem:q.totalP||q.totalPrem||0, freq:q.isMo===false?'/yr':'/mo', date:q.savedAt||q.doq||'', badge:'EDU', agent:q.agent||'' }));
 
     const my = rawMy
       .filter(q => q)
@@ -3192,7 +3192,7 @@ function renderRecentQuotes(){
       const bs   = badgeStyle[q.badge]||badgeStyle.PSP;
       const lbl  = timeLabel(q.date);
       const ref  = q.ref ? ' · '+q.ref : '';
-      const prem = q.prem>0 ? 'MK '+Math.round(q.prem).toLocaleString()+q.freq : '—';
+      const prem = typeof q.prem==='number' && q.prem>0 ? 'MK '+Math.round(q.prem).toLocaleString()+q.freq : '—';
       return '<div class="rq-row" onclick="switchTab(\'history\');setTimeout(()=>openHistModal(\''+q.ref+'\'),120)">'+
         '<div class="rq-avatar">'+initials+'</div>'+
         '<div class="rq-info">'+
@@ -8822,7 +8822,7 @@ function eduGenerate(){
     units, unitSA, totalSA, colUnits, colSA, hasCollege,
     premTerm, freq, isMo,
     occCls:occCls==='0'?'Standard':occCls,
-    basicPrem, occPrem, colPrem, totalPrem, basicRate, occLoad,
+    basicPrem, occPrem, colPrem, totalPrem, totalP:totalPrem, basicRate, occLoad,
     doq, agent:currentAgent
   };
 
