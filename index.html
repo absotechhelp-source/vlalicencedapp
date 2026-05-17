@@ -3341,8 +3341,7 @@ async function fetchAgentsFromSheets(){
   try {
     const fetchPromise = fetch(url + '?action=getAgents', {
       cache:'no-store',
-      redirect:'follow',
-      mode:'cors'
+      redirect:'follow'
     });
     const timeoutPromise = new Promise((_,rej) => setTimeout(()=>rej(new Error('timeout')), 6000));
     const res = await Promise.race([fetchPromise, timeoutPromise]);
@@ -4364,7 +4363,7 @@ async function restoreHistoryFromSheets(agentName, showFeedback){
   if(showFeedback) showToast('📋 Checking Sheets for your quotes…', 2500);
   try {
     const fetchPromise = fetch(url + '?action=getQuotes&agent=' + encodeURIComponent(agentName), {
-      cache:'no-store', redirect:'follow', mode:'cors'
+      cache:'no-store', redirect:'follow'
     });
     const timeout = new Promise((_,rej) => setTimeout(()=>rej(new Error('timeout')), 12000));
     const res = await Promise.race([fetchPromise, timeout]);
@@ -4661,7 +4660,7 @@ async function retroSyncAllQuotes(silent){
     const agentParam = isAdmin ? '' : '&agent='+encodeURIComponent(currentAgent);
     try {
       const res = await Promise.race([
-        fetch(url+'?action='+action+agentParam, {cache:'no-store',redirect:'follow',mode:'cors'}),
+        fetch(url+'?action='+action+agentParam, {cache:'no-store',redirect:'follow'}),
         new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')),8000))
       ]);
       const data = await res.json();
@@ -4916,7 +4915,7 @@ function saveSheetURL(){
   s.textContent='Saved. Testing connection…';
 
   // Try GET first (works if CORS is allowed by Apps Script)
-  fetch(raw+'?action=ping')
+  fetch(raw+'?action=ping', {redirect:'follow'})
     .then(r=>r.json())
     .then(data=>{
       if(data.status==='ok'){
