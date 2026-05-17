@@ -2,7 +2,7 @@
    VLA Sales App — Service Worker v2.7
 ═══════════════════════════════════════════════════════ */
 
-const CACHE_VERSION = 'vla-v7.15';
+const CACHE_VERSION = 'vla-v7.16';
 const CACHE_NAME    = CACHE_VERSION;
 
 // Only cache static assets — NEVER index.html

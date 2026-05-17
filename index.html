@@ -3343,7 +3343,7 @@ async function fetchAgentsFromSheets(){
       cache:'no-store',
       redirect:'follow'
     });
-    const timeoutPromise = new Promise((_,rej) => setTimeout(()=>rej(new Error('timeout')), 6000));
+    const timeoutPromise = new Promise((_,rej) => setTimeout(()=>rej(new Error('timeout')), 20000));
     const res = await Promise.race([fetchPromise, timeoutPromise]);
     if(!res.ok && res.type !== 'opaque') throw new Error('HTTP '+res.status);
     const text = await res.text();
@@ -3636,7 +3636,7 @@ window.addEventListener('DOMContentLoaded', async ()=>{
     try {
       const r = await Promise.race([
         fetch('./licence.json?t='+Date.now(), {cache:'no-store', redirect:'follow', mode:'cors'}),
-        new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')),8000))
+        new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')),20000))
       ]);
       if(!r.ok) throw new Error('HTTP '+r.status);
       const d = await r.json();
@@ -4365,7 +4365,7 @@ async function restoreHistoryFromSheets(agentName, showFeedback){
     const fetchPromise = fetch(url + '?action=getQuotes&agent=' + encodeURIComponent(agentName), {
       cache:'no-store', redirect:'follow'
     });
-    const timeout = new Promise((_,rej) => setTimeout(()=>rej(new Error('timeout')), 12000));
+    const timeout = new Promise((_,rej) => setTimeout(()=>rej(new Error('timeout')), 25000));
     const res = await Promise.race([fetchPromise, timeout]);
     const data = await res.json();
     console.log('[RESTORE] Sheets returned', data.quotes ? data.quotes.length : 0, 'quotes for', agentName);
@@ -4554,7 +4554,19 @@ async function restoreHistoryFromSheets(agentName, showFeedback){
     }
   } catch(e){
     console.warn('[RESTORE] Failed:', e.message);
-    if(showFeedback) showToast('⚠️ Could not reach Sheets — check connection', 4000);
+    // Retry once after 3s before showing error — handles momentary mobile drops
+    if(showFeedback){
+      setTimeout(async ()=>{
+        try{
+          const res2 = await fetch(url+'?action=getQuotes&agent='+encodeURIComponent(agentName),{cache:'no-store',redirect:'follow'});
+          const d2   = await res2.json();
+          if(d2.status==='ok') showToast('✅ Connected to Sheets on retry', 3000);
+          else showToast('⚠️ Could not reach Sheets — check connection', 4000);
+        } catch(e2){
+          showToast('⚠️ Could not reach Sheets — check connection', 4000);
+        }
+      }, 3000);
+    }
   }
 }
 
@@ -4661,7 +4673,7 @@ async function retroSyncAllQuotes(silent){
     try {
       const res = await Promise.race([
         fetch(url+'?action='+action+agentParam, {cache:'no-store',redirect:'follow'}),
-        new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')),8000))
+        new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')),20000))
       ]);
       const data = await res.json();
       if(data.status === 'ok'){
