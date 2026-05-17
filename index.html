@@ -3339,8 +3339,7 @@ async function fetchAgentsFromSheets(){
   const url = localStorage.getItem(SHEETS_URL_KEY) || APPS_SCRIPT_URL;
   if(!url) return null;
   try {
-    const fetchPromise = fetch(url + '?action=getAgents', {
-      cache:'no-store',
+    const fetchPromise = fetch(url + '?action=getAgents&_t='+Date.now(), {
       redirect:'follow'
     });
     const timeoutPromise = new Promise((_,rej) => setTimeout(()=>rej(new Error('timeout')), 20000));
@@ -4362,8 +4361,8 @@ async function restoreHistoryFromSheets(agentName, showFeedback){
   if(!url || !agentName) return;
   if(showFeedback) showToast('📋 Checking Sheets for your quotes…', 2500);
   try {
-    const fetchPromise = fetch(url + '?action=getQuotes&agent=' + encodeURIComponent(agentName), {
-      cache:'no-store', redirect:'follow'
+    const fetchPromise = fetch(url + '?action=getQuotes&agent=' + encodeURIComponent(agentName) + '&_t='+Date.now(), {
+      redirect:'follow'
     });
     const timeout = new Promise((_,rej) => setTimeout(()=>rej(new Error('timeout')), 25000));
     const res = await Promise.race([fetchPromise, timeout]);
@@ -4558,7 +4557,7 @@ async function restoreHistoryFromSheets(agentName, showFeedback){
     if(showFeedback){
       setTimeout(async ()=>{
         try{
-          const res2 = await fetch(url+'?action=getQuotes&agent='+encodeURIComponent(agentName),{cache:'no-store',redirect:'follow'});
+          const res2 = await fetch(url+'?action=getQuotes&agent='+encodeURIComponent(agentName)+'&_t='+Date.now(),{redirect:'follow'});
           const d2   = await res2.json();
           if(d2.status==='ok') showToast('✅ Connected to Sheets on retry', 3000);
           else showToast('⚠️ Could not reach Sheets — check connection', 4000);
@@ -4672,7 +4671,7 @@ async function retroSyncAllQuotes(silent){
     const agentParam = isAdmin ? '' : '&agent='+encodeURIComponent(currentAgent);
     try {
       const res = await Promise.race([
-        fetch(url+'?action='+action+agentParam, {cache:'no-store',redirect:'follow'}),
+        fetch(url+'?action='+action+agentParam+'&_t='+Date.now(), {redirect:'follow'}),
         new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')),20000))
       ]);
       const data = await res.json();
