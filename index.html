@@ -3039,7 +3039,7 @@ input:checked+.tog-trk:before{transform:translateX(17px)}
 ═══════════════════════════════════════════ */
 const AGENTS_KEY = 'vla_agents_v2';
 const SHEETS_URL_KEY = 'vla_sheets_url';
-const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx6CSWIiSQqwSLrzjbhde9opvruGqlRl1AoLrBVdb4GTn/exec';
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxzxBEO1bQ1O-uv0nEJeXlilxjmvq8H2y9-6lJEFtf9hQh_Oa/exec';
 const ADMIN_USER = 'VLA Admin';
 const ADMIN_PIN  = '9999';  // Admin PIN — change via admin panel
 
@@ -5742,6 +5742,7 @@ function renderHomeDash(){
   if(ssEl) ssEl.textContent = persistSent + (sessionSentCount||0) || '0';
 
   renderSyncBadge();
+  try{renderRecentQuotes();}catch(e){}
 }
 
 function renderQuotesHub(){
@@ -7817,6 +7818,8 @@ function phinduResetQuote(){
 /* -- Sharing -- */
 function phinduShareWA(){
   if(!phinduQuoteData){showToast('Generate a quote first');return;}
+  sessionSentCount=(sessionSentCount||0)+1;
+  localStorage.setItem('vla_sent_count',String((parseInt(localStorage.getItem('vla_sent_count')||'0'))+1));
   captureQuoteImageFromEl(document.getElementById('phindu-q-doc'),canvas=>{
     const link=document.createElement('a');
     link.download='VLA-Phindu-'+phinduQuoteData.ref+'.png';
@@ -7844,6 +7847,8 @@ function phinduShareWA(){
 
 function phinduShareSMS(){
   if(!phinduQuoteData){showToast('Generate a quote first');return;}
+  sessionSentCount=(sessionSentCount||0)+1;
+  localStorage.setItem('vla_sent_count',String((parseInt(localStorage.getItem('vla_sent_count')||'0'))+1));
   const q=phinduQuoteData, f=v=>'MWK '+Math.round(v).toLocaleString();
   const location=[q.town,q.district].filter(Boolean).join(', ');
   const msg='VLA Phindu Savings Plan\nRef: '+q.ref+'\nClient: '+q.name+(q.gender?' ('+q.gender+')':'')+
@@ -7855,6 +7860,8 @@ function phinduShareSMS(){
 
 function phinduShareEmail(){
   if(!phinduQuoteData){showToast('Generate a quote first');return;}
+  sessionSentCount=(sessionSentCount||0)+1;
+  localStorage.setItem('vla_sent_count',String((parseInt(localStorage.getItem('vla_sent_count')||'0'))+1));
   const q=phinduQuoteData, f=v=>'MWK '+Math.round(v).toLocaleString();
   const sub='Phindu Savings Plan Quote — '+q.name+' ('+q.ref+')';
   const location=[q.town,q.district].filter(Boolean).join(', ');
@@ -9102,6 +9109,8 @@ function eduRenderDoc(q){
 /* ── 10. SHARE ── */
 function eduShareWA(){
   if(!eduCurrentQuote){ showToast('Generate a quote first'); return; }
+  sessionSentCount=(sessionSentCount||0)+1;
+  localStorage.setItem('vla_sent_count',String((parseInt(localStorage.getItem('vla_sent_count')||'0'))+1));
   const q = eduCurrentQuote;
   captureQuoteImageFromEl(document.getElementById('edu-q-doc'), canvas=>{
     const link = document.createElement('a');
@@ -9140,6 +9149,8 @@ function eduShareWA(){
 
 function eduShareSMS(){
   if(!eduCurrentQuote){ showToast('Generate a quote first'); return; }
+  sessionSentCount=(sessionSentCount||0)+1;
+  localStorage.setItem('vla_sent_count',String((parseInt(localStorage.getItem('vla_sent_count')||'0'))+1));
   const q = eduCurrentQuote;
   const freqLabel = q.isMo ? 'Monthly' : 'Annual';
   const txt =
