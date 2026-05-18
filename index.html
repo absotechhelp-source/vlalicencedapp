@@ -4427,6 +4427,8 @@ async function restoreHistoryFromSheets(agentName, showFeedback){
         colSA:     Number(r['College Benefit SA (MK)']   || 0),
         hasCollege:r['Has College Benefit'] === 'Yes',
         premTerm:  r['Premium Term (yrs)']               || '',
+        // Fallback: if totalPrem is 0, calculate from basicPrem + occPrem (for synced Sheets data)
+        _fixedPrem: false,
         // ── Manga Yako fields ─────────────────────────────────────────
         prem:        Number(r['Monthly Premium (MK)']          || 0),
         tmv:         Number(r['Target Maturity Value (MK)']    || 0),
@@ -4465,6 +4467,12 @@ async function restoreHistoryFromSheets(agentName, showFeedback){
                         ?BONUS[Number(q.term)]:Math.pow(1.07,Number(q.term));
               q.projM=Math.round(q.SA*_m);
             }catch(e){}
+          }
+          // FIX: Recalculate totalPrem for Educational Plans if it's 0 but basicPrem exists
+          if(q.product==='Educational Plans' && !q.totalPrem && q.basicPrem>0){
+            q.totalPrem = q.basicPrem + (q.colPrem||0);
+            q.totalP = q.totalPrem;  // Also set totalP for consistency
+            q._fixedPrem = true;
           }
           return q;
         });
