@@ -3142,7 +3142,7 @@ function renderRecentQuotes(){
 
     const edu = rawPspEdu
       .filter(q => q && q.product==='Educational Plans')
-      .map(q=>({ name:q.clientName||q.parentName||'—', ref:q.ref||'', prem:q.totalP||q.totalPrem||0, freq:q.isMo===false?'/yr':'/mo', date:q.savedAt||q.doq||'', badge:'EDU', agent:q.agent||'' }));
+      .map(q=>({ name:q.clientName||q.parentName||'—', ref:q.ref||'', prem:q.totalP||q.totalPrem||0, freq:q.isMo===false?'/yr':'/mo', date:q.savedAt||q.doq||'', badge:q.plan||'EDU', agent:q.agent||'', premTerm:q.premTerm, pANB:q.pANB, isMo:q.isMo }));
 
     const my = rawMy
       .filter(q => q)
@@ -3193,10 +3193,13 @@ function renderRecentQuotes(){
       const lbl  = timeLabel(q.date);
       const ref  = q.ref ? ' · '+q.ref : '';
       const prem = typeof q.prem==='number' && q.prem>0 ? 'MK '+Math.round(q.prem).toLocaleString()+q.freq : '—';
+      // For EDU products, add term and ANB info
+      const eduMeta = (q.premTerm||q.isMo!==undefined) ? (q.premTerm||'?')+' yrs · '+(q.isMo?'Monthly':'Annual')+' · Parent ANB '+(q.pANB||'—') : '';
       return '<div class="rq-row" onclick="switchTab(\'history\');setTimeout(()=>openHistModal(\''+q.ref+'\'),120)">'+
         '<div class="rq-avatar">'+initials+'</div>'+
         '<div class="rq-info">'+
           '<div class="rq-name">'+q.name+'</div>'+
+          (eduMeta ? '<div class="rq-meta" style="font-size:9px;color:var(--T2)">'+eduMeta+'</div>' : '')+
           '<div class="rq-meta"><span class="rq-badge" style="'+bs+'">'+q.badge+'</span>'+ref+'</div>'+
         '</div>'+
         '<div class="rq-right">'+
@@ -4423,10 +4426,18 @@ async function restoreHistoryFromSheets(agentName, showFeedback){
         totalSA:   Number(r['Sum Assured (MK)']          || 0),
         totalPrem: Number(r['Total Premium (MK)']        || 0),
         basicPrem: Number(r['Basic Premium (MK)']        || 0),
+        occPrem:   Number(r['Occ Loading Premium (MK)']  || 0),
         colPrem:   Number(r['College Premium (MK)']      || 0),
         colSA:     Number(r['College Benefit SA (MK)']   || 0),
         hasCollege:r['Has College Benefit'] === 'Yes',
         premTerm:  r['Premium Term (yrs)']               || '',
+        freq:      (r['Frequency']||'').toLowerCase()    || '',
+        isMo:      (r['Frequency']||'').toLowerCase() === 'monthly',
+        pANB:      Number(r['Parent ANB']                || 0) || Number(r['Parent Age Next Birthday'] || 0),
+        cANB:      Number(r['Child ANB']                 || 0) || Number(r['Child Age Next Birthday']  || 0),
+        parentName:r['Parent Name']                      || r['Parent Full Name'] || '',
+        childName: r['Child Name']                       || r['Child Full Name'] || '',
+        plan:      r['Plan Type']                        || r['Product Sub-Type'] || '',
         // Fallback: if totalPrem is 0, calculate from basicPrem + occPrem (for synced Sheets data)
         _fixedPrem: false,
         // ── Manga Yako fields ─────────────────────────────────────────
@@ -4469,8 +4480,8 @@ async function restoreHistoryFromSheets(agentName, showFeedback){
             }catch(e){}
           }
           // FIX: Recalculate totalPrem for Educational Plans if it's 0 but basicPrem exists
-          if(q.product==='Educational Plans' && !q.totalPrem && q.basicPrem>0){
-            q.totalPrem = q.basicPrem + (q.colPrem||0);
+          if(q.product==='Educational Plans' && !q.totalPrem && (q.basicPrem>0 || q.occPrem>0 || q.colPrem>0)){
+            q.totalPrem = (q.basicPrem||0) + (q.occPrem||0) + (q.colPrem||0);
             q.totalP = q.totalPrem;  // Also set totalP for consistency
             q._fixedPrem = true;
           }
@@ -4751,22 +4762,45 @@ async function retroSyncAllQuotes(silent){
   for(const q of toSyncPspEdu){
     const isEdu = (q.product||'') === 'Educational Plans';
     if(isEdu){
+      const _isWP = (q.plan==='lge-wp'||q.plan==='tep'||q.plan==='lgp-lc'||q.plan==='lgp-nl');
+      const _projSA    = _isWP ? Math.round(q.tmv || 0) : 0;
+      const _projColSA = q.hasCollege ? Math.round((q.colSA||0) * Math.pow(1.10, q.premTerm||0)) : 0;
       await send({
         action:'logEduQuote',
-        QuoteDate:q.doq||q.savedAt||'',  Reference:q.ref||'',  Agent:q.agent||'',
-        PlanName:q.planName||'',          PlanCode:q.plan||'',
-        ParentFirstName:q.clientFirstName||'',  ParentMiddleName:q.clientMiddleName||'',
-        ParentLastName:q.clientLastName||'',    ParentName:q.clientName||'',
-        ParentGender:q.gender||'',        ParentDOB:q.dob||'',  ParentANB:q.anb||'',
-        Phone:q.clientPhone||'',          Town:q.clientCity||'',  District:q.clientDistrict||'',
-        ChildName:q.childName||'',        ChildGender:q.childGender||'',
-        ChildDOB:q.childDob||'',          ChildANB:q.childAnb||'',
-        BasicSA:Math.round(q.totalSA||0),
-        CollegeSA:Math.round(q.colSA||0), HasCollege:q.hasCollege?'Yes':'No',
-        BasicPremium:Math.round(q.basicPrem||0), CollegePremium:Math.round(q.colPrem||0),
-        OccLoading:Math.round(q.occPrem||0),     TotalPremium:Math.round(q.totalPrem||0),
-        PremiumTerm:q.premTerm||'',       Frequency:q.isMo?'Monthly':'Annual',
-        OccClass:q.occCls||'Standard'
+        QuoteDate:       q.doq||q.savedAt||'',
+        Reference:       q.ref||'',
+        Agent:           q.agent||'',
+        PlanName:        q.planName||'',
+        PlanCode:        q.plan||'',
+        ParentFirstName: q.pFirstName||q.clientFirstName||'',
+        ParentMiddleName:q.pmname||q.pMiddleName||q.clientMiddleName||'',
+        ParentLastName:  q.plname||q.pLastName||q.clientLastName||'',
+        ParentName:      q.parentName||q.clientName||'',
+        ParentGender:    q.pGender||q.gender||'',
+        ParentDOB:       q.pdob||q.dob||'',
+        ParentANB:       String(q.pANB||q.anb||''),
+        ChildFirstName:  q.cFirstName||'',
+        ChildMiddleName: q.cMiddleName||q.cmname||'',
+        ChildLastName:   q.cLastName||q.clname||'',
+        ChildName:       q.childName||'',
+        ChildGender:     q.cGender||q.childGender||'',
+        ChildDOB:        q.cdob||q.childDob||'',
+        ChildANB:        String(q.cANB||q.childAnb||''),
+        Phone:           q.phone||q.clientPhone||'',
+        Town:            q.town||q.clientCity||'',
+        District:        q.district||q.clientDistrict||'',
+        BasicSA:         String(Math.round(q.totalSA||0)),
+        ProjectedSA:     String(_projSA),
+        CollegeSA:       String(Math.round(q.colSA||0)),
+        ProjectedColSA:  String(_projColSA),
+        HasCollege:      q.hasCollege?'Yes':'No',
+        BasicPremium:    String(Math.round(q.basicPrem||0)),
+        CollegePremium:  String(Math.round(q.colPrem||0)),
+        OccLoading:      String(Math.round(q.occPrem||0)),
+        TotalPremium:    String(Math.round(q.totalPrem||q.totalP||0)),
+        PremiumTerm:     String(q.premTerm||''),
+        Frequency:       q.isMo?'Monthly':'Annual',
+        OccClass:        q.occCls||'Standard'
       });
     } else {
       await send({
