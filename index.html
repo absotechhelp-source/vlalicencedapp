@@ -3352,9 +3352,8 @@ async function fetchAgentsFromSheets(){
   if(!url) return null;
   try {
     const fetchPromise = fetch(url + '?action=getAgents', {
-      cache:'no-store',
-      redirect:'follow',
-      mode:'cors'
+      cache:'no-store'
+      // No mode:'cors' — avoids redirect CORS issue with Google Apps Script
     });
     const timeoutPromise = new Promise((_,rej) => setTimeout(()=>rej(new Error('timeout')), 6000));
     const res = await Promise.race([fetchPromise, timeoutPromise]);
@@ -3783,6 +3782,7 @@ window.addEventListener('DOMContentLoaded', async ()=>{
         try { switchTab('home'); } catch(e){}
         setTimeout(()=>{ try{ renderHomeDash(); }catch(e){} }, 80);
         setTimeout(()=>{ try{ flushSyncQueue(true); }catch(e){} }, 2000);
+        setTimeout(()=>{ try{ restoreHistoryFromSheets(saved.agent); }catch(e){} }, 4000);
       } else {
         // Agent was deactivated or removed — clear the stale session
         try { localStorage.removeItem(SESSION_KEY); } catch(_){}
@@ -4403,11 +4403,17 @@ async function restoreHistoryFromSheets(agentName, showFeedback){
   showToast('📋 Checking Sheets for your quotes…', 2500);
   try {
     const fetchPromise = fetch(url + '?action=getQuotes&agent=' + encodeURIComponent(agentName), {
-      cache:'no-store', redirect:'follow', mode:'cors'
+      cache:'no-store'
+      // No mode:'cors' — let browser handle CORS negotiation and redirect chain naturally
+      // Google Apps Script redirects via 302; strict mode:'cors' blocks the redirect response
     });
-    const timeout = new Promise((_,rej) => setTimeout(()=>rej(new Error('timeout')), 12000));
+    const timeout = new Promise((_,rej) => setTimeout(()=>rej(new Error('timeout')), 15000));
     const res = await Promise.race([fetchPromise, timeout]);
-    const data = await res.json();
+    if(!res.ok) throw new Error('HTTP '+res.status);
+    const text = await res.text();
+    let data;
+    try { data = JSON.parse(text); }
+    catch(pe){ throw new Error('Bad JSON from Sheets: '+text.slice(0,80)); }
     console.log('[RESTORE] Sheets returned', data.quotes ? data.quotes.length : 0, 'quotes for', agentName);
     if(data.status !== 'ok' || !Array.isArray(data.quotes) || !data.quotes.length){
       console.warn('[RESTORE] No quotes returned — status:', data.status, 'count:', data.quotes?.length);
@@ -4735,10 +4741,14 @@ async function retroSyncAllQuotes(silent){
     const agentParam = isAdmin ? '' : '&agent='+encodeURIComponent(currentAgent);
     try {
       const res = await Promise.race([
-        fetch(url+'?action='+action+agentParam, {cache:'no-store',redirect:'follow',mode:'cors'}),
+        fetch(url+'?action='+action+agentParam, {cache:'no-store'}),
+        // No mode:'cors' — avoids redirect CORS issue with Google Apps Script
         new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')),8000))
       ]);
-      const data = await res.json();
+      if(!res.ok) return;
+      const text = await res.text();
+      let data;
+      try { data = JSON.parse(text); } catch(e){ return; }
       if(data.status === 'ok'){
         const items = data.quotes || data.refs || [];
         items.forEach(item => {
@@ -4747,7 +4757,7 @@ async function retroSyncAllQuotes(silent){
           if(ref) existingRefs.add(ref.trim().toUpperCase());
         });
       }
-    } catch(e){}
+    } catch(e){ console.warn('[RETROSYNC] fetchRefs failed:', e.message); }
   }
   await fetchRefs('getQuotes');
   await fetchRefs('getProposals');
