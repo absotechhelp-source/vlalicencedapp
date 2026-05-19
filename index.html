@@ -4410,9 +4410,12 @@ async function restoreHistoryFromSheets(agentName, showFeedback){
     const data = await res.json();
     console.log('[RESTORE] Sheets returned', data.quotes ? data.quotes.length : 0, 'quotes for', agentName);
     if(data.status !== 'ok' || !Array.isArray(data.quotes) || !data.quotes.length){
+      console.warn('[RESTORE] No quotes returned — status:', data.status, 'count:', data.quotes?.length);
       showToast('⚠️ No quotes found in Sheets for this agent', 4000);
       return;
     }
+    console.log('[RESTORE] Products in response:', [...new Set(data.quotes.map(q=>q['Product']))]);
+    console.log('[RESTORE] Agents in response:',  [...new Set(data.quotes.map(q=>q['Agent']))]);
 
     let totalRestored = 0;
 
@@ -4495,14 +4498,26 @@ async function restoreHistoryFromSheets(agentName, showFeedback){
       return true;
     });
     if(pspEduRows.length > 0){
+      // Build a map of local refs → quote (to detect broken ones that should be overwritten)
       const local     = getLocalQuotes();
-      const localRefs = new Set(local.map(q => (q.ref||'').toUpperCase()));
+      const localRefMap = {};
+      local.forEach(q => { if(q.ref) localRefMap[(q.ref||'').toUpperCase()] = q; });
+
+      function isHealthyLocal(q){
+        if(!q) return false;
+        if(q.product === 'Educational Plans')
+          return q.totalPrem > 0 && q.premTerm && q.pANB > 0;
+        // PSP / default
+        return q.totalP > 0 && q.term && q.term !== '';
+      }
+
       const incoming  = pspEduRows
         .filter(r => {
           const ref = (r['Reference']||'').toUpperCase();
-          // If ref exists, check it's not already local
-          // If ref is empty, always include (can't dedup without ref)
-          return !ref || !localRefs.has(ref);
+          if(!ref) return true;                         // no ref — always include
+          const existing = localRefMap[ref];
+          if(!existing) return true;                    // not local — include
+          return !isHealthyLocal(existing);             // broken local — override with Sheets
         })
         .map(mapSheetQuote)
         .map(q => {
@@ -4524,9 +4539,16 @@ async function restoreHistoryFromSheets(agentName, showFeedback){
           return q;
         });
       if(incoming.length > 0){
-        const merged = [...incoming, ...local].slice(0, 200);
+        // Replace broken local quotes with Sheets versions — keep only healthy local quotes
+        const incomingRefs = new Set(incoming.map(q => (q.ref||'').toUpperCase()));
+        const healthyLocal = local.filter(q => !incomingRefs.has((q.ref||'').toUpperCase()));
+        const merged = [...incoming, ...healthyLocal].slice(0, 200);
         localStorage.setItem('vla_quotes', JSON.stringify(merged));
         totalRestored += incoming.length;
+        console.log('[RESTORE] PSP/EDU: restored', incoming.length, '— healthy local kept:', healthyLocal.length);
+        incoming.forEach(q => console.log('[RESTORE]  ', q.product||'PSP', q.ref, 'totalP:', q.totalP, 'totalPrem:', q.totalPrem, 'pANB:', q.pANB, 'premTerm:', q.premTerm));
+      } else {
+        console.log('[RESTORE] PSP/EDU: all', pspEduRows.length, 'Sheets quotes are already healthy in localStorage — nothing overridden');
       }
     }
 
