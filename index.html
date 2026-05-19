@@ -2128,15 +2128,17 @@ input:checked+.tog-trk:before{transform:translateX(17px)}
         <!-- App settings (visible to all) -->
         <div class="card">
           <div class="sec-lbl">App Settings</div>
-          <div class="setting-row"><span class="setting-lbl">Google Sheets URL</span></div>
-          <div style="font-size:10px;color:var(--T2);margin-bottom:6px">
-            Paste the <strong>deployment URL</strong> — must start with:<br>
-            <code style="font-size:9px;background:#f5f5f5;padding:2px 4px;border-radius:3px">https://script.google.com/macros/s/</code> and end with <code style="font-size:9px;background:#f5f5f5;padding:2px 4px;border-radius:3px">/exec</code><br>
-            <span style="color:#991b1b;font-size:9px">❌ Do NOT use the library URL (/macros/library/d/…)</span>
+          <div id="sheets-url-admin-section">
+            <div class="setting-row"><span class="setting-lbl">Google Sheets URL</span></div>
+            <div style="font-size:10px;color:var(--T2);margin-bottom:6px">
+              Paste the <strong>deployment URL</strong> — must start with:<br>
+              <code style="font-size:9px;background:#f5f5f5;padding:2px 4px;border-radius:3px">https://script.google.com/macros/s/</code> and end with <code style="font-size:9px;background:#f5f5f5;padding:2px 4px;border-radius:3px">/exec</code><br>
+              <span style="color:#991b1b;font-size:9px">❌ Do NOT use the library URL (/macros/library/d/…)</span>
+            </div>
+            <input class="f-inp" type="url" id="sheets-url" placeholder="https://script.google.com/macros/s/…/exec" style="font-size:11px;margin-bottom:8px">
+            <button class="btn-primary btn-secondary" style="padding:9px;font-size:13px" onclick="saveSheetURL()">Save &amp; Test</button>
+            <div id="conn-status" style="font-size:12px;color:var(--T2);display:none;margin-top:6px"></div>
           </div>
-          <input class="f-inp" type="url" id="sheets-url" placeholder="https://script.google.com/macros/s/…/exec" style="font-size:11px;margin-bottom:8px">
-          <button class="btn-primary btn-secondary" style="padding:9px;font-size:13px" onclick="saveSheetURL()">Save &amp; Test</button>
-          <div id="conn-status" style="font-size:12px;color:var(--T2);display:none;margin-top:6px"></div>
           <div style="margin-top:12px;padding:10px 12px;background:#f5e0e0;border-radius:8px;font-size:12px;color:#641414;line-height:1.5">
             <strong>Sync quotes with Google Sheets</strong> — uploads any quotes missing from Sheets and restores any quotes missing on this device. Safe to run anytime.
           </div>
@@ -3039,6 +3041,8 @@ input:checked+.tog-trk:before{transform:translateX(17px)}
 ═══════════════════════════════════════════ */
 const AGENTS_KEY = 'vla_agents_v2';
 const SHEETS_URL_KEY = 'vla_sheets_url';
+const SHEETS_URL_VERSION = 'v3.2';  // Bump this when APPS_SCRIPT_URL changes
+const SHEETS_URL_VER_KEY = 'vla_sheets_url_ver';
 const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxzxBEO1bQ1O-uv0nEJeXlilxjmvq8H2y9-6lJEFtf9hQh_Oa/exec';
 const ADMIN_USER = 'VLA Admin';
 const ADMIN_PIN  = '9999';  // Admin PIN — change via admin panel
@@ -3722,11 +3726,14 @@ window.addEventListener('DOMContentLoaded', async ()=>{
   const t=new Date();
   const today=`${t.getFullYear()}-${String(t.getMonth()+1).padStart(2,'0')}-${String(t.getDate()).padStart(2,'0')}`;
   document.getElementById('c-doq').value=today;
-  // Always ensure the Sheets URL is set — if localStorage was cleared, restore from the
-  // hardcoded default. If the user has saved a custom URL, preserve it.
-  const savedUrl = localStorage.getItem(SHEETS_URL_KEY);
-  const url = (savedUrl && savedUrl.startsWith('https://script.google.com')) ? savedUrl : APPS_SCRIPT_URL;
+  // Always ensure the Sheets URL is set — force-update if a new deployment version
+  // is detected so ALL agents automatically use the latest Apps Script URL.
+  const savedUrl  = localStorage.getItem(SHEETS_URL_KEY);
+  const savedVer  = localStorage.getItem(SHEETS_URL_VER_KEY);
+  const urlOutdated = !savedVer || savedVer !== SHEETS_URL_VERSION;
+  const url = (!savedUrl || urlOutdated) ? APPS_SCRIPT_URL : savedUrl;
   localStorage.setItem(SHEETS_URL_KEY, url);
+  localStorage.setItem(SHEETS_URL_VER_KEY, SHEETS_URL_VERSION);
   document.getElementById('sheets-url').value=url;
   document.getElementById('l-pin').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin();});
   document.getElementById('l-user').addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('l-pin').focus();});
@@ -3865,6 +3872,9 @@ async function doLogin(){
     // Show admin option in More menu
     const moreAdmin=document.getElementById('more-admin-item');
     if(moreAdmin)moreAdmin.style.display=isAdmin?'flex':'none';
+    // Show Sheets URL setting only to admins — agents use the auto-configured URL
+    const sheetsAdminSection=document.getElementById('sheets-url-admin-section');
+    if(sheetsAdminSection)sheetsAdminSection.style.display=isAdmin?'':'none';
     // Load profile saved data
     loadProfileData();
     // Start on home dashboard
@@ -3874,6 +3884,32 @@ async function doLogin(){
     showToast('Welcome, '+user+'!');
     // Flush any quotes that were saved while offline
     setTimeout(()=>flushSyncQueue(true), 2000);
+    // ── EDU MIGRATION: purge broken EDU quotes (missing premium/term/ANB) so they
+    //    re-pull cleanly from Sheets with corrected field mapping ──────────────────
+    setTimeout(()=>{
+      try{
+        const stored = getLocalQuotes();
+        const broken = stored.filter(q =>
+          q.product === 'Educational Plans' && (
+            !q.totalPrem || q.totalPrem === 0 ||
+            !q.premTerm  || q.premTerm  === '' ||
+            !q.pANB      || q.pANB      === 0
+          )
+        );
+        if(broken.length > 0){
+          // Keep only healthy EDU quotes + all non-EDU quotes
+          const healthy = stored.filter(q => !(
+            q.product === 'Educational Plans' && (
+              !q.totalPrem || q.totalPrem === 0 ||
+              !q.premTerm  || q.premTerm  === '' ||
+              !q.pANB      || q.pANB      === 0
+            )
+          ));
+          localStorage.setItem('vla_quotes', JSON.stringify(healthy));
+          console.log('[EDU-MIGRATION] Removed '+broken.length+' broken EDU quotes — will re-fetch from Sheets');
+        }
+      }catch(e){ console.warn('[EDU-MIGRATION] error:', e); }
+    }, 1000);
     // Restore any missing quote history from Sheets (survives data clears & new devices)
     setTimeout(()=>{ try{ restoreHistoryFromSheets(user); }catch(e){} }, 3000);
   } else {
@@ -4426,18 +4462,18 @@ async function restoreHistoryFromSheets(agentName, showFeedback){
         totalSA:   Number(r['Sum Assured (MK)']          || 0),
         totalPrem: Number(r['Total Premium (MK)']        || 0),
         basicPrem: Number(r['Basic Premium (MK)']        || 0),
-        occPrem:   Number(r['Occ Loading Premium (MK)']  || 0),
+        occPrem:   Number(r['Occ Loading (MK)']          || 0),  // matches QUOTE_HEADERS exactly
         colPrem:   Number(r['College Premium (MK)']      || 0),
         colSA:     Number(r['College Benefit SA (MK)']   || 0),
         hasCollege:r['Has College Benefit'] === 'Yes',
         premTerm:  r['Premium Term (yrs)']               || '',
         freq:      (r['Frequency']||'').toLowerCase()    || '',
         isMo:      (r['Frequency']||'').toLowerCase() === 'monthly',
-        pANB:      Number(r['Parent ANB']                || 0) || Number(r['Parent Age Next Birthday'] || 0),
-        cANB:      Number(r['Child ANB']                 || 0) || Number(r['Child Age Next Birthday']  || 0),
-        parentName:r['Parent Name']                      || r['Parent Full Name'] || '',
-        childName: r['Child Name']                       || r['Child Full Name'] || '',
-        plan:      r['Plan Type']                        || r['Product Sub-Type'] || '',
+        pANB:      Number(r['ANB']                       || 0),   // EDU writes parent ANB to 'ANB' column
+        cANB:      Number(r['Child ANB']                 || 0),
+        parentName:r['Full Name']                        || '',   // EDU writes parent name to 'Full Name' column
+        childName: r['Child Full Name']                  || '',
+        // plan already mapped from 'Plan Code' above
         // Fallback: if totalPrem is 0, calculate from basicPrem + occPrem (for synced Sheets data)
         _fixedPrem: false,
         // ── Manga Yako fields ─────────────────────────────────────────
@@ -4952,6 +4988,7 @@ function saveSheetURL(){
 
   // ── URL looks correct — save and test ────────────────────────────────
   localStorage.setItem(SHEETS_URL_KEY, raw);
+  localStorage.setItem(SHEETS_URL_VER_KEY, SHEETS_URL_VERSION);  // mark as manually set for this version
   s.textContent='Saved. Testing connection…';
 
   // Try GET first (works if CORS is allowed by Apps Script)
@@ -5007,7 +5044,12 @@ function renderHistory(){
     .filter(q => q.product === 'Educational Plans')
     .map(q=>({...q, _product:'EDU',
       clientName: q.clientName || q.parentName || '',
-      totalP: q.totalPrem, SA: q.totalSA, projM: q.totalSA
+      totalPrem:  q.totalPrem || q.totalP || (q.basicPrem||0)+(q.occPrem||0)+(q.colPrem||0),
+      totalP:     q.totalP    || q.totalPrem || (q.basicPrem||0)+(q.occPrem||0)+(q.colPrem||0),
+      SA: q.totalSA, projM: q.totalSA,
+      premTerm: q.premTerm || '',
+      pANB:     q.pANB || '',
+      isMo:     q.isMo !== undefined ? q.isMo : (q.freq||'').toLowerCase()==='monthly'
     }));
   const myQ  = getLocalMyQuotes().map(q=>({...q,_product:'MY', ref:q.ref,
     clientName:q.clientName,agent:q.agent,savedAt:q.savedAt,doq:q.doq,
