@@ -4282,8 +4282,28 @@ function generateQuote(){
    RENDER QUOTE DOCUMENT (reusable for live + history modal)
 ═══════════════════════════════════════════ */
 function renderQuoteDoc(q, docId, isModal){
-  const {ref,doq,clientName,clientPhone,clientEmail,gender,occupation,occClass,
-         anb,term,SA,isMo,basicP,dabP,policyFee,totalP,projM,dabIncluded,dabR1k,matAge,selectedOcc:so} = q;
+  // Coerce all numeric fields — Sheets-restored quotes may have strings
+  const ref       = q.ref       || '';
+  const doq       = q.doq       || q.savedAt || '';
+  const clientName= q.clientName|| '';
+  const clientPhone=q.clientPhone|| '';
+  const clientEmail=q.clientEmail|| '';
+  const gender    = q.gender    || '';
+  const occupation= q.occupation|| '';
+  const occClass  = q.occClass  || q.occCls || '1';
+  const anb       = Number(q.anb)      || 0;
+  const term      = Number(q.term)     || 0;
+  const SA        = Number(q.SA)       || 0;
+  const isMo      = !!q.isMo;
+  const basicP    = Number(q.basicP)   || 0;
+  const dabP      = Number(q.dabP)     || 0;
+  const policyFee = Number(q.policyFee)|| 0;
+  const totalP    = Number(q.totalP)   || 0;
+  const projM     = Number(q.projM)    || 0;
+  const dabIncluded = !!q.dabIncluded;
+  const dabR1k    = Number(q.dabR1k)   || 0;
+  const matAge    = Number(q.matAge)   || (anb && term ? anb + term - 1 : 0);
+  const so        = q.selectedOcc      || null;
   const feeAmt = isMo ? FEE_M : FEE_A;
   const baseRt = (isMo ? MR : AR)[anb][term];
   const aUnits = SA / 10000;
@@ -4454,7 +4474,7 @@ async function restoreHistoryFromSheets(agentName, showFeedback){
         clientLastName:  String(r['Last Name']          || ''),
         gender:          String(r['Gender']             || ''),
         dob:             String(r['DOB']                || ''),
-        anb:             String(r['ANB']                || ''),
+        anb:             Number(r['ANB']                || 0),
         clientPhone:     String(r['Phone']              || ''),
         clientEmail:     String(r['Email']              || ''),
         clientCity:      String(r['Town / City']        || ''),
@@ -4474,7 +4494,7 @@ async function restoreHistoryFromSheets(agentName, showFeedback){
         dabP:        Number(r['DAB Premium (MK)']        || 0),
         policyFee:   Number(r['Policy Fee (MK)']         || 0),
         projM:       Number(r['Projected SA (MK)']       || 0),
-        term:        String(r['Premium Term (yrs)']      || ''),
+        term:        Number(r['Premium Term (yrs)']      || 0),
         mode:        String(r['Mode']                    || 'sa'),
         dabIncluded: String(r['Riders'] || '').includes('DAB'),
         // ── Edu fields ────────────────────────────────────────────────
@@ -4485,7 +4505,7 @@ async function restoreHistoryFromSheets(agentName, showFeedback){
         colPrem:     Number(r['College Premium (MK)']    || 0),
         colSA:       Number(r['College Benefit SA (MK)'] || 0),
         hasCollege:  String(r['Has College Benefit']     || '') === 'Yes',
-        premTerm:    String(r['Premium Term (yrs)']      || ''),
+        premTerm:    Number(r['Premium Term (yrs)']      || 0),
         pANB:        Number(r['ANB']                     || 0),
         cANB:        Number(r['Child ANB']               || 0),
         parentName:  String(r['Full Name']               || ''),
