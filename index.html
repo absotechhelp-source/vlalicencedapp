@@ -4399,18 +4399,28 @@ async function restoreHistoryFromSheets(agentName, showFeedback){
   if(!url || !agentName) return;
   showToast('📋 Checking Sheets for your quotes…', 2500);
   try {
+    // ── Pre-flight: verify script is healthy before fetching all quotes ──
+    const pingRes  = await Promise.race([
+      fetch(url + '?action=ping'),
+      new Promise((_,rej) => setTimeout(()=>rej(new Error('timeout')), 8000))
+    ]);
+    const pingText = await pingRes.text();
+    let pingData;
+    try { pingData = JSON.parse(pingText); } catch(e){ throw new Error('Script error (ping bad JSON): '+pingText.slice(0,120)); }
+    if(pingData.status !== 'ok') throw new Error('Script unhealthy: '+JSON.stringify(pingData));
+
+    // ── Fetch quotes ──────────────────────────────────────────────────────
     const fetchUrl = url + '?action=getQuotes&agent=' + encodeURIComponent(agentName);
     console.log('[RESTORE] Fetching:', fetchUrl);
-    // Bare fetch — no options — matches the working ping exactly
     const res = await Promise.race([
       fetch(fetchUrl),
-      new Promise((_,rej) => setTimeout(()=>rej(new Error('timeout')), 20000))
+      new Promise((_,rej) => setTimeout(()=>rej(new Error('timeout after 25s')), 25000))
     ]);
     const text = await res.text();
     console.log('[RESTORE] Raw response (first 300):', text.slice(0,300));
     let data;
     try { data = JSON.parse(text); }
-    catch(pe){ throw new Error('Bad JSON: '+text.slice(0,120)); }
+    catch(pe){ throw new Error('getQuotes returned non-JSON: "'+text.slice(0,200)+'"'); }
     console.log('[RESTORE] Sheets returned', data.quotes ? data.quotes.length : 0, 'quotes for', agentName);
     if(data.status !== 'ok' || !Array.isArray(data.quotes) || !data.quotes.length){
       console.warn('[RESTORE] No quotes returned — status:', data.status, 'count:', data.quotes?.length);
