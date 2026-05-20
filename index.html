@@ -4434,68 +4434,67 @@ async function restoreHistoryFromSheets(agentName, showFeedback){
 
     // ── Helper: map a Sheets row back to the local quote format ──
     function mapSheetQuote(r){
-      const _isMo = (r['Frequency']||'').toLowerCase() === 'monthly';
+      // Sheets can return numbers, booleans or Date objects for any cell.
+      // Always coerce to string before calling string methods.
+      const _freq = String(r['Frequency'] || '').toLowerCase();
+      const _isMo = _freq === 'monthly';
       return {
         // ── Core ──────────────────────────────────────────────────────
-        ref:        r['Reference']         || r['ref']         || '',
-        agent:      r['Agent']             || '',
-        doq:        r['Quote Date']        || '',
-        savedAt:    r['Timestamp']         || r['Quote Date']  || '',
-        product:    r['Product']           || '',
-        planName:   r['Plan Name']         || '',
-        plan:       r['Plan Code']         || '',
+        ref:        String(r['Reference']  || r['ref']      || ''),
+        agent:      String(r['Agent']      || ''),
+        doq:        String(r['Quote Date'] || ''),
+        savedAt:    String(r['Timestamp']  || r['Quote Date']|| ''),
+        product:    String(r['Product']    || ''),
+        planName:   String(r['Plan Name']  || ''),
+        plan:       String(r['Plan Code']  || ''),
         // ── Client ────────────────────────────────────────────────────
-        clientName:      r['Full Name']            || r['clientName'] || '',
-        clientFirstName: r['First Name']           || '',
-        clientMiddleName:r['Middle Name']          || '',
-        clientLastName:  r['Last Name']            || '',
-        gender:          r['Gender']               || '',
-        dob:             r['DOB']                  || '',
-        anb:             r['ANB']                  || '',
-        clientPhone:     r['Phone']                || '',
-        clientEmail:     r['Email']                || '',
-        clientCity:      r['Town / City']          || '',
-        clientDistrict:  r['District / Country']   || '',
-        clientCountry:   r['District / Country']   || '',
-        occupation:      r['Occupation']           || '',
-        occClass:        r['Occupation Class']     || '',
-        occCls:          r['Occupation Class']     || '',
-        // ── PSP fields ────────────────────────────────────────────────
-        SA:        Number(r['Sum Assured (MK)']    || 0),
-        isMo:      _isMo,
-        freq:      (r['Frequency']||'').toLowerCase() || '',
-        totalP:    _isMo
-                     ? Number(r['Monthly Premium (MK)'] || 0)
-                     : Number(r['Annual Premium (MK)']  || r['Total Premium (MK)'] || 0),
-        basicP:    Number(r['Basic Premium (MK)']  || 0),
-        dabP:      Number(r['DAB Premium (MK)']    || 0),
-        policyFee: Number(r['Policy Fee (MK)']     || 0),
-        projM:     Number(r['Projected SA (MK)']   || 0),  // no SA fallback — recalculate below if zero
-        term:      r['Premium Term (yrs)']         || '',
-        mode:      r['Mode']                       || 'sa',
-        dabIncluded: (r['Riders']||'').includes('DAB'),
+        clientName:      String(r['Full Name']          || r['clientName'] || ''),
+        clientFirstName: String(r['First Name']         || ''),
+        clientMiddleName:String(r['Middle Name']        || ''),
+        clientLastName:  String(r['Last Name']          || ''),
+        gender:          String(r['Gender']             || ''),
+        dob:             String(r['DOB']                || ''),
+        anb:             String(r['ANB']                || ''),
+        clientPhone:     String(r['Phone']              || ''),
+        clientEmail:     String(r['Email']              || ''),
+        clientCity:      String(r['Town / City']        || ''),
+        clientDistrict:  String(r['District / Country'] || ''),
+        clientCountry:   String(r['District / Country'] || ''),
+        occupation:      String(r['Occupation']         || ''),
+        occClass:        String(r['Occupation Class']   || ''),
+        occCls:          String(r['Occupation Class']   || ''),
+        // ── PSP / shared fields ───────────────────────────────────────
+        SA:          Number(r['Sum Assured (MK)']        || 0),
+        isMo:        _isMo,
+        freq:        _freq,
+        totalP:      _isMo
+                       ? Number(r['Monthly Premium (MK)'] || 0)
+                       : Number(r['Annual Premium (MK)']  || r['Total Premium (MK)'] || 0),
+        basicP:      Number(r['Basic Premium (MK)']      || 0),
+        dabP:        Number(r['DAB Premium (MK)']        || 0),
+        policyFee:   Number(r['Policy Fee (MK)']         || 0),
+        projM:       Number(r['Projected SA (MK)']       || 0),
+        term:        String(r['Premium Term (yrs)']      || ''),
+        mode:        String(r['Mode']                    || 'sa'),
+        dabIncluded: String(r['Riders'] || '').includes('DAB'),
         // ── Edu fields ────────────────────────────────────────────────
-        totalSA:   Number(r['Sum Assured (MK)']          || 0),
-        totalPrem: Number(r['Total Premium (MK)']        || 0),
-        basicPrem: Number(r['Basic Premium (MK)']        || 0),
-        occPrem:   Number(r['Occ Loading (MK)']          || 0),  // matches QUOTE_HEADERS exactly
-        colPrem:   Number(r['College Premium (MK)']      || 0),
-        colSA:     Number(r['College Benefit SA (MK)']   || 0),
-        hasCollege:r['Has College Benefit'] === 'Yes',
-        premTerm:  r['Premium Term (yrs)']               || '',
-        freq:      (r['Frequency']||'').toLowerCase()    || '',
-        isMo:      (r['Frequency']||'').toLowerCase() === 'monthly',
-        pANB:      Number(r['ANB']                       || 0),   // EDU writes parent ANB to 'ANB' column
-        cANB:      Number(r['Child ANB']                 || 0),
-        parentName:r['Full Name']                        || '',   // EDU writes parent name to 'Full Name' column
-        childName: r['Child Full Name']                  || '',
-        // plan already mapped from 'Plan Code' above
-        // Fallback: if totalPrem is 0, calculate from basicPrem + occPrem (for synced Sheets data)
-        _fixedPrem: false,
+        totalSA:     Number(r['Sum Assured (MK)']        || 0),
+        totalPrem:   Number(r['Total Premium (MK)']      || 0),
+        basicPrem:   Number(r['Basic Premium (MK)']      || 0),
+        occPrem:     Number(r['Occ Loading (MK)']        || 0),
+        colPrem:     Number(r['College Premium (MK)']    || 0),
+        colSA:       Number(r['College Benefit SA (MK)'] || 0),
+        hasCollege:  String(r['Has College Benefit']     || '') === 'Yes',
+        premTerm:    String(r['Premium Term (yrs)']      || ''),
+        pANB:        Number(r['ANB']                     || 0),
+        cANB:        Number(r['Child ANB']               || 0),
+        parentName:  String(r['Full Name']               || ''),
+        childName:   String(r['Child Full Name']         || ''),
+        _fixedPrem:  false,
         // ── Manga Yako fields ─────────────────────────────────────────
-        prem:        Number(r['Monthly Premium (MK)']          || 0),
-        tmv:         Number(r['Target Maturity Value (MK)']    || 0),
-        totalContrib:Number(r['Total Contributions (MK)']      || 0),
+        prem:         Number(r['Monthly Premium (MK)']         || 0),
+        tmv:          Number(r['Target Maturity Value (MK)']   || 0),
+        totalContrib: Number(r['Total Contributions (MK)']     || 0),
       };
     }
 
