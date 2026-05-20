@@ -3351,11 +3351,8 @@ async function fetchAgentsFromSheets(){
   const url = localStorage.getItem(SHEETS_URL_KEY) || APPS_SCRIPT_URL;
   if(!url) return null;
   try {
-    const fetchPromise = fetch(url + '?action=getAgents', {
-      cache:'no-store'
-      // No mode:'cors' — avoids redirect CORS issue with Google Apps Script
-    });
-    const timeoutPromise = new Promise((_,rej) => setTimeout(()=>rej(new Error('timeout')), 6000));
+    const fetchPromise = fetch(url + '?action=getAgents');  // bare fetch — matches working ping
+    const timeoutPromise = new Promise((_,rej) => setTimeout(()=>rej(new Error('timeout')), 8000));
     const res = await Promise.race([fetchPromise, timeoutPromise]);
     if(!res.ok && res.type !== 'opaque') throw new Error('HTTP '+res.status);
     const text = await res.text();
@@ -4402,18 +4399,18 @@ async function restoreHistoryFromSheets(agentName, showFeedback){
   if(!url || !agentName) return;
   showToast('📋 Checking Sheets for your quotes…', 2500);
   try {
-    const fetchPromise = fetch(url + '?action=getQuotes&agent=' + encodeURIComponent(agentName), {
-      cache:'no-store'
-      // No mode:'cors' — let browser handle CORS negotiation and redirect chain naturally
-      // Google Apps Script redirects via 302; strict mode:'cors' blocks the redirect response
-    });
-    const timeout = new Promise((_,rej) => setTimeout(()=>rej(new Error('timeout')), 15000));
-    const res = await Promise.race([fetchPromise, timeout]);
-    if(!res.ok) throw new Error('HTTP '+res.status);
+    const fetchUrl = url + '?action=getQuotes&agent=' + encodeURIComponent(agentName);
+    console.log('[RESTORE] Fetching:', fetchUrl);
+    // Bare fetch — no options — matches the working ping exactly
+    const res = await Promise.race([
+      fetch(fetchUrl),
+      new Promise((_,rej) => setTimeout(()=>rej(new Error('timeout')), 20000))
+    ]);
     const text = await res.text();
+    console.log('[RESTORE] Raw response (first 300):', text.slice(0,300));
     let data;
     try { data = JSON.parse(text); }
-    catch(pe){ throw new Error('Bad JSON from Sheets: '+text.slice(0,80)); }
+    catch(pe){ throw new Error('Bad JSON: '+text.slice(0,120)); }
     console.log('[RESTORE] Sheets returned', data.quotes ? data.quotes.length : 0, 'quotes for', agentName);
     if(data.status !== 'ok' || !Array.isArray(data.quotes) || !data.quotes.length){
       console.warn('[RESTORE] No quotes returned — status:', data.status, 'count:', data.quotes?.length);
@@ -4638,7 +4635,7 @@ async function restoreHistoryFromSheets(agentName, showFeedback){
     }
   } catch(e){
     console.warn('[RESTORE] Failed:', e.message);
-    showToast('⚠️ Could not reach Sheets — check connection', 4000);
+    showToast('⚠️ Sync failed: '+e.message, 6000);
   }
 }
 
@@ -4736,16 +4733,12 @@ async function retroSyncAllQuotes(silent){
   // ── Step 1: Fetch all refs already in Sheets (quotes AND proposals) ──
   let existingRefs = new Set();
   async function fetchRefs(action){
-    // Admin fetches all records (no agent filter) for complete dedup
-    // Regular agents fetch only their own
     const agentParam = isAdmin ? '' : '&agent='+encodeURIComponent(currentAgent);
     try {
       const res = await Promise.race([
-        fetch(url+'?action='+action+agentParam, {cache:'no-store'}),
-        // No mode:'cors' — avoids redirect CORS issue with Google Apps Script
-        new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')),8000))
+        fetch(url+'?action='+action+agentParam),  // bare fetch — matches working ping
+        new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')),10000))
       ]);
-      if(!res.ok) return;
       const text = await res.text();
       let data;
       try { data = JSON.parse(text); } catch(e){ return; }
