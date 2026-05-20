@@ -4299,15 +4299,22 @@ function renderQuoteDoc(q, docId, isModal){
   const dabP      = Number(q.dabP)     || 0;
   const policyFee = Number(q.policyFee)|| 0;
   const totalP    = Number(q.totalP)   || 0;
-  const projM     = Number(q.projM)    || 0;
+  const _storedProjM = Number(q.projM) || 0;
+  const projM = _storedProjM > 0
+    ? _storedProjM
+    : (SA > 0 && term > 0 ? Math.round(SA * (BONUS[term] || Math.pow(1.10, term))) : 0);
   const dabIncluded = !!q.dabIncluded;
   const dabR1k    = Number(q.dabR1k)   || 0;
   const matAge    = Number(q.matAge)   || (anb && term ? anb + term - 1 : 0);
   const so        = q.selectedOcc      || null;
   const feeAmt = isMo ? FEE_M : FEE_A;
-  const baseRt = (isMo ? MR : AR)[anb][term];
-  const aUnits = SA / 10000;
-  const aBasicP = baseRt * aUnits;
+  // Guard: only look up rate table if anb and term are valid non-zero numbers
+  const baseRt  = (anb > 0 && term > 0 && (isMo ? MR : AR)[anb] && (isMo ? MR : AR)[anb][term])
+                  ? (isMo ? MR : AR)[anb][term]
+                  : null;
+  const aUnits  = SA / 10000;
+  // Fall back to stored basicP if rate table lookup fails
+  const aBasicP = baseRt ? baseRt * aUnits : basicP;
   const aTotalP = aBasicP + feeAmt;
   const bDabR1k = dabR1k > 0 ? dabR1k : 1.50;
   const bOccCls = occClass || '1';
@@ -4509,7 +4516,21 @@ async function restoreHistoryFromSheets(agentName, showFeedback){
         pANB:        Number(r['ANB']                     || 0),
         cANB:        Number(r['Child ANB']               || 0),
         parentName:  String(r['Full Name']               || ''),
+        // EDU parent name parts (map from generic First/Middle/Last Name columns)
+        pFirstName:  String(r['First Name']              || ''),
+        pmname:      String(r['Middle Name']             || ''),
+        pMiddleName: String(r['Middle Name']             || ''),
+        plname:      String(r['Last Name']               || ''),
+        pLastName:   String(r['Last Name']               || ''),
+        pGender:     String(r['Gender']                  || ''),
+        pdob:        String(r['DOB']                     || ''),
+        // EDU child fields (map from Child-specific columns)
+        cFirstName:  String(r['Child First Name']        || ''),
+        cMiddleName: String(r['Child Middle Name']       || ''),
+        cLastName:   String(r['Child Last Name']         || ''),
         childName:   String(r['Child Full Name']         || ''),
+        cGender:     String(r['Child Gender']            || ''),
+        cdob:        String(r['Child DOB']               || ''),
         _fixedPrem:  false,
         // ── Manga Yako fields ─────────────────────────────────────────
         prem:         Number(r['Monthly Premium (MK)']         || 0),
