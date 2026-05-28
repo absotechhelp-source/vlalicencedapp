@@ -9541,22 +9541,33 @@ function reviseQuote(){
     setTimeout(()=>{
       try{
         const fmtD = d => { if(!d)return''; const s=String(d); if(/^\d{4}-\d{2}-\d{2}$/.test(s))return s; const m=s.match(/^(\d{4}-\d{2}-\d{2})/); return m?m[1]:''; };
-        const v = (id,val) => { const el=document.getElementById(id); if(el&&val!==undefined&&val!==null&&val!=='') el.value=val; };
-        v('phindu-fname',  q.clientFirstName || (q.clientName||'').split(' ')[0]);
-        v('phindu-mname',  q.clientMiddleName);
-        v('phindu-lname',  q.clientLastName  || (q.clientName||'').split(' ').slice(1).join(' '));
+        const v  = (id,val) => { const el=document.getElementById(id); if(el&&val!==undefined&&val!==null&&val!=='') el.value=val; };
+        // Phindu quote stores: name, dob, gender, phone, town, district, mt, premium, basicSA, mode
+        // Name is stored as a single string — split into parts
+        const fullName = q.name || q.clientName || '';
+        const parts = fullName.trim().split(/\s+/);
+        v('phindu-fname',  q.clientFirstName || parts[0] || '');
+        v('phindu-mname',  q.clientMiddleName || (parts.length > 2 ? parts[1] : ''));
+        v('phindu-lname',  q.clientLastName   || parts.slice(parts.length > 2 ? 2 : 1).join(' '));
         v('phindu-gender', q.gender);
         v('phindu-dob',    fmtD(q.dob));
-        v('phindu-phone',  q.clientPhone);
-        v('phindu-town',   q.clientCity);
-        v('phindu-district',q.clientDistrict);
-        if(q.SA){ const el=document.getElementById('phindu-sa'); if(el) el.value=q.SA; }
-        // mt (money tree %) — stored on the quote
-        const mtPct = q['Money Tree % (Phindu)'] || (q.mt||'');
-        if(mtPct){ const el=document.getElementById('phindu-mt'); if(el) el.value=mtPct; }
-        try{ calcPhinduANB(); }catch(e){}
+        v('phindu-phone',  q.phone || q.clientPhone);
+        v('phindu-town',   q.town  || q.clientCity);
+        v('phindu-district', q.district || q.clientDistrict);
+        // Money Tree %
+        if(q.mt){ const el=document.getElementById('phindu-mt'); if(el) el.value=String(q.mt); }
+        // Set mode (premium or SA) and populate the right field
+        const mode = q.mode || 'sa';
+        try{ phinduSetMode(mode); }catch(e){}
+        if(mode === 'prem' || mode === 'premium'){
+          if(q.premium){ const el=document.getElementById('phindu-prem'); if(el) el.value=q.premium; }
+        } else {
+          if(q.basicSA){ const el=document.getElementById('phindu-target-sa'); if(el) el.value=q.basicSA; }
+        }
+        // Trigger age calculation
+        try{ phinduCheckAge(); }catch(e){}
         showToast('✏️ Quote pre-filled — adjust and regenerate', 4000);
-      }catch(e){ showToast('Could not pre-fill all fields', 3000); }
+      }catch(e){ console.warn('[REVISE Phindu]', e); showToast('Could not pre-fill all fields', 3000); }
     }, 350);
 
   } else {
