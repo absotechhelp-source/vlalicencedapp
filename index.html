@@ -3352,25 +3352,50 @@ function saveAgents(agents){
 async function fetchAgentsFromSheets(){
   const url = localStorage.getItem(SHEETS_URL_KEY) || APPS_SCRIPT_URL;
   if(!url) return null;
-  try {
-    const fetchPromise = fetch(url + '?action=getAgents');  // bare fetch — matches working ping
-    const timeoutPromise = new Promise((_,rej) => setTimeout(()=>rej(new Error('timeout')), 8000));
-    const res = await Promise.race([fetchPromise, timeoutPromise]);
-    if(!res.ok && res.type !== 'opaque') throw new Error('HTTP '+res.status);
-    const text = await res.text();
-    const data = JSON.parse(text);
-    if(data.status === 'ok' && data.agents && typeof data.agents === 'object' && !Array.isArray(data.agents)){
-      const local = getAgents();
-      const merged = Object.assign({}, local, data.agents);
-      saveAgents(merged);
-      return merged;
+
+  // Try up to 2 times — first failure may be a transient 503
+  for(let attempt = 1; attempt <= 2; attempt++){
+    try {
+      const res = await Promise.race([
+        fetch(url + '?action=getAgents'),
+        new Promise((_,rej) => setTimeout(()=>rej(new Error('timeout')), 10000))
+      ]);
+
+      // 503 = Apps Script crashed (old deployment with Date objects)
+      // CORS opaque response = browser blocked redirect
+      if(res.status === 503){
+        console.warn('[AGENTS] 503 from Apps Script — old deployment still active. Deploy AppsScript_FIXED.gs.');
+        return null;
+      }
+
+      const text = await res.text();
+
+      // If response is HTML it's an error page — Apps Script crashed
+      if(text.trimStart().startsWith('<')){
+        console.warn('[AGENTS] Apps Script returned HTML (crashed). Raw:', text.slice(0,120));
+        return null;
+      }
+
+      let data;
+      try { data = JSON.parse(text); }
+      catch(e){ console.warn('[AGENTS] Bad JSON:', text.slice(0,120)); return null; }
+
+      if(data.status === 'ok' && data.agents && typeof data.agents === 'object' && !Array.isArray(data.agents)){
+        const local  = getAgents();
+        const merged = Object.assign({}, local, data.agents);
+        saveAgents(merged);
+        console.log('[AGENTS] ✅ Fetched', Object.keys(data.agents).length, 'agents from Sheets');
+        return merged;
+      }
+      console.warn('[AGENTS] Bad response:', text.slice(0,200));
+      return null;
+
+    } catch(e){
+      console.warn('[AGENTS] Attempt', attempt, 'failed:', e.message);
+      if(attempt < 2) await new Promise(r => setTimeout(r, 1500));  // wait before retry
     }
-    console.warn('[AGENTS] Bad response:', text.slice(0,200));
-    return null;
-  } catch(e){
-    console.warn('[AGENTS] Fetch failed:', e.message);
-    return null;
   }
+  return null;
 }
 
 // Push a single agent change to Sheets
@@ -3814,7 +3839,24 @@ async function doLogin(){
   const agents = getAgents();
   const agent  = agents[user];
 
-  const agentNames = Object.keys(agents).join(', ');
+  // If Sheets fetch failed AND agent not in local cache → show helpful error
+  if(!agent && !sheetsResult){
+    err.textContent = '⚠️ Could not reach Vanguard Sheets to verify your credentials. Check your internet connection and try again. If the problem persists, contact your administrator.';
+    err.style.display='block';
+    return;
+  }
+
+  // If agent not found even after successful Sheets fetch
+  if(!agent){
+    err.textContent = 'Agent "'+user+'" not found. Check your name matches exactly or contact your administrator.';
+    err.style.display='block';
+    return;
+  }
+
+  if(!sheetsResult){
+    // Sheets unavailable — logging in with cached credentials
+    showToast('⚠️ Sheets offline — using saved credentials', 4000);
+  }
 
   const agentPin    = typeof agent === 'object' ? agent.pin    : agent;
   const agentActive = typeof agent === 'object' ? agent.active : true;
@@ -5070,12 +5112,23 @@ function saveSheetURL(){
 
   // Try GET first (works if CORS is allowed by Apps Script)
   fetch(raw+'?action=ping')
-    .then(r=>r.json())
-    .then(data=>{
+    .then(r=>r.text())
+    .then(text=>{
+      let data;
+      try{ data=JSON.parse(text); }
+      catch(e){ throw new Error('Script returned non-JSON — check deployment URL'); }
       if(data.status==='ok'){
-        s.textContent='✓ Connected successfully — Apps Script v'+( data.message||'').replace(/[^0-9.]/g,'')+' online';
-        s.style.color='var(--M)';
-        showToast('✓ Google Sheets connected');
+        const ver = data.message || '';
+        const isOld = ver && !ver.includes('v3.3');
+        if(isOld){
+          s.textContent='⚠️ Connected but OLD version active ('+ver+'). Sync will fail. Please deploy AppsScript_FIXED.gs as a NEW deployment and update this URL.';
+          s.style.color='#b45309';
+          showToast('⚠️ Old Apps Script — redeploy required', 6000);
+        } else {
+          s.textContent='✓ Connected successfully — '+ver+' online';
+          s.style.color='var(--M)';
+          showToast('✓ Google Sheets connected');
+        }
       } else {
         s.textContent='✓ URL reachable but returned: '+JSON.stringify(data);
         s.style.color='var(--M)';
