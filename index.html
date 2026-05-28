@@ -16,25 +16,25 @@
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
 <style>
 :root{
-  --M:  #641414;
-  --M2: #5E1411;
-  --ML: #f5e0e0;
-  --CR: #D8C9B4;
-  --CRL:#f4ede1;
-  --RS: #C8A0A0;
-  --OW: #F2E9EA;
-  --W:  #FFFFFF;
-  --T:  #2a0a0a;
-  --T2: #3d0d0d;
-  --BD: #d4b8b8;
-  --SH: rgba(100,20,20,.13);
-  --G:  #641414;
-  --GL: #f5e0e0;
+  --M:  #5A0F0F;     /* deeper, sharper maroon */
+  --M2: #4A0C0C;     /* pressed/hover state */
+  --ML: #FBEAEA;     /* light maroon tint for pills/badges */
+  --CR: #C8B8A0;     /* cream accent — slightly cooler */
+  --CRL:#FBF6F0;     /* light cream bg */
+  --RS: #C09898;     /* rose separator */
+  --OW: #FFFFFF;     /* app body — pure white */
+  --W:  #FFFFFF;     /* card/input white */
+  --T:  #1A0505;     /* deep maroon-black for body text */
+  --T2: #4A1010;     /* secondary text — sharp maroon */
+  --BD: #E5D0D0;     /* borders — lighter, crisper */
+  --SH: rgba(90,15,15,.10);  /* shadow */
+  --G:  #5A0F0F;
+  --GL: #FBEAEA;
   --RA: 6px; --RB:10px; --RC:14px; --RD:20px;
 }
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html{scroll-behavior:smooth;-webkit-tap-highlight-color:transparent}
-body{font-family:'DM Sans',sans-serif;background:var(--OW);color:var(--T);font-size:15px;line-height:1.6;min-height:100vh;overscroll-behavior:none}
+body{font-family:'DM Sans',sans-serif;background:#F5F5F7;color:var(--T);font-size:15px;line-height:1.6;min-height:100vh;overscroll-behavior:none}
 .screen{display:none;min-height:100vh;flex-direction:column;overflow:hidden}
 .screen.active{display:flex}
 .topbar{background:var(--M);padding:10px 16px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:100;box-shadow:0 2px 8px var(--SH);transition:box-shadow .2s}
@@ -47,7 +47,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--OW);color:var(--T);font-s
 .cream-bar{height:3px;background:var(--CR);flex-shrink:0}
 .rose-bar{height:2px;background:var(--RS);flex-shrink:0}
 #screen-login{background:var(--M);justify-content:center;align-items:center;padding:32px 24px}
-.login-card{background:var(--W);border-radius:var(--RC);padding:32px 24px;width:100%;max-width:380px;box-shadow:0 8px 32px rgba(0,0,0,.3)}
+.login-card{background:#FFFFFF;border-radius:var(--RC);padding:32px 24px;width:100%;max-width:380px;box-shadow:0 8px 40px rgba(0,0,0,.35),0 2px 8px rgba(0,0,0,.1)}
 .login-logo-wrap{text-align:center;margin-bottom:24px}
 .login-logo{height:60px;width:auto}
 .login-app-name{font-family:'Playfair Display',serif;font-size:22px;color:var(--M);font-weight:700;text-align:center;margin-bottom:4px}
@@ -60,22 +60,22 @@ body{font-family:'DM Sans',sans-serif;background:var(--OW);color:var(--T);font-s
 .login-btn:active{background:var(--M2)}
 .login-err{color:#991b1b;font-size:12px;text-align:center;margin-top:8px;display:none}
 .login-version{font-size:10px;color:var(--BD);text-align:center;margin-top:20px}
-#screen-app{background:var(--OW)}
-.app-body{flex:1;overflow-y:auto;padding:14px 14px 80px}
-.bottom-nav{background:var(--W);border-top:1px solid var(--BD);display:flex;position:fixed;bottom:0;left:0;right:0;z-index:100;box-shadow:0 -2px 8px var(--SH)}
+#screen-app{background:#F5F5F7}
+.app-body{flex:1;overflow-y:auto;padding:14px 14px 80px;background:#F5F5F7}
+.bottom-nav{background:#FFFFFF;border-top:1px solid #EAD8D8;display:flex;position:fixed;bottom:0;left:0;right:0;z-index:100;box-shadow:0 -2px 12px rgba(90,15,15,.08)}
 .nav-btn{flex:1;padding:10px 4px 8px;display:flex;flex-direction:column;align-items:center;gap:3px;border:none;background:none;cursor:pointer;font-family:'DM Sans',sans-serif;color:var(--T2);font-size:10px;transition:color .15s}
 .nav-btn.active{color:var(--M)}
 .nav-btn svg{width:22px;height:22px;stroke-width:1.8}
 .nav-btn.active svg{stroke:var(--M)}
 .tab-panel{display:none}
 .tab-panel.active{display:block}
-.card{background:var(--W);border:1px solid var(--BD);border-radius:var(--RC);padding:14px 16px;margin-bottom:12px;box-shadow:0 1px 4px var(--SH)}
-.sec-lbl{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--M);margin-bottom:8px;padding-bottom:5px;border-bottom:1px solid var(--ML)}
+.card{background:#FFFFFF;border:1px solid #EAD8D8;border-radius:var(--RC);padding:14px 16px;margin-bottom:12px;box-shadow:0 1px 3px rgba(90,15,15,.07),0 1px 2px rgba(0,0,0,.04)}
+.sec-lbl{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--M);margin-bottom:8px;padding-bottom:5px;border-bottom:1.5px solid #EAD8D8}
 .row2{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
 .full{margin-bottom:10px}
 label.f-lbl{display:block;font-size:12px;font-weight:500;color:var(--T2);margin-bottom:4px}
-input.f-inp,select.f-inp,textarea.f-inp{width:100%;font-size:14px;font-family:'DM Sans',sans-serif;padding:9px 11px;border:1px solid var(--BD);border-radius:var(--RA);background:var(--W);color:var(--T);outline:none;transition:border-color .15s,box-shadow .15s;-webkit-appearance:none;appearance:none}
-input.f-inp:focus,select.f-inp:focus{border-color:var(--M);box-shadow:0 0 0 3px rgba(100,20,20,.1)}
+input.f-inp,select.f-inp,textarea.f-inp{width:100%;font-size:14px;font-family:'DM Sans',sans-serif;padding:9px 11px;border:1.5px solid #DDD0D0;border-radius:var(--RA);background:#FFFFFF;color:var(--T);outline:none;transition:border-color .15s,box-shadow .15s;-webkit-appearance:none;appearance:none}
+input.f-inp:focus,select.f-inp:focus{border-color:var(--M);box-shadow:0 0 0 3px rgba(90,15,15,.10)}
 .anb-pill{display:none;margin-top:5px;padding:5px 10px;border-radius:var(--RA);font-size:12px;font-weight:500}
 .anb-ok{background:var(--ML);color:var(--M)}
 .anb-err{background:#fee2e2;color:#991b1b}
@@ -165,9 +165,9 @@ input:checked+.tog-trk:before{transform:translateX(17px)}
 .hist-search{flex:1;min-width:160px;padding:9px 11px;border:1px solid var(--BD);border-radius:var(--RA);font-size:13px;font-family:'DM Sans',sans-serif;outline:none;background:var(--W);color:var(--T)}
 .hist-search:focus{border-color:var(--M)}
 .hist-filter{padding:9px 10px;border:1px solid var(--BD);border-radius:var(--RA);font-size:12px;font-family:'DM Sans',sans-serif;background:var(--W);color:var(--T);outline:none;-webkit-appearance:none;appearance:none;cursor:pointer}
-.hist-item{background:var(--W);border:1px solid var(--BD);border-radius:var(--RB);padding:12px 14px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:flex-start;gap:10px;cursor:pointer;transition:box-shadow .15s,border-color .15s}
+.hist-item{background:#FFFFFF;border:1px solid #EAD8D8;border-radius:var(--RB);padding:12px 14px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:flex-start;gap:10px;cursor:pointer;transition:box-shadow .15s,border-color .15s}
 .hist-item:active{box-shadow:0 0 0 2px var(--M)}
-.hist-item:hover{border-color:var(--RS)}
+.hist-item:hover{border-color:var(--M);box-shadow:0 2px 8px rgba(90,15,15,.10)}
 .hist-name{font-size:14px;font-weight:600;color:var(--T)}
 .hist-meta{font-size:11px;color:var(--T2);margin-top:2px}
 .hist-prem{font-size:14px;font-weight:700;color:var(--M);text-align:right;flex-shrink:0}
@@ -180,9 +180,9 @@ input:checked+.tog-trk:before{transform:translateX(17px)}
 .empty-state p{font-size:13px}
 
 /* ── MODAL (History Quote Preview) ── */
-.modal-overlay{position:fixed;inset:0;background:rgba(30,5,5,.7);z-index:200;display:none;align-items:flex-start;justify-content:center;padding:16px;overflow-y:auto}
+.modal-overlay{position:fixed;inset:0;background:rgba(20,0,0,.65);z-index:200;display:none;align-items:flex-start;justify-content:center;padding:16px;overflow-y:auto;backdrop-filter:blur(2px)}
 .modal-overlay.open{display:flex}
-.modal-box{background:var(--W);border-radius:var(--RC);max-width:600px;width:100%;margin:auto;overflow:hidden;box-shadow:0 16px 64px rgba(0,0,0,.5)}
+.modal-box{background:#FFFFFF;border-radius:var(--RC);max-width:600px;width:100%;margin:auto;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.35),0 0 0 1px rgba(90,15,15,.08)}
 .modal-topbar{background:var(--M);padding:12px 16px;display:flex;align-items:center;justify-content:space-between}
 .modal-title{font-family:'Playfair Display',serif;font-size:15px;color:var(--CR);font-weight:700}
 .modal-close{background:rgba(255,255,255,.15);border:none;border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--CR);font-size:18px;line-height:1}
@@ -313,8 +313,8 @@ input:checked+.tog-trk:before{transform:translateX(17px)}
 .home-branding img{height:20px;opacity:.7;filter:brightness(2)}
 .home-branding-text{font-size:10px;color:rgba(216,201,180,.7);font-weight:500;line-height:1.3}
 .stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:14px 14px 0}
-.stat-card{background:var(--W);border:1px solid var(--BD);border-radius:var(--RC);padding:12px 14px;box-shadow:0 1px 4px var(--SH);position:relative}
-.stat-card-icon{width:34px;height:34px;border-radius:var(--RB);background:var(--ML);display:flex;align-items:center;justify-content:center;margin-bottom:8px}
+.stat-card{background:#FFFFFF;border:1px solid #EAD8D8;border-radius:var(--RC);padding:12px 14px;box-shadow:0 1px 3px rgba(90,15,15,.07),0 1px 2px rgba(0,0,0,.04);position:relative}
+.stat-card-icon{width:34px;height:34px;border-radius:var(--RB);background:#FBEAEA;display:flex;align-items:center;justify-content:center;margin-bottom:8px}
 .stat-card-icon svg{width:16px;height:16px}
 .stat-trend{position:absolute;top:10px;right:10px;font-size:10px;font-weight:700;display:flex;align-items:center;gap:2px}
 .stat-trend.up{color:var(--M)}
@@ -2853,6 +2853,10 @@ input:checked+.tog-trk:before{transform:translateX(17px)}
               <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
               SMS
             </button>
+            <button class="btn-sm btn-email-btn" onclick="eduShareEmail()">
+              <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+              Email
+            </button>
             <button class="btn-sm btn-pdf" onclick="eduPrint()">
               <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
               PDF
@@ -2860,6 +2864,10 @@ input:checked+.tog-trk:before{transform:translateX(17px)}
             <button class="btn-sm btn-outline" onclick="eduReset()">
               <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4.95"/></svg>
               New Quote
+            </button>
+            <button class="btn-sm" onclick="reviseQuote()" style="background:var(--CR);color:var(--M);border:1.5px solid var(--M);font-weight:600">
+              <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+              Revise
             </button>
           </div>
           <div class="qdoc" id="edu-q-doc" style="margin-bottom:80px"></div>
@@ -3029,6 +3037,10 @@ input:checked+.tog-trk:before{transform:translateX(17px)}
       <button class="btn-sm btn-email-btn" onclick="shareHistEmail()">
         <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
         Email
+      </button>
+      <button class="btn-sm" id="hist-revise-btn" onclick="reviseQuote()" style="background:var(--CR);color:var(--M);border:1.5px solid var(--M);font-weight:600">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+        Revise
       </button>
       <button class="btn-sm btn-outline" onclick="closeHistModal()" style="margin-left:auto">Close</button>
     </div>
@@ -3645,6 +3657,7 @@ const FEE_M=600,FEE_A=7128.74,MIN_SA=12000000;
 let sessionProposals = 0;
 let currentAgent='', isAdmin=false, anb=null, selectedOcc=null, mode='sa', quoteData=null;
 let histModalQuote=null;
+let currentHistQuote=null;  // quote open in any hist modal — used by reviseQuote()
 
 /* ═══════════════════════════════════════════
    INIT
@@ -5303,7 +5316,7 @@ function openHistModal(refOrIdx){
     return;
   }
   histModalQuote=q;
-  const LOGO_SRC=document.getElementById('vla-full-logo').src;
+  currentHistQuote=q;  // expose to reviseQuote()
   document.getElementById('hist-modal-body').innerHTML=`
     <div id="hm-q-doc" style="background:#fff">
       <!-- LETTERHEAD — official VLA style -->
@@ -6613,6 +6626,7 @@ function printViaIframe(el){ captureQuotePDF(el.id, 'VLA-Quote.pdf', function(pd
 function openEduHistModal(ref){
   const q = getLocalQuotes().find(x=>x.ref===ref && x.product==='Educational Plans');
   if(!q){ showToast('Quote not found'); return; }
+  currentHistQuote = {...q, product:'Educational Plans'};  // expose to reviseQuote()
   eduCurrentQuote = q;
   switchTab('edu-plans');
   setTimeout(()=>{
@@ -6625,8 +6639,8 @@ function openEduHistModal(ref){
 }
 
 function openMyHistModal(q){
-  // Re-populate myQuoteData and show the MY quote output
   myQuoteData = q;
+  currentHistQuote = {...q, product:'Manga Yako'};  // expose to reviseQuote()
   // Switch to MY tab and render the quote
   switchTab('manga-yako');
   setTimeout(()=>{
@@ -8129,6 +8143,7 @@ function openPhinduHist(ref){
   const quotes=JSON.parse(localStorage.getItem(PHINDU_QUOTES_KEY)||'[]');
   const q=quotes.find(x=>x.ref===ref);
   if(!q){showToast('Quote not found');return;}
+  currentHistQuote = {...q, product:'Phindu'};  // expose to reviseQuote()
   phinduQuoteData=q;
   switchTab('phindu');
   setTimeout(()=>{
@@ -9369,6 +9384,163 @@ function eduShareWA(){
       showToast('✓ Image saved! Open WhatsApp → attach from gallery', 4500);
     }, 800);
   });
+}
+
+function eduShareEmail(){
+  if(!eduCurrentQuote){ showToast('Generate a quote first'); return; }
+  sessionSentCount=(sessionSentCount||0)+1;
+  localStorage.setItem('vla_sent_count',String((parseInt(localStorage.getItem('vla_sent_count')||'0'))+1));
+  const q = eduCurrentQuote;
+  const freqLabel = q.isMo ? 'Monthly' : 'Annual';
+  const projSA = (['lge-wp','tep','lgp-lc','lgp-nl'].includes(q.plan)) ? Math.round(q.totalSA*Math.pow(1.10,q.premTerm)) : 0;
+  const projColSA = q.hasCollege ? Math.round(q.colSA*Math.pow(1.10,q.premTerm)) : 0;
+  const {mobile:agMobile} = loadProfileData();
+  const sub = encodeURIComponent('Vanguard Life — '+q.planName+' Quotation for '+q.parentName);
+  const body = encodeURIComponent(
+    'Dear '+q.parentName+',\n\n'+
+    'Thank you for your interest in our '+q.planName+'.\n\n'+
+    'QUOTATION SUMMARY\n'+
+    '─────────────────────────\n'+
+    'Ref: '+q.ref+'\n'+
+    'Plan: '+q.planName+'\n'+
+    'Parent: '+q.parentName+(q.pGender?' ('+q.pGender+')':'')+' · ANB '+q.pANB+'\n'+
+    'Child:  '+q.childName+(q.cGender?' ('+q.cGender+')':'')+' · ANB '+q.cANB+'\n\n'+
+    'POLICY DETAILS\n'+
+    'Basic Sum Assured:  MK '+eduFmt(q.totalSA)+'\n'+
+    (projSA ? 'Projected SA @ 10%: MK '+eduFmt(projSA)+'\n' : '')+
+    (q.hasCollege ? 'College Benefit:    MK '+eduFmt(q.colSA)+(projColSA?' (Projected: MK '+eduFmt(projColSA)+' at age 19)':'')+'\n' : '')+
+    'Premium Term:       '+q.premTerm+' years\n'+
+    freqLabel+' Premium:   MK '+eduFmt2(q.totalPrem)+'\n\n'+
+    'Indicative only. Subject to underwriting. Bonus projections not guaranteed.\n\n'+
+    'Kind regards,\n'+q.agent+
+    (agMobile ? '\n📱 '+agMobile : '')+
+    '\n📞 3043 (VLA Call Centre)'+
+    '\nVanguard Life Assurance Company Limited'
+  );
+  window.open('mailto:'+(q.phone||'')+'?subject='+sub+'&body='+body,'_blank');
+  showToast('Opening email…', 3000);
+}
+
+/* ═══════════════════════════════════════════
+   REVISE QUOTE — pre-fills quote form from history
+   Works for PSP, EDU, Manga Yako, Phindu
+═══════════════════════════════════════════ */
+function reviseQuote(){
+  const q = currentHistQuote;
+  if(!q){ showToast('No quote selected'); return; }
+  const product = (q.product||q._product||'').toLowerCase();
+
+  closeHistModal();
+
+  // ── PSP / Pure Savings Plan ──────────────────────────────────────────
+  if(!product || product.includes('pure') || product.includes('psp') || product==='conventional plans'){
+    switchTab('quote');
+    setTimeout(()=>{
+      try{
+        const v = (id,val) => { const el=document.getElementById(id); if(el&&val!==undefined&&val!==null&&val!=='') el.value=val; };
+        const vn = (id,val) => { const el=document.getElementById(id); if(el&&Number(val)) el.value=Number(val); };
+        v('c-fname',  q.clientFirstName || (q.clientName||'').split(' ')[0]);
+        v('c-mname',  q.clientMiddleName);
+        v('c-lname',  q.clientLastName  || (q.clientName||'').split(' ').slice(1).join(' '));
+        v('c-gender', q.gender);
+        v('c-dob',    q.dob);
+        v('c-phone',  q.clientPhone);
+        v('c-email',  q.clientEmail);
+        v('c-district', q.clientDistrict);
+        v('c-occ',    q.occupation);
+        v('p-term',   q.term);
+        v('p-freq',   q.isMo ? 'monthly' : 'annual');
+        vn('p-sa',    q.SA);
+        // Trigger dependent updates
+        try{ calcANB(); }catch(e){}
+        try{ updatePremLabel(); }catch(e){}
+        const dabCb = document.getElementById('p-dab');
+        if(dabCb) dabCb.checked = !!q.dabIncluded;
+        showToast('✏️ Quote pre-filled — adjust and regenerate', 4000);
+      }catch(e){ showToast('Could not pre-fill all fields', 3000); }
+    }, 350);
+
+  // ── Educational Plans ────────────────────────────────────────────────
+  } else if(product.includes('edu')){
+    switchTab('edu-plans');
+    setTimeout(()=>{
+      try{
+        const v = (id,val) => { const el=document.getElementById(id); if(el&&val!==undefined&&val!==null&&val!=='') el.value=val; };
+        v('edu-plan',    q.plan);
+        v('edu-pfname',  q.pFirstName || q.clientFirstName || (q.parentName||'').split(' ')[0]);
+        v('edu-pmname',  q.pmname     || q.clientMiddleName);
+        v('edu-plname',  q.plname     || q.clientLastName);
+        v('edu-pdob',    q.pdob       || q.dob);
+        v('edu-pgender', q.pGender    || q.gender);
+        v('edu-cfname',  q.cFirstName);
+        v('edu-cmname',  q.cMiddleName|| q.cmname);
+        v('edu-clname',  q.cLastName  || q.clname);
+        v('edu-cdob',    q.cdob);
+        v('edu-cgender', q.cGender);
+        v('edu-phone',   q.phone      || q.clientPhone);
+        v('edu-town',    q.town       || q.clientCity);
+        v('edu-district',q.district   || q.clientDistrict);
+        if(q.totalSA){ const el=document.getElementById('edu-sa-amount'); if(el) el.value=q.totalSA; }
+        if(q.colSA)  { const el=document.getElementById('edu-college-sa'); if(el) el.value=q.colSA; }
+        v('edu-freq', q.isMo ? 'monthly' : 'annual');
+        const colTog = document.getElementById('edu-college-tog');
+        if(colTog){ colTog.checked = !!q.hasCollege; }
+        // Trigger plan-change to recalculate
+        try{ onEduPlanChange(); }catch(e){}
+        try{ calcEduANB(); }catch(e){}
+        showToast('✏️ Quote pre-filled — adjust and regenerate', 4000);
+      }catch(e){ showToast('Could not pre-fill all fields', 3000); }
+    }, 350);
+
+  // ── Manga Yako ───────────────────────────────────────────────────────
+  } else if(product.includes('manga')){
+    switchTab('manga-yako');
+    setTimeout(()=>{
+      try{
+        const v = (id,val) => { const el=document.getElementById(id); if(el&&val!==undefined&&val!==null&&val!=='') el.value=val; };
+        v('my-fname',   q.clientFirstName || (q.clientName||'').split(' ')[0]);
+        v('my-mname',   q.clientMiddleName);
+        v('my-lname',   q.clientLastName  || (q.clientName||'').split(' ').slice(1).join(' '));
+        v('my-gender',  q.gender);
+        v('my-dob',     q.dob);
+        v('my-email',   q.clientEmail);
+        v('my-phone',   q.clientPhone);
+        v('my-city',    q.clientCity);
+        v('my-country', q.clientCountry  || q.clientDistrict);
+        if(q.prem){ const el=document.getElementById('my-prem'); if(el) el.value=q.prem; }
+        if(q.tmv) { const el=document.getElementById('my-tmv');  if(el) el.value=q.tmv;  }
+        if(q.term){ const el=document.getElementById('my-term'); if(el) el.value=q.term; }
+        try{ calcMyANB(); }catch(e){}
+        showToast('✏️ Quote pre-filled — adjust and regenerate', 4000);
+      }catch(e){ showToast('Could not pre-fill all fields', 3000); }
+    }, 350);
+
+  // ── Phindu ───────────────────────────────────────────────────────────
+  } else if(product.includes('phindu')){
+    switchTab('phindu');
+    setTimeout(()=>{
+      try{
+        const v = (id,val) => { const el=document.getElementById(id); if(el&&val!==undefined&&val!==null&&val!=='') el.value=val; };
+        v('phindu-fname',  q.clientFirstName || (q.clientName||'').split(' ')[0]);
+        v('phindu-mname',  q.clientMiddleName);
+        v('phindu-lname',  q.clientLastName  || (q.clientName||'').split(' ').slice(1).join(' '));
+        v('phindu-gender', q.gender);
+        v('phindu-dob',    q.dob);
+        v('phindu-phone',  q.clientPhone);
+        v('phindu-town',   q.clientCity);
+        v('phindu-district',q.clientDistrict);
+        if(q.SA){ const el=document.getElementById('phindu-sa'); if(el) el.value=q.SA; }
+        // mt (money tree %) — stored on the quote
+        const mtPct = q['Money Tree % (Phindu)'] || (q.mt||'');
+        if(mtPct){ const el=document.getElementById('phindu-mt'); if(el) el.value=mtPct; }
+        try{ calcPhinduANB(); }catch(e){}
+        showToast('✏️ Quote pre-filled — adjust and regenerate', 4000);
+      }catch(e){ showToast('Could not pre-fill all fields', 3000); }
+    }, 350);
+
+  } else {
+    showToast('Revise not supported for this product type yet', 3000);
+  }
 }
 
 function eduShareSMS(){
