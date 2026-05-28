@@ -2295,6 +2295,7 @@ input:checked+.tog-trk:before{transform:translateX(17px)}
           <button class="btn-sm btn-email-btn" onclick="myShareEmail()"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg> Email</button>
           <button class="btn-sm btn-outline" <button class="btn-sm" style="background:var(--M);color:var(--CR)" onclick="switchTab('proposal')"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg> Proposal</button>
           <button class="btn-sm btn-outline" onclick="myResetQuote()"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4.95"/></svg> New</button>
+          <button class="btn-sm" onclick="reviseQuote()" style="background:var(--CR);color:var(--M);border:1.5px solid var(--M);font-weight:600"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg> Revise</button>
         </div>
         <div class="qdoc" id="my-q-doc">
           <div class="q-letterhead">
@@ -9517,22 +9518,31 @@ function reviseQuote(){
     switchTab('manga-yako');
     setTimeout(()=>{
       try{
+        const fmtD = d => { if(!d)return''; const s=String(d); if(/^\d{4}-\d{2}-\d{2}$/.test(s))return s; const m=s.match(/^(\d{4}-\d{2}-\d{2})/); return m?m[1]:''; };
         const v = (id,val) => { const el=document.getElementById(id); if(el&&val!==undefined&&val!==null&&val!=='') el.value=val; };
+        // myQuoteData fields: clientFirstName, clientMiddleName, clientLastName,
+        //   clientPhone, clientEmail, clientCity, clientCountry, gender, dob, prem, tmv, mode
         v('my-fname',   q.clientFirstName || (q.clientName||'').split(' ')[0]);
         v('my-mname',   q.clientMiddleName);
         v('my-lname',   q.clientLastName  || (q.clientName||'').split(' ').slice(1).join(' '));
         v('my-gender',  q.gender);
-        v('my-dob',     q.dob);
+        v('my-dob',     fmtD(q.dob));
         v('my-email',   q.clientEmail);
         v('my-phone',   q.clientPhone);
         v('my-city',    q.clientCity);
-        v('my-country', q.clientCountry  || q.clientDistrict);
-        if(q.prem){ const el=document.getElementById('my-prem'); if(el) el.value=q.prem; }
-        if(q.tmv) { const el=document.getElementById('my-tmv');  if(el) el.value=q.tmv;  }
-        if(q.term){ const el=document.getElementById('my-term'); if(el) el.value=q.term; }
-        try{ calcMyANB(); }catch(e){}
+        v('my-country', q.clientCountry);
+        // Set mode first, then populate the right value field
+        const mode = q.mode || 'tmv';
+        try{ mySetMode(mode); }catch(e){}
+        if(mode === 'prem'){
+          if(q.prem){ const el=document.getElementById('my-prem'); if(el) el.value=q.prem; }
+        } else {
+          if(q.tmv){ const el=document.getElementById('my-tmv'); if(el) el.value=q.tmv; }
+        }
+        // Trigger ANB recalculation
+        try{ myCalcANB(); }catch(e){}
         showToast('✏️ Quote pre-filled — adjust and regenerate', 4000);
-      }catch(e){ showToast('Could not pre-fill all fields', 3000); }
+      }catch(e){ console.warn('[REVISE MY]', e); showToast('Could not pre-fill all fields', 3000); }
     }, 350);
 
   // ── Phindu ───────────────────────────────────────────────────────────
