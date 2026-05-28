@@ -2471,6 +2471,7 @@ input:checked+.tog-trk:before{transform:translateX(17px)}
             <button class="btn-sm btn-email-btn" onclick="phinduShareEmail()"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg> Email</button>
             <button class="btn-sm" style="background:var(--M);color:var(--CR)" onclick="switchTab('phindu-proposal')"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg> Proposal</button>
             <button class="btn-sm btn-outline" onclick="phinduResetQuote()"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4.95"/></svg> New</button>
+            <button class="btn-sm" onclick="reviseQuote()" style="background:var(--CR);color:var(--M);border:1.5px solid var(--M);font-weight:600"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg> Revise</button>
           </div>
           <div id="phindu-sync-status" style="display:none;font-size:11px;text-align:center;padding:4px;margin-bottom:6px;border-radius:6px;background:var(--ML)"></div>
           <div class="qdoc" id="phindu-q-doc" style="margin-bottom:80px"></div>
@@ -5317,6 +5318,7 @@ function openHistModal(refOrIdx){
   }
   histModalQuote=q;
   currentHistQuote=q;  // expose to reviseQuote()
+  const LOGO_SRC = (document.getElementById('vla-full-logo')||{src:''}).src;
   document.getElementById('hist-modal-body').innerHTML=`
     <div id="hm-q-doc" style="background:#fff">
       <!-- LETTERHEAD — official VLA style -->
@@ -9437,13 +9439,14 @@ function reviseQuote(){
     switchTab('quote');
     setTimeout(()=>{
       try{
-        const v = (id,val) => { const el=document.getElementById(id); if(el&&val!==undefined&&val!==null&&val!=='') el.value=val; };
+        const fmtD = d => { if(!d)return''; const s=String(d); if(/^\d{4}-\d{2}-\d{2}$/.test(s))return s; const m=s.match(/^(\d{4}-\d{2}-\d{2})/); return m?m[1]:''; };
+        const v  = (id,val) => { const el=document.getElementById(id); if(el&&val!==undefined&&val!==null&&val!=='') el.value=val; };
         const vn = (id,val) => { const el=document.getElementById(id); if(el&&Number(val)) el.value=Number(val); };
         v('c-fname',  q.clientFirstName || (q.clientName||'').split(' ')[0]);
         v('c-mname',  q.clientMiddleName);
         v('c-lname',  q.clientLastName  || (q.clientName||'').split(' ').slice(1).join(' '));
         v('c-gender', q.gender);
-        v('c-dob',    q.dob);
+        v('c-dob',    fmtD(q.dob));
         v('c-phone',  q.clientPhone);
         v('c-email',  q.clientEmail);
         v('c-district', q.clientDistrict);
@@ -9465,17 +9468,33 @@ function reviseQuote(){
     switchTab('edu-plans');
     setTimeout(()=>{
       try{
+        // Helper: normalise any date string to YYYY-MM-DD for <input type="date">
+        const fmtDate = d => {
+          if(!d) return '';
+          const s = String(d);
+          // Already YYYY-MM-DD
+          if(/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+          // ISO timestamp e.g. 2015-03-12T00:00:00.000Z
+          const m = s.match(/^(\d{4}-\d{2}-\d{2})/);
+          if(m) return m[1];
+          return '';
+        };
         const v = (id,val) => { const el=document.getElementById(id); if(el&&val!==undefined&&val!==null&&val!=='') el.value=val; };
-        v('edu-plan',    q.plan);
+
+        // Set plan FIRST then trigger change (populates term options etc)
+        v('edu-plan', q.plan);
+        try{ onEduPlanChange(); }catch(e){}
+
+        // Now populate all fields AFTER plan change (prevents wipe)
         v('edu-pfname',  q.pFirstName || q.clientFirstName || (q.parentName||'').split(' ')[0]);
         v('edu-pmname',  q.pmname     || q.clientMiddleName);
         v('edu-plname',  q.plname     || q.clientLastName);
-        v('edu-pdob',    q.pdob       || q.dob);
+        v('edu-pdob',    fmtDate(q.pdob || q.dob));
         v('edu-pgender', q.pGender    || q.gender);
         v('edu-cfname',  q.cFirstName);
         v('edu-cmname',  q.cMiddleName|| q.cmname);
         v('edu-clname',  q.cLastName  || q.clname);
-        v('edu-cdob',    q.cdob);
+        v('edu-cdob',    fmtDate(q.cdob));
         v('edu-cgender', q.cGender);
         v('edu-phone',   q.phone      || q.clientPhone);
         v('edu-town',    q.town       || q.clientCity);
@@ -9485,9 +9504,10 @@ function reviseQuote(){
         v('edu-freq', q.isMo ? 'monthly' : 'annual');
         const colTog = document.getElementById('edu-college-tog');
         if(colTog){ colTog.checked = !!q.hasCollege; }
-        // Trigger plan-change to recalculate
-        try{ onEduPlanChange(); }catch(e){}
+        // Trigger ANB recalculation now that DOBs are set
         try{ calcEduANB(); }catch(e){}
+        // Trigger college row toggle
+        try{ const ct=document.getElementById('edu-college-tog'); if(ct){ const ev=new Event('change'); ct.dispatchEvent(ev); }}catch(e){}
         showToast('✏️ Quote pre-filled — adjust and regenerate', 4000);
       }catch(e){ showToast('Could not pre-fill all fields', 3000); }
     }, 350);
@@ -9520,12 +9540,13 @@ function reviseQuote(){
     switchTab('phindu');
     setTimeout(()=>{
       try{
+        const fmtD = d => { if(!d)return''; const s=String(d); if(/^\d{4}-\d{2}-\d{2}$/.test(s))return s; const m=s.match(/^(\d{4}-\d{2}-\d{2})/); return m?m[1]:''; };
         const v = (id,val) => { const el=document.getElementById(id); if(el&&val!==undefined&&val!==null&&val!=='') el.value=val; };
         v('phindu-fname',  q.clientFirstName || (q.clientName||'').split(' ')[0]);
         v('phindu-mname',  q.clientMiddleName);
         v('phindu-lname',  q.clientLastName  || (q.clientName||'').split(' ').slice(1).join(' '));
         v('phindu-gender', q.gender);
-        v('phindu-dob',    q.dob);
+        v('phindu-dob',    fmtD(q.dob));
         v('phindu-phone',  q.clientPhone);
         v('phindu-town',   q.clientCity);
         v('phindu-district',q.clientDistrict);
