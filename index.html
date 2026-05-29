@@ -3339,7 +3339,18 @@ async function checkLicence(){
   return { allowed: true };
 }
 function getAgents(){
-  const DEFAULTS = {'VLA Agent':{pin:'1625',role:'agent',active:true},'VLA Admin':{pin:'9999',role:'admin',active:true}};
+  // ── SEEDED AGENTS: login works even when Sheets is unreachable ──────────
+  // Sheets will override with fresh data when available.
+  const DEFAULTS = {
+    'VLA Admin':              {pin:'9999', role:'admin', active:true},
+    'VLA Agent':              {pin:'1625', role:'agent', active:true},
+    'Anderson Tichiwangani':  {pin:'7660', role:'agent', active:true},
+    'Ted Mwambira':           {pin:'2010', role:'agent', active:true},
+    'Hastings Chimwendo':     {pin:'9293', role:'agent', active:true},
+    'Alex Nehuwa':            {pin:'6211', role:'agent', active:true},
+    'Samuel Chuma':           {pin:'3180', role:'agent', active:true},
+    'Ashraf Mbuka':           {pin:'8405', role:'agent', active:true},
+  };
   try {
     const stored = localStorage.getItem(AGENTS_KEY);
     if(stored) {
