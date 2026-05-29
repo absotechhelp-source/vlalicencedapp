@@ -3063,9 +3063,9 @@ input:checked+.tog-trk:before{transform:translateX(17px)}
 ═══════════════════════════════════════════ */
 const AGENTS_KEY = 'vla_agents_v2';
 const SHEETS_URL_KEY = 'vla_sheets_url';
-const SHEETS_URL_VERSION = 'v3.3';  // Bump this when APPS_SCRIPT_URL changes
+const SHEETS_URL_VERSION = 'v3.4';  // Bump this when APPS_SCRIPT_URL changes
 const SHEETS_URL_VER_KEY = 'vla_sheets_url_ver';
-const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxzzBEO1bQ1ODwr3CzrMdWsoosxNGgJNHxYSeVPgtF_ZQri7iqsjEBpg9-2h3yc_cigrA/exec';
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwG5yrxCV3qq2OZU9n5qSAZRI8fxMgOAbUKLXOSrQ0-5ueb6_MhvPV73M-XWESj6lg5Zw/exec';
 const ADMIN_USER = 'VLA Admin';
 const ADMIN_PIN  = '9999';  // Admin PIN — change via admin panel
 
@@ -3710,12 +3710,15 @@ window.addEventListener('DOMContentLoaded', async ()=>{
       if(!r.ok) throw new Error('HTTP '+r.status);
       const d = await r.json();
       const expiry = d.expiry || FALLBACK_EXPIRY;
+      // Safety: never trust a licence.json date EARLIER than the hardcoded fallback
+      // This prevents an outdated licence.json on GitHub from locking out agents
+      const effectiveExpiry = expiry > FALLBACK_EXPIRY ? expiry : FALLBACK_EXPIRY;
       const todayD = new Date(); todayD.setHours(0,0,0,0);
-      const expiryD = new Date(expiry); expiryD.setHours(0,0,0,0);
+      const expiryD = new Date(effectiveExpiry); expiryD.setHours(0,0,0,0);
       const active = todayD <= expiryD;
-      console.log('[LICENCE] online check — expiry:', expiry, '| active:', active);
+      console.log('[LICENCE] online check — licence.json expiry:', expiry, '| effective expiry:', effectiveExpiry, '| active:', active);
       // Save stamp with status AND timestamp
-      try { localStorage.setItem(LICENCE_STAMP_KEY, JSON.stringify({active, ts:Date.now(), expiry})); } catch(e){}
+      try { localStorage.setItem(LICENCE_STAMP_KEY, JSON.stringify({active, ts:Date.now(), expiry:effectiveExpiry})); } catch(e){}
       return { allowed: active, source: 'online' };
     } catch(e){
       console.warn('[LICENCE] offline —', e.message);
@@ -3824,10 +3827,15 @@ window.addEventListener('DOMContentLoaded', async ()=>{
   try {
     const saved = JSON.parse(localStorage.getItem(SESSION_KEY)||'null');
     if(saved && saved.agent && typeof saved.agent === 'string') {
-      // Verify the agent still exists and is active before restoring
+      // Trust the saved session — it was created by a successful login.
+      // Don't hard-require the agent to still be in getAgents() because the agents
+      // cache can be empty/partial right after a cache clear or 503, which would
+      // wrongly boot a legitimately logged-in agent.
       const agents = getAgents();
       const agentRecord = agents[saved.agent];
-      if(agentRecord && agentRecord.active) {
+      // Only block if we have a definitive record saying the agent is deactivated.
+      const explicitlyDisabled = agentRecord && agentRecord.active === false;
+      if(!explicitlyDisabled) {
         // ── Licence check on session restore ──
         const lic = await checkLicence();
         if(!lic.allowed){
@@ -3863,8 +3871,9 @@ window.addEventListener('DOMContentLoaded', async ()=>{
         setTimeout(()=>{ try{ flushSyncQueue(true); }catch(e){} }, 2000);
         setTimeout(()=>{ try{ restoreHistoryFromSheets(saved.agent); }catch(e){} }, 4000);
       } else {
-        // Agent was deactivated or removed — clear the stale session
+        // Agent explicitly deactivated (active===false) — clear session and force re-login
         try { localStorage.removeItem(SESSION_KEY); } catch(_){}
+        showToast('Your account has been deactivated. Contact your administrator.', 5000);
       }
     }
   } catch(e) {
