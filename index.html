@@ -473,6 +473,12 @@ input:checked+.tog-trk:before{transform:translateX(17px)}
     <div class="login-err" id="l-err">Invalid username or PIN. Please try again.</div>
     <div class="login-err" id="l-lic-err" style="display:none;background:#7f1d1d;border-radius:8px;padding:12px 14px;margin-top:8px;font-size:13px;line-height:1.5;color:#fecaca;text-align:center"></div>
     <div class="login-version">VLA Sales App v2.0 · Powered by Vanguard Life</div>
+    <div id="l-conn-status" style="display:none;font-size:11px;text-align:center;margin-top:6px;color:rgba(255,255,255,.5)"></div>
+    <div style="text-align:center;margin-top:10px">
+      <button onclick="forceAppRefresh()" style="background:none;border:none;color:rgba(255,255,255,.45);font-size:11px;cursor:pointer;padding:4px 8px;text-decoration:underline;font-family:'DM Sans',sans-serif">
+        Having trouble? Force refresh app
+      </button>
+    </div>
     <!-- Emergency reset — clears local agent cache so fresh data loads from Sheets -->
     <div style="text-align:center;margin-top:14px">
       <span onclick="emergencyReset()" style="font-size:11px;color:#bbb;cursor:pointer;text-decoration:underline">Having trouble signing in? Tap here to reset</span>
@@ -3059,7 +3065,7 @@ const AGENTS_KEY = 'vla_agents_v2';
 const SHEETS_URL_KEY = 'vla_sheets_url';
 const SHEETS_URL_VERSION = 'v3.3';  // Bump this when APPS_SCRIPT_URL changes
 const SHEETS_URL_VER_KEY = 'vla_sheets_url_ver';
-const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxzzBEO1bQ1ODwr3CzrMdWsoosxNGgJNHxYSeVPgtF_ZQri7iqsjEBpg9-2h3yc_cigrA/exec';
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwG5yrxCV3qq2OZU9n5qSAZRI8fxMgOAbUKLXOSrQ0-5ueb6_MhvPV73M-XWESj6lg5Zw/exec';
 const ADMIN_USER = 'VLA Admin';
 const ADMIN_PIN  = '9999';  // Admin PIN — change via admin panel
 
@@ -3398,6 +3404,7 @@ async function fetchAgentsFromSheets(){
         const local  = getAgents();
         const merged = Object.assign({}, local, data.agents);
         saveAgents(merged);
+        localStorage.setItem('vla_agents_fetched_at', String(Date.now()));
         console.log('[AGENTS] ✅ Fetched', Object.keys(data.agents).length, 'agents from Sheets');
         return merged;
       }
@@ -3775,6 +3782,28 @@ window.addEventListener('DOMContentLoaded', async ()=>{
   document.getElementById('sheets-url').value=url;
   document.getElementById('l-pin').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin();});
   document.getElementById('l-user').addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('l-pin').focus();});
+
+  // ── Pre-fetch agents as soon as login screen loads ──────────────────
+  // Fresh installs have nothing in localStorage — fetching now means agents
+  // are cached and ready before the login button is even pressed.
+  (async ()=>{
+    const connStatus = document.getElementById('l-conn-status');
+    if(connStatus){ connStatus.textContent='🔄 Connecting to Vanguard…'; connStatus.style.display='block'; connStatus.style.color='rgba(255,255,255,.55)'; }
+    try {
+      const result = await fetchAgentsFromSheets();
+      if(result && connStatus){
+        const count = Object.keys(result).length;
+        connStatus.textContent = '✓ Connected — '+count+' agent'+(count===1?'':'s')+' loaded';
+        connStatus.style.color = 'rgba(255,255,255,.5)';
+        setTimeout(()=>{ if(connStatus) connStatus.style.display='none'; }, 3000);
+      } else if(connStatus){
+        connStatus.textContent = '⚠️ Could not reach servers — login may fail for new accounts';
+        connStatus.style.color = '#fca5a5';
+      }
+    } catch(e){
+      if(connStatus){ connStatus.textContent='⚠️ Offline — cached logins only'; connStatus.style.color='#fca5a5'; }
+    }
+  })();
   // Set Manga Yako date of quote to today
   const myDoqEl=document.getElementById('my-doq');
   if(myDoqEl)myDoqEl.value=today;
@@ -3833,6 +3862,22 @@ window.addEventListener('DOMContentLoaded', async ()=>{
   }
 });
 
+// Force clear service worker cache and reload — for agents stuck on old cached version
+async function forceAppRefresh(){
+  showToast('Clearing cache and reloading…', 3000);
+  try {
+    if('serviceWorker' in navigator){
+      const regs = await navigator.serviceWorker.getRegistrations();
+      for(const reg of regs) await reg.unregister();
+    }
+    if('caches' in window){
+      const keys = await caches.keys();
+      for(const key of keys) await caches.delete(key);
+    }
+    setTimeout(()=>{ window.location.href = window.location.href.split('?')[0]+'?t='+Date.now(); }, 800);
+  } catch(e){ window.location.reload(true); }
+}
+
 /* ═══════════════════════════════════════════
    LOGIN / LOGOUT
 ═══════════════════════════════════════════ */
@@ -3845,32 +3890,51 @@ async function doLogin(){
   licErr.style.display='none';
   err.style.display='none';
 
-  // ── Fetch fresh agents from Sheets before checking credentials ──
-  btn.textContent='Checking…'; btn.disabled=true;
+  // ── Fetch agents from Sheets (skip if pre-fetch already ran within 60s) ──
+  btn.textContent='Connecting…'; btn.disabled=true;
+  err.style.display='none';
+
   let sheetsResult = null;
-  try { sheetsResult = await fetchAgentsFromSheets(); } catch(e){}
+  let fetchError   = null;
+  const lastFetch  = parseInt(localStorage.getItem('vla_agents_fetched_at')||'0');
+  const freshEnough = (Date.now() - lastFetch) < 60000;  // within last 60 seconds
+  if(!freshEnough){
+    try { sheetsResult = await fetchAgentsFromSheets(); }
+    catch(e){ fetchError = e.message; }
+  } else {
+    // Pre-fetch already ran — reuse cached agents
+    sheetsResult = getAgents();
+    console.log('[LOGIN] Using pre-fetched agents (fetched', Math.round((Date.now()-lastFetch)/1000)+'s ago)');
+  }
+
   btn.textContent='Sign In →'; btn.disabled=false;
 
   const agents = getAgents();
   const agent  = agents[user];
 
-  // If Sheets fetch failed AND agent not in local cache → show helpful error
-  if(!agent && !sheetsResult){
-    err.textContent = '⚠️ Could not reach Vanguard Sheets to verify your credentials. Check your internet connection and try again. If the problem persists, contact your administrator.';
-    err.style.display='block';
-    return;
-  }
-
-  // If agent not found even after successful Sheets fetch
+  // ── Agent not found anywhere ─────────────────────────────────────────
   if(!agent){
-    err.textContent = 'Agent "'+user+'" not found. Check your name matches exactly or contact your administrator.';
-    err.style.display='block';
+    if(!sheetsResult){
+      // Sheets unreachable AND not cached — show actionable error with retry
+      err.innerHTML =
+        '⚠️ Could not reach Vanguard servers to load your account.<br><br>'+
+        '<strong>Try these steps:</strong><br>'+
+        '1. Check you have internet (try opening a website)<br>'+
+        '2. Tap <strong>Retry</strong> below<br>'+
+        '3. If it still fails, tap <strong>Force Refresh App</strong> to load the latest version<br><br>'+
+        '<button onclick="doLogin()" style="background:var(--M);color:#fff;border:none;padding:8px 16px;border-radius:6px;font-size:13px;cursor:pointer;margin-right:8px">↻ Retry</button>'+
+        '<button onclick="forceAppRefresh()" style="background:#fff;color:var(--M);border:1.5px solid var(--M);padding:8px 16px;border-radius:6px;font-size:13px;cursor:pointer">⟳ Force Refresh App</button>';
+      err.style.display='block';
+    } else {
+      err.textContent = 'Agent "'+user+'" not found in Vanguard Sheets. Check your name matches exactly (including capitals) or ask your administrator to add your account.';
+      err.style.display='block';
+    }
     return;
   }
 
   if(!sheetsResult){
-    // Sheets unavailable — logging in with cached credentials
-    showToast('⚠️ Sheets offline — using saved credentials', 4000);
+    // Sheets offline but agent IS cached — allow login with warning
+    showToast('⚠️ Offline — using saved credentials', 4000);
   }
 
   const agentPin    = typeof agent === 'object' ? agent.pin    : agent;
