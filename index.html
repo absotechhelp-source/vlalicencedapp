@@ -3034,6 +3034,20 @@ input:checked+.tog-trk:before{transform:translateX(17px)}
   </div>
 </div>
 
+<!-- IN-APP CONFIRM DIALOG (replaces browser confirm() which is blocked on some mobile/iframe contexts) -->
+<div class="modal-overlay" id="confirm-modal" style="z-index:2100">
+  <div class="modal-box" style="max-width:340px;width:92vw">
+    <div style="padding:20px 20px 6px">
+      <div style="font-size:15px;font-weight:700;color:var(--T);margin-bottom:8px" id="confirm-title">Confirm</div>
+      <div style="font-size:13px;color:var(--T2);line-height:1.6" id="confirm-msg"></div>
+    </div>
+    <div style="padding:14px 20px;display:flex;gap:10px;justify-content:flex-end">
+      <button class="btn-sm btn-outline" id="confirm-cancel-btn" onclick="_confirmResolve(false)" style="min-width:72px">Cancel</button>
+      <button class="btn-sm" id="confirm-ok-btn" onclick="_confirmResolve(true)" style="min-width:72px;background:#991b1b;color:#fff;border:none">Confirm</button>
+    </div>
+  </div>
+</div>
+
 <!-- HISTORY QUOTE MODAL — unified for all 4 products -->
 <div class="modal-overlay" id="hist-modal">
   <div class="modal-box" style="max-width:520px;width:96vw">
@@ -5697,30 +5711,7 @@ function _hmRenderMyDoc(q, targetEl){
   </div>`;
 }
 
-/* ── Unified PDF save from modal ── */
-function histSavePDF(){
-  const docEl = document.getElementById('hm-doc');
-  if(!docEl || !_hmFilename){ showToast('No quote to save'); return; }
-  captureQuotePDF('hm-doc', _hmFilename, function(pdf, fn){
-    pdf.save(fn);
-    showToast('✓ PDF saved — check Downloads', 3000);
-  });
-}
-
-/* ── Unified WhatsApp share from modal ── */
-function histShareWA(){
-  const q = histModalQuote;
-  if(!q){ showToast('No quote open'); return; }
-  const docEl = document.getElementById('hm-doc');
-  if(!docEl){ showToast('No quote to share'); return; }
-  captureQuoteImageFromEl(docEl, canvas => {
-    const link = document.createElement('a');
-    link.download = (_hmFilename||'VLA-Quote').replace('.pdf','.png');
-    link.href = canvas.toDataURL('image/png');
-    link.click();
-    setTimeout(()=> showToast('✓ Image saved — open WhatsApp and attach from gallery', 4500), 800);
-  });
-}
+/* histSavePDF and histShareWA defined further below in the PDF ENGINE section */
 function closeHistModal(){
   document.getElementById('hist-modal').classList.remove('open');
   histModalQuote = null;
@@ -5732,6 +5723,27 @@ function closeHistModal(){
 }
 
 /* ═══════════════════════════════════════════
+   IN-APP CONFIRM DIALOG
+   Replaces browser confirm() which is blocked
+   on GitHub Pages and some mobile contexts.
+═══════════════════════════════════════════ */
+let _confirmResolve = ()=>{};
+function appConfirm(title, msg, okLabel='Confirm', okColor='#991b1b'){
+  return new Promise(resolve=>{
+    document.getElementById('confirm-title').textContent = title;
+    document.getElementById('confirm-msg').innerHTML = msg;
+    const okBtn = document.getElementById('confirm-ok-btn');
+    okBtn.textContent = okLabel;
+    okBtn.style.background = okColor;
+    _confirmResolve = (val)=>{
+      document.getElementById('confirm-modal').classList.remove('open');
+      resolve(val);
+    };
+    document.getElementById('confirm-modal').classList.add('open');
+  });
+}
+
+/* ═══════════════════════════════════════════
    ADMIN SOFT DELETE
 ═══════════════════════════════════════════ */
 async function adminDeleteQuote(){
@@ -5740,8 +5752,17 @@ async function adminDeleteQuote(){
   const ref = q.ref;
   if(!ref){ showToast('No reference — cannot delete'); return; }
 
-  // Confirm
-  if(!confirm('Mark quote ' + ref + ' as DELETED?\n\nThe quote will remain visible in Sheets and in History (filtered by "Deleted only") but will be hidden from the default view.\n\nThis action is logged with your name and cannot be undone.')) return;
+  // In-app confirm — browser confirm() is blocked on GitHub Pages mobile
+  const ok = await appConfirm(
+    'Delete Quote',
+    'Mark quote <strong>' + ref + '</strong> as DELETED?<br><br>' +
+    'The quote will remain visible in Sheets and in History (filter: "Deleted only") ' +
+    'but hidden from the default view.<br><br>' +
+    'This action is logged with your name.',
+    'Delete',
+    '#991b1b'
+  );
+  if(!ok) return;
 
   // Offline guard
   if(!navigator.onLine){ showToast('⚠️ No connection — cannot delete right now', 4000); return; }
@@ -6037,8 +6058,14 @@ async function addAgent(){
   showToast('✓ Agent "'+name+'" added ('+role+')');
   renderAdminPanel();
 }
-function removeAgent(name){
-  if(!confirm('Remove agent "'+name+'"? Their past quotes will remain in history.'))return;
+async function removeAgent(name){
+  const ok = await appConfirm(
+    'Remove Agent',
+    'Remove agent <strong>"'+name+'"</strong>?<br><br>Their past quotes will remain in history.',
+    'Remove',
+    '#991b1b'
+  );
+  if(!ok) return;
   const agents=getAgents();
   delete agents[name];
   saveAgents(agents);
@@ -6123,58 +6150,446 @@ function captureQuoteImageFromEl(el, callback){
 }
 function captureQuoteImage(callback){captureQuoteImageFromEl(document.getElementById('q-doc'),callback);}
 
+/* ═══════════════════════════════════════════════════════════════════
+   PROGRAMMATIC PDF ENGINE  v4.0
+   Matches VLA Annuity quote style:
+   — Clean white A4, maroon only for header/rules/section heads
+   — No coloured boxes, no gradients, no card backgrounds
+   — Letterhead: logo left, contact right, thin rule below
+   — Footer: VLA Pension logo block left, tagline right
+   Uses jsPDF programmatic drawing — no html2canvas screenshot.
+═══════════════════════════════════════════════════════════════════ */
+
+// Colour palette matching Annuity quote exactly
+const PDF_MAROON  = [90, 15, 15];    // #5A0F0F
+const PDF_CREAM   = [200, 184, 160]; // #C8B8A0
+const PDF_GREY    = [100, 100, 100];
+const PDF_LGREY   = [220, 220, 220];
+const PDF_BLACK   = [26, 5, 5];
+const PDF_WHITE   = [255, 255, 255];
+
+// ── Shared PDF helpers ────────────────────────────────────────────
+
+function _pdfSetFont(doc, size, style='normal', color=PDF_BLACK){
+  doc.setFontSize(size);
+  doc.setFont('helvetica', style);
+  doc.setTextColor(...color);
+}
+
+function _pdfRule(doc, x, y, w, color=PDF_MAROON, h=0.35){
+  doc.setFillColor(...color);
+  doc.rect(x, y, w, h, 'F');
+}
+
+function _pdfSectionHead(doc, x, y, w, label){
+  // Maroon filled header row — like "Details of Annuity" in the Annuity quote
+  doc.setFillColor(...PDF_MAROON);
+  doc.rect(x, y, w, 6.5, 'F');
+  _pdfSetFont(doc, 9, 'bold', PDF_WHITE);
+  doc.text(label, x + w/2, y + 4.5, {align:'center'});
+  return y + 6.5;
+}
+
+function _pdfDataRow(doc, x, y, w, label, value, shade=false){
+  // Alternating-shade row — label left, bold value right
+  if(shade){
+    doc.setFillColor(248, 248, 248);
+    doc.rect(x, y, w, 6, 'F');
+  }
+  _pdfSetFont(doc, 8.5, 'normal', PDF_GREY);
+  doc.text(label, x + 3, y + 4.2);
+  _pdfSetFont(doc, 8.5, 'bold', PDF_BLACK);
+  doc.text(String(value), x + w - 3, y + 4.2, {align:'right'});
+  // Light bottom border
+  doc.setDrawColor(...PDF_LGREY);
+  doc.setLineWidth(0.2);
+  doc.line(x, y + 6, x + w, y + 6);
+  return y + 6;
+}
+
+function _pdfFooter(doc, pageW, pageH){
+  // Cream band at bottom — matches letterhead footer
+  doc.setFillColor(...PDF_CREAM);
+  doc.rect(0, pageH - 14, pageW, 14, 'F');
+  // Dark maroon block left (VLA Pension badge)
+  doc.setFillColor(...PDF_MAROON);
+  doc.rect(0, pageH - 14, 52, 14, 'F');
+  _pdfSetFont(doc, 7, 'bold', PDF_WHITE);
+  doc.text('Vanguard', 8, pageH - 8.5);
+  doc.text('Pension Services', 8, pageH - 4.5);
+  // Tagline right
+  _pdfSetFont(doc, 8, 'bold', PDF_MAROON);
+  doc.text('Life Assurance  •  Pension Services', pageW - 10, pageH - 5.5, {align:'right'});
+}
+
+function _pdfHeader(doc, pageW, logoDataUrl){
+  // Top rule
+  _pdfRule(doc, 0, 0, pageW, PDF_MAROON, 1.5);
+  // Logo — left
+  if(logoDataUrl){
+    try{ doc.addImage(logoDataUrl, 'PNG', 10, 4, 38, 12); }catch(e){}
+  }
+  // Contact block — right (matches letterhead)
+  _pdfSetFont(doc, 7.5, 'normal', PDF_GREY);
+  doc.text('Robins Road, P.O. Box 1625, Blantyre, Malawi', pageW - 10, 8, {align:'right'});
+  doc.text('+265 887 094 872', pageW - 10, 12, {align:'right'});
+  _pdfSetFont(doc, 7.5, 'normal', PDF_MAROON);
+  doc.text('vanguard@vanguardlifemw.com', pageW - 10, 16, {align:'right'});
+  doc.text('vanguardlifemw.com', pageW - 10, 20, {align:'right'});
+  // Thin maroon rule below header
+  _pdfRule(doc, 0, 23, pageW, PDF_CREAM, 0.5);
+  _pdfRule(doc, 0, 23.5, pageW, PDF_MAROON, 0.5);
+  return 28; // y after header
+}
+
+// ── Get logo as dataURL ────────────────────────────────────────────
+function _pdfGetLogoDataUrl(){
+  const img = document.querySelector('.login-logo') || document.querySelector('.q-lh-logo') || document.querySelector('img[alt="Vanguard Life"]');
+  if(!img) return null;
+  try{
+    const c = document.createElement('canvas');
+    c.width = img.naturalWidth || 200; c.height = img.naturalHeight || 70;
+    const ctx = c.getContext('2d');
+    ctx.drawImage(img, 0, 0);
+    return c.toDataURL('image/png');
+  }catch(e){ return null; }
+}
+
+// ══════════════════════════════════════════════════════════════════
+//  histSavePDF — unified PDF entry point called from modal
+//  Routes to the right product PDF builder based on _hmProduct
+// ══════════════════════════════════════════════════════════════════
+function histSavePDF(){
+  const q = histModalQuote;
+  if(!q){ showToast('No quote open'); return; }
+  showSavingOverlay('Generating PDF…');
+  setTimeout(()=>{
+    try{
+      let doc;
+      if(_hmProduct==='PSP')    doc = _buildPSPPdf(q);
+      else if(_hmProduct==='EDU')    doc = _buildEduPdf(q);
+      else if(_hmProduct==='PHINDU') doc = _buildPhinduPdf(q);
+      else if(_hmProduct==='MY')     doc = _buildMyPdf(q);
+      else throw new Error('Unknown product');
+      hideSavingOverlay();
+      doc.save(_hmFilename || 'VLA-Quote.pdf');
+      showToast('✓ PDF saved — check Downloads', 3000);
+    }catch(err){
+      hideSavingOverlay();
+      console.error('[histSavePDF]', err);
+      showToast('PDF error: '+err.message, 4000);
+    }
+  }, 80);
+}
+
+// ── PSP PDF ───────────────────────────────────────────────────────
+function _buildPSPPdf(q){
+  const {jsPDF} = window.jspdf;
+  const doc = new jsPDF({orientation:'portrait', unit:'mm', format:'a4'});
+  const W = 210, H = 297, M = 14, CW = W - M*2;
+  const logo = _pdfGetLogoDataUrl();
+  let y = _pdfHeader(doc, W, logo);
+
+  // Ref + Date line
+  _pdfSetFont(doc, 8, 'normal', PDF_GREY);
+  doc.text('Quotation reference:  ' + (q.ref||''), M, y+4);
+  doc.text('Quotation date:  ' + fmtDate(q.doq||q.savedAt||''), W-M, y+4, {align:'right'});
+  y += 10;
+
+  // Client details section
+  y = _pdfSectionHead(doc, M, y, CW, 'Client Details');
+  const fee = q.isMo ? FEE_M : FEE_A;
+  const rows1 = [
+    ['Name', q.clientName||'—'],
+    ['Date of birth', q.dob ? fmtDate(q.dob) : '—'],
+    ['Age at next birthday (ANB)', String(q.anb||'—')],
+    ['Gender', q.gender||'—'],
+    ['Occupation', (q.occupation||'—') + (q.occClass&&q.occClass!=='N/A'?' (Class '+q.occClass+')':'')],
+    ['Phone', q.clientPhone||'—'],
+    ['Address', [q.clientCity,q.clientDistrict].filter(Boolean).join(', ')||'—'],
+  ];
+  rows1.forEach((r,i)=>{ y = _pdfDataRow(doc, M, y, CW, r[0], r[1], i%2===0); });
+  y += 4;
+
+  // Policy details section
+  y = _pdfSectionHead(doc, M, y, CW, 'Details of Quotation — Pure Savings Plan');
+  const isMo = !!q.isMo;
+  const freq = isMo ? 'Monthly' : 'Annual';
+  const basicP = Number(q.basicP)||0;
+  const dabP   = Number(q.dabP)||0;
+  const totalP = Number(q.totalP)||(basicP+dabP+fee);
+  const aTotalP = basicP + fee;
+  const projM  = Number(q.projM)||0;
+
+  const rows2 = [
+    ['Sum Assured', 'MK ' + Math.round(q.SA||0).toLocaleString()],
+    ['Policy term', (q.term||'—') + ' years'],
+    ['Payment frequency', freq],
+    ['Age at maturity', String(q.matAge||((q.anb||0)+(q.term||0)-1))],
+    ['Projected maturity value (10% p.a.)*', 'MK ' + Math.round(projM).toLocaleString()],
+  ];
+  rows2.forEach((r,i)=>{ y = _pdfDataRow(doc, M, y, CW, r[0], r[1], i%2===0); });
+  y += 4;
+
+  // Premium breakdown — two columns like Annuity options
+  y = _pdfSectionHead(doc, M, y, CW, 'Premium Breakdown');
+  const half = CW/2 - 1;
+
+  // Option A header
+  doc.setFillColor(240,236,232);
+  doc.rect(M, y, half, 5.5, 'F');
+  _pdfSetFont(doc, 8, 'bold', PDF_MAROON);
+  doc.text('Option A — Savings Only', M + half/2, y+3.8, {align:'center'});
+  // Option B header
+  doc.setFillColor(240,236,232);
+  doc.rect(M+half+2, y, half, 5.5, 'F');
+  doc.text('Option B — Savings + DAB', M+half+2 + half/2, y+3.8, {align:'center'});
+  y += 5.5;
+
+  const rowPairs = [
+    ['PSP Premium', 'MK '+Math.round(basicP).toLocaleString(), 'PSP Premium', 'MK '+Math.round(basicP).toLocaleString()],
+    ['DAB', '—', 'DAB (Class '+(q.occClass||'1')+')', 'MK '+Math.round(dabP).toLocaleString()],
+    ['Policy fee', 'MK '+Math.round(fee).toLocaleString(), 'Policy fee', 'MK '+Math.round(fee).toLocaleString()],
+    ['Total /'+( isMo?'mo':'yr'), 'MK '+Math.round(aTotalP).toLocaleString(), 'Total /'+(isMo?'mo':'yr'), 'MK '+Math.round(totalP).toLocaleString()],
+  ];
+  rowPairs.forEach((r,i)=>{
+    const shade = i%2===0;
+    // Left col
+    if(shade){ doc.setFillColor(248,248,248); doc.rect(M, y, half, 6, 'F'); }
+    _pdfSetFont(doc, 8, 'normal', PDF_GREY);  doc.text(r[0], M+3, y+4.2);
+    _pdfSetFont(doc, 8, 'bold', i===3?PDF_MAROON:PDF_BLACK); doc.text(r[1], M+half-3, y+4.2, {align:'right'});
+    // Right col
+    if(shade){ doc.setFillColor(248,248,248); doc.rect(M+half+2, y, half, 6, 'F'); }
+    _pdfSetFont(doc, 8, 'normal', PDF_GREY);  doc.text(r[2], M+half+2+3, y+4.2);
+    _pdfSetFont(doc, 8, 'bold', i===3?PDF_MAROON:PDF_BLACK); doc.text(r[3], M+half+2+half-3, y+4.2, {align:'right'});
+    // Border
+    doc.setDrawColor(...PDF_LGREY); doc.setLineWidth(0.2);
+    doc.line(M, y+6, M+half, y+6);
+    doc.line(M+half+2, y+6, M+half+2+half, y+6);
+    y += 6;
+  });
+  y += 6;
+
+  // Key features
+  _pdfSetFont(doc, 7.5, 'normal', PDF_GREY);
+  const feats = [
+    'Maturity benefit: Sum assured plus all declared bonuses payable at maturity.',
+    'Death benefit: Years 1–2: 90% of premiums paid. After year 2: premiums + 4% compound p.a.',
+    'With-profits: Annual reversionary bonus — once declared, permanently added.',
+    'Loan facility: Up to 95% of surrender value once acquired.',
+    'Surrender & paid-up: Available after 3 years (2 years for terms ≤19 years).',
+    q.dabIncluded ? 'Double Accident Benefit (DAB): Additional MK '+Math.round(q.SA||0).toLocaleString()+' on accidental death/disability.' : null
+  ].filter(Boolean);
+  feats.forEach(f=>{ doc.text('• '+f, M+3, y); y+=5; });
+  y+=2;
+
+  // Disclaimer
+  _pdfSetFont(doc, 6.5, 'italic', PDF_GREY);
+  doc.text('* Projected maturity assumes 10% p.a. compound annual bonus — not guaranteed. Subject to underwriting. Regulated by Reserve Bank of Malawi.', M, y, {maxWidth:CW});
+  y+=8;
+
+  // Acceptance
+  _pdfRule(doc, M, y, CW, PDF_CREAM, 0.5);
+  y+=3;
+  _pdfSetFont(doc, 8, 'normal', PDF_BLACK);
+  doc.text('Agent: '+(q.agent||''), M, y+4);
+  const {mobile:agMob} = loadProfileData();
+  if(agMob) doc.text('Tel: '+agMob, M, y+9);
+  doc.text('_______________________', M, H-40);
+  doc.text('Proposer', M, H-35);
+  doc.text('_______________________', M, H-40+5);
+  doc.text('Date', M, H-35+5);
+
+  _pdfFooter(doc, W, H);
+  return doc;
+}
+
+// ── Phindu PDF ────────────────────────────────────────────────────
+function _buildPhinduPdf(q){
+  const {jsPDF} = window.jspdf;
+  const doc = new jsPDF({orientation:'portrait', unit:'mm', format:'a4'});
+  const W=210, H=297, M=14, CW=W-M*2;
+  const logo = _pdfGetLogoDataUrl();
+  let y = _pdfHeader(doc, W, logo);
+
+  _pdfSetFont(doc, 8, 'normal', PDF_GREY);
+  doc.text('Quotation reference:  '+(q.ref||''), M, y+4);
+  doc.text('Quotation date:  '+fmtDate(q.savedAt||q.doq||''), W-M, y+4, {align:'right'});
+  y+=10;
+
+  y = _pdfSectionHead(doc, M, y, CW, 'Client Details');
+  const cr1=[['Name',q.name||q.clientName||'—'],['Date of birth',q.dob?fmtDate(q.dob):'—'],['Age at next birthday',String(q.anb||'—')],['Age band',q.band||'—'],['Gender',q.gender||'—'],['Phone',q.phone||'—'],['Town / District',[q.town,q.district].filter(Boolean).join(', ')||'—']];
+  cr1.forEach((r,i)=>{y=_pdfDataRow(doc,M,y,CW,r[0],r[1],i%2===0);});
+  y+=4;
+
+  y=_pdfSectionHead(doc,M,y,CW,'Details of Quotation — Phindu Savings Plan');
+  const prem=q.premium||q.prem||0;
+  const cr2=[
+    ['Monthly premium','MK '+Math.round(prem).toLocaleString()],
+    ['Money Tree %',String(q.mt||'—')+'%'],
+    ['Policy term','10 years'],
+    ['Basic Sum Assured','MK '+Math.round(q.basicSA||0).toLocaleString()],
+    ['SA with bonus at maturity','MK '+Math.round(q.saWithBonus||0).toLocaleString()],
+    ['Money Tree benefit (×2)','MK '+Math.round((q.mtBenefit||0)*2).toLocaleString()],
+    ['Total receipts','MK '+Math.round(q.totalReceipts||q.totalRcpts||0).toLocaleString()],
+    ['Total premiums paid','MK '+Math.round(q.totalPremiums||q.totalPrems||0).toLocaleString()],
+    ['Client profit','MK '+Math.round(q.profit||0).toLocaleString()],
+  ];
+  cr2.forEach((r,i)=>{y=_pdfDataRow(doc,M,y,CW,r[0],r[1],i%2===0);});
+  y+=8;
+
+  _pdfSetFont(doc,6.5,'italic',PDF_GREY);
+  doc.text('Indicative quotation only. Subject to underwriting. Regulated by Reserve Bank of Malawi.',M,y,{maxWidth:CW});
+  _pdfFooter(doc,W,H);
+  return doc;
+}
+
+// ── Manga Yako PDF ────────────────────────────────────────────────
+function _buildMyPdf(q){
+  const {jsPDF} = window.jspdf;
+  const doc = new jsPDF({orientation:'portrait', unit:'mm', format:'a4'});
+  const W=210, H=297, M=14, CW=W-M*2;
+  const logo = _pdfGetLogoDataUrl();
+  let y = _pdfHeader(doc, W, logo);
+
+  _pdfSetFont(doc,8,'normal',PDF_GREY);
+  doc.text('Quotation reference:  '+(q.ref||''),M,y+4);
+  doc.text('Quotation date:  '+fmtDate(q.doq||q.savedAt||''),W-M,y+4,{align:'right'});
+  y+=10;
+
+  y=_pdfSectionHead(doc,M,y,CW,'Client Details');
+  const cr1=[['Name',q.clientName||'—'],['Date of birth',q.dob?fmtDate(q.dob):'—'],['Age at next birthday',String(q.anb||'—')],['Gender',q.gender||'—'],['Phone',q.clientPhone||q.phone||'—'],['Location',[q.clientCity||q.city,q.clientCountry||q.country].filter(Boolean).join(', ')||'—']];
+  cr1.forEach((r,i)=>{y=_pdfDataRow(doc,M,y,CW,r[0],r[1],i%2===0);});
+  y+=4;
+
+  y=_pdfSectionHead(doc,M,y,CW,'Details of Quotation — Manga Yako Savings Plan (15 Years)');
+  const cr2=[
+    ['Monthly premium','USD '+Math.round(q.prem||0).toLocaleString()],
+    ['Target maturity value','USD '+Math.round(q.tmv||0).toLocaleString()],
+    ['Total contributions (15 yrs)','USD '+Math.round(q.totalContrib||0).toLocaleString()],
+    ['Death benefit','USD '+Math.round(q.deathBenefit||Math.max(1000,q.tmv||0)).toLocaleString()],
+    ['Policy term','15 years (fixed)'],
+    ['Payment frequency','Monthly'],
+  ];
+  cr2.forEach((r,i)=>{y=_pdfDataRow(doc,M,y,CW,r[0],r[1],i%2===0);});
+  y+=8;
+
+  _pdfSetFont(doc,6.5,'italic',PDF_GREY);
+  doc.text('USD-denominated product. Indicative quotation only. Subject to underwriting. Regulated by Reserve Bank of Malawi.',M,y,{maxWidth:CW});
+  _pdfFooter(doc,W,H);
+  return doc;
+}
+
+// ── Educational Plans PDF ─────────────────────────────────────────
+function _buildEduPdf(q){
+  const {jsPDF} = window.jspdf;
+  const doc = new jsPDF({orientation:'portrait', unit:'mm', format:'a4'});
+  const W=210, H=297, M=14, CW=W-M*2;
+  const logo = _pdfGetLogoDataUrl();
+  let y = _pdfHeader(doc, W, logo);
+
+  _pdfSetFont(doc,8,'normal',PDF_GREY);
+  doc.text('Quotation reference:  '+(q.ref||''),M,y+4);
+  doc.text('Quotation date:  '+fmtDate(q.doq||q.savedAt||''),W-M,y+4,{align:'right'});
+  y+=10;
+
+  y=_pdfSectionHead(doc,M,y,CW,'Parent / Proposer Details');
+  const cr1=[
+    ['Name', q.parentName||q.clientName||'—'],
+    ['Date of birth', q.pdob?fmtDate(q.pdob):'—'],
+    ['Age at next birthday (ANB)', String(q.pANB||q.anb||'—')],
+    ['Gender', q.pGender||q.gender||'—'],
+    ['Phone', q.phone||'—'],
+    ['Location', [q.town,q.district].filter(Boolean).join(', ')||'—'],
+  ];
+  cr1.forEach((r,i)=>{y=_pdfDataRow(doc,M,y,CW,r[0],r[1],i%2===0);});
+  y+=4;
+
+  y=_pdfSectionHead(doc,M,y,CW,'Child Details');
+  const cr2=[
+    ['Name', q.childName||q.childFullName||'—'],
+    ['Date of birth', q.cdob?fmtDate(q.cdob):'—'],
+    ['Age at next birthday (ANB)', String(q.cANB||'—')],
+    ['Gender', q.cGender||'—'],
+  ];
+  cr2.forEach((r,i)=>{y=_pdfDataRow(doc,M,y,CW,r[0],r[1],i%2===0);});
+  y+=4;
+
+  const planNames={
+    'lgp-lc':'Little Genius Primary (With Life Cover)',
+    'lgp-nl':'Little Genius Primary (Without Life Cover)',
+    'lge-wp':'Little Genius Education Plan (With Profits)',
+    'tep':'Tertiary Education Plan (With Profits)'
+  };
+  const freqLabel = q.isMo?'Monthly':'Annual';
+  const BONUS_RATE = 0.10;
+  const projSA = Math.round((q.totalSA||0)*Math.pow(1+BONUS_RATE, q.premTerm||0));
+  const projCol = q.hasCollege&&q.colSA ? Math.round(q.colSA*Math.pow(1+BONUS_RATE,q.premTerm||0)) : 0;
+
+  y=_pdfSectionHead(doc,M,y,CW,'Details of Quotation — '+(planNames[q.plan]||q.planName||'Educational Plan'));
+  const cr3=[
+    ['Sum Assured (Basic)', 'MK '+Math.round(q.totalSA||0).toLocaleString()],
+    ['Projected SA @ 10% p.a.*', 'MK '+projSA.toLocaleString()],
+    ['Premium term', String(q.premTerm||'—')+' years'],
+    ['Payment frequency', freqLabel],
+    ['Occupation class', q.occCls||'Standard'],
+    ['Basic premium', 'MK '+Math.round(q.basicPrem||0).toLocaleString()+' /'+( q.isMo?'mo':'yr')],
+    q.occPrem>0 ? ['Occupation loading', 'MK '+Math.round(q.occPrem||0).toLocaleString()+' /'+(q.isMo?'mo':'yr')] : null,
+    q.hasCollege ? ['College Benefit SA', 'MK '+Math.round(q.colSA||0).toLocaleString()] : null,
+    q.hasCollege ? ['College Benefit projected*', 'MK '+projCol.toLocaleString()] : null,
+    q.hasCollege ? ['College Benefit premium', 'MK '+Math.round(q.colPrem||0).toLocaleString()+' /'+(q.isMo?'mo':'yr')] : null,
+    ['Total premium', 'MK '+Math.round(q.totalPrem||q.totalP||0).toLocaleString()+' /'+(q.isMo?'mo':'yr')],
+  ].filter(Boolean);
+  cr3.forEach((r,i)=>{y=_pdfDataRow(doc,M,y,CW,r[0],r[1],i%2===0);});
+  y+=8;
+
+  _pdfSetFont(doc,6.5,'italic',PDF_GREY);
+  doc.text('* Projected values assume 10% p.a. compound annual bonus — not guaranteed. Indicative quotation only. Subject to underwriting. Regulated by Reserve Bank of Malawi.',M,y,{maxWidth:CW});
+  _pdfFooter(doc,W,H);
+  return doc;
+}
+
+/* captureQuotePDF kept for any legacy calls — now delegates to programmatic builder if product known */
 function captureQuotePDF(elId, filename, callback){
+  // Legacy fallback using html2canvas — only used if product-specific builder not available
   const el = document.getElementById(elId) || document.getElementById('q-doc');
   if(!el){showToast('Generate a quote first');return;}
   showSavingOverlay('Generating PDF…');
-
   const {jsPDF} = window.jspdf;
-  const RENDER_W = 640;
-  const pdfW = 210; // A4 width mm
-  const pdfH = 297; // A4 height mm
-
-  const origWidth = el.style.width;
-  const origMaxWidth = el.style.maxWidth;
-  el.style.width = RENDER_W + 'px';
-  el.style.maxWidth = RENDER_W + 'px';
-
+  const RENDER_W = 640, pdfW=210, pdfH=297;
+  const origWidth=el.style.width, origMaxWidth=el.style.maxWidth;
+  el.style.width=RENDER_W+'px'; el.style.maxWidth=RENDER_W+'px';
   setTimeout(()=>{
-    html2canvas(el, {
-      scale: 1.5,
-      useCORS: true,
-      allowTaint: true,
-      backgroundColor: '#ffffff',
-      logging: false,
-      width: RENDER_W,
-      windowWidth: RENDER_W + 40,
-      scrollX: 0,
-      scrollY: -window.scrollY
-    }).then(canvas=>{
-      el.style.width = origWidth;
-      el.style.maxWidth = origMaxWidth;
-
-      const pdf = new jsPDF({orientation:'portrait', unit:'mm', format:'a4'});
-      const imgH = (canvas.height * pdfW) / canvas.width;
-      const imgData = canvas.toDataURL('image/jpeg', 0.93);
-
-      if(imgH <= pdfH){
-        // ── Fits on one page — place at top, natural height ──
-        pdf.addImage(imgData, 'JPEG', 0, 0, pdfW, imgH);
-      } else {
-        // ── Overflows — compress height to fill exactly one A4 page ──
-        // This covers both the "footer spills over" case and genuine overflow
-        pdf.addImage(imgData, 'JPEG', 0, 0, pdfW, pdfH);
-      }
+    html2canvas(el,{scale:1.5,useCORS:true,allowTaint:true,backgroundColor:'#ffffff',logging:false,width:RENDER_W,windowWidth:RENDER_W+40,scrollX:0,scrollY:-window.scrollY})
+    .then(canvas=>{
+      el.style.width=origWidth; el.style.maxWidth=origMaxWidth;
+      const pdf=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
+      const imgH=(canvas.height*pdfW)/canvas.width;
+      const imgData=canvas.toDataURL('image/jpeg',0.93);
+      pdf.addImage(imgData,'JPEG',0,0,pdfW,imgH<=pdfH?imgH:pdfH);
       hideSavingOverlay();
       callback(pdf, filename);
     }).catch(err=>{
-      el.style.width = origWidth;
-      el.style.maxWidth = origMaxWidth;
-      hideSavingOverlay();
-      showToast('PDF error — please try again');
+      el.style.width=origWidth; el.style.maxWidth=origMaxWidth;
+      hideSavingOverlay(); showToast('PDF error — please try again');
     });
-  }, 150);
+  },150);
 }
+/* ── Unified WhatsApp share from modal (image capture) ── */
+function histShareWA(){
+  const q = histModalQuote;
+  if(!q){ showToast('No quote open'); return; }
+  const docEl = document.getElementById('hm-doc');
+  if(!docEl){ showToast('No quote to share'); return; }
+  captureQuoteImageFromEl(docEl, canvas => {
+    const link = document.createElement('a');
+    link.download = (_hmFilename||'VLA-Quote').replace('.pdf','.png');
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+    setTimeout(()=> showToast('✓ Image saved — open WhatsApp and attach from gallery', 4500), 800);
+  });
+}
+
 /* ═══════════════════════════════════════════
    SHARE — WhatsApp & Email
 ═══════════════════════════════════════════ */
@@ -6273,11 +6688,15 @@ function shareEmail(){
 ═══════════════════════════════════════════ */
 function printQuote(){
   if(!quoteData){showToast('Generate a quote first');return;}
-  const ref=quoteData.ref||'PSP';
-  captureQuotePDF('q-doc','VLA-Quote-'+ref+'.pdf',function(pdf,filename){
-    pdf.save(filename);
-    showToast('✓ PDF saved: '+filename,3000);
-  });
+  showSavingOverlay('Generating PDF…');
+  setTimeout(()=>{
+    try{
+      const doc = _buildPSPPdf(quoteData);
+      hideSavingOverlay();
+      doc.save('VLA-Quote-'+(quoteData.ref||'PSP')+'.pdf');
+      showToast('✓ PDF saved — check Downloads',3000);
+    }catch(e){ hideSavingOverlay(); showToast('PDF error: '+e.message,4000); }
+  },80);
 }
 
 /* ═══════════════════════════════════════════
@@ -6898,11 +7317,15 @@ function myResetQuote(){
 /* -- Print/PDF -- */
 function myPrintQuote(){
   if(!myQuoteData){showToast('Generate a quote first');return;}
-  const ref=myQuoteData.ref||'MY';
-  captureQuotePDF('my-q-doc','VLA-Quote-'+ref+'.pdf',function(pdf,filename){
-    pdf.save(filename);
-    showToast('✓ PDF saved: '+filename,3000);
-  });
+  showSavingOverlay('Generating PDF…');
+  setTimeout(()=>{
+    try{
+      const doc = _buildMyPdf(myQuoteData);
+      hideSavingOverlay();
+      doc.save('VLA-MyQuote-'+(myQuoteData.ref||'MY')+'.pdf');
+      showToast('✓ PDF saved — check Downloads',3000);
+    }catch(e){ hideSavingOverlay(); showToast('PDF error: '+e.message,4000); }
+  },80);
 }
 function myShareWA(){
   if(!myQuoteData){showToast('Generate a quote first');return;}
@@ -8445,7 +8868,15 @@ function phinduShareEmail(){
 
 function phinduPrintQuote(){
   if(!phinduQuoteData){showToast('Generate a quote first');return;}
-  captureQuotePDF('phindu-q-doc','VLA-Phindu-'+phinduQuoteData.ref+'.pdf',function(pdf,fn){pdf.save(fn);});
+  showSavingOverlay('Generating PDF…');
+  setTimeout(()=>{
+    try{
+      const doc = _buildPhinduPdf(phinduQuoteData);
+      hideSavingOverlay();
+      doc.save('VLA-Phindu-'+(phinduQuoteData.ref||'PHN')+'.pdf');
+      showToast('✓ PDF saved — check Downloads',3000);
+    }catch(e){ hideSavingOverlay(); showToast('PDF error: '+e.message,4000); }
+  },80);
 }
 
 /* -- History -- */
@@ -9545,10 +9976,15 @@ function eduShareSMS(){
 
 function eduPrint(){
   if(!eduCurrentQuote){ showToast('Generate a quote first'); return; }
-  document.title = 'VLA-Quote-'+eduCurrentQuote.ref;
-  captureQuotePDF('edu-q-doc','VLA-EduQuote-'+eduCurrentQuote.ref+'.pdf',function(pdf,fn){
-    pdf.save(fn); showToast('✓ PDF saved: '+fn, 3000);
-  });
+  showSavingOverlay('Generating PDF…');
+  setTimeout(()=>{
+    try{
+      const doc = _buildEduPdf(eduCurrentQuote);
+      hideSavingOverlay();
+      doc.save('VLA-EduQuote-'+(eduCurrentQuote.ref||'EDU')+'.pdf');
+      showToast('✓ PDF saved — check Downloads',3000);
+    }catch(e){ hideSavingOverlay(); showToast('PDF error: '+e.message,4000); }
+  },80);
 }
 
 function eduReset(){
