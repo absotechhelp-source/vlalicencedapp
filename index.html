@@ -3063,7 +3063,7 @@ input:checked+.tog-trk:before{transform:translateX(17px)}
 ═══════════════════════════════════════════ */
 const AGENTS_KEY = 'vla_agents_v2';
 const SHEETS_URL_KEY = 'vla_sheets_url';
-const SHEETS_URL_VERSION = 'v4.0';  // Bump this when APPS_SCRIPT_URL changes
+const SHEETS_URL_VERSION = 'v4.1';  // Bump this when APPS_SCRIPT_URL changes
 const SHEETS_URL_VER_KEY = 'vla_sheets_url_ver';
 const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwG5yrxCV3qq2OZU9n5qSAZRI8fxMgOAbUKLXOSrQ0-5ueb6_MhvPV73M-XWESj6lg5Zw/exec';
 const ADMIN_USER = 'VLA Admin';
@@ -5264,7 +5264,7 @@ function saveSheetURL(){
       catch(e){ throw new Error('Script returned non-JSON — check deployment URL'); }
       if(data.status==='ok'){
         const ver = data.message || '';
-        const isOld = ver && !ver.includes('v3.3');
+        const isOld = ver && !ver.includes('v4.0');
         if(isOld){
           s.textContent='⚠️ Connected but OLD version active ('+ver+'). Sync will fail. Please deploy AppsScript_FIXED.gs as a NEW deployment and update this URL.';
           s.style.color='#b45309';
