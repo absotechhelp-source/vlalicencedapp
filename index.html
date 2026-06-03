@@ -3034,27 +3034,38 @@ input:checked+.tog-trk:before{transform:translateX(17px)}
   </div>
 </div>
 
-<!-- HISTORY QUOTE MODAL -->
+<!-- HISTORY QUOTE MODAL — unified for all 4 products -->
 <div class="modal-overlay" id="hist-modal">
-  <div class="modal-box">
+  <div class="modal-box" style="max-width:520px;width:96vw">
     <div class="modal-topbar">
-      <span class="modal-title">Past Quotation</span>
+      <div style="display:flex;flex-direction:column;gap:1px">
+        <span class="modal-title" id="hm-modal-title">Past Quotation</span>
+        <span style="font-size:10px;color:var(--T2);opacity:.7" id="hm-modal-sub"></span>
+      </div>
       <button class="modal-close" onclick="closeHistModal()">×</button>
     </div>
-    <div id="hist-modal-body" style="padding:16px;max-height:80vh;overflow-y:auto"></div>
-    <div style="padding:12px 16px;border-top:1px solid var(--BD);display:flex;gap:8px;flex-wrap:wrap">
-      <button class="btn-sm btn-wa" onclick="shareHistWA()">
+    <!-- Scrollable doc area -->
+    <div id="hist-modal-body" style="max-height:65vh;overflow-y:auto;padding:0">
+      <div id="hm-doc"></div>
+    </div>
+    <!-- Action bar -->
+    <div style="padding:10px 14px;border-top:1px solid var(--BD);display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+      <!-- Save PDF -->
+      <button class="btn-sm btn-pdf" id="hm-pdf-btn" onclick="histSavePDF()">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
+        Save PDF
+      </button>
+      <!-- WhatsApp -->
+      <button class="btn-sm btn-wa" id="hm-wa-btn" onclick="histShareWA()">
         <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.123.553 4.116 1.522 5.851L.057 23.857a.5.5 0 0 0 .603.641l6.258-1.641A11.945 11.945 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.818a9.793 9.793 0 0 1-5.015-1.376l-.36-.214-3.713.974.993-3.614-.234-.372A9.794 9.794 0 0 1 2.182 12c0-5.417 4.401-9.818 9.818-9.818 5.417 0 9.818 4.401 9.818 9.818 0 5.417-4.401 9.818-9.818 9.818z"/></svg>
         WhatsApp
       </button>
-      <button class="btn-sm btn-email-btn" onclick="shareHistEmail()">
-        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
-        Email
-      </button>
-      <button class="btn-sm" id="hist-revise-btn" onclick="reviseQuote()" style="background:var(--CR);color:var(--M);border:1.5px solid var(--M);font-weight:600">
+      <!-- Revise — agents only, not for deleted quotes -->
+      <button class="btn-sm" id="hm-revise-btn" onclick="reviseQuote()" style="display:none;background:var(--CR);color:var(--M);border:1.5px solid var(--M);font-weight:600">
         <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
         Revise
       </button>
+      <!-- Delete — Admin only -->
       <button class="btn-sm" id="hist-delete-btn" onclick="adminDeleteQuote()" style="display:none;background:#fee2e2;color:#991b1b;border:1.5px solid #fca5a5;font-weight:600">
         <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
         Delete
@@ -4522,8 +4533,58 @@ function renderQuoteDoc(q, docId, isModal){
 
   const refEl = document.getElementById(isModal ? 'hm-q-ref' : 'q-ref');
   const dateSub = document.getElementById(isModal ? 'hm-q-date' : 'q-date-sub');
-  if(refEl) refEl.textContent = 'Ref: ' + ref;
-  if(dateSub) dateSub.textContent = fmtDate(doq);
+
+  // For modal: inject scaffold HTML into hm-doc so inner IDs exist
+  if(isModal){
+    const logoSrc = (document.querySelector('.q-lh-logo')||document.querySelector('.login-logo')||{src:''}).src||'';
+    const docEl = document.getElementById('hm-doc');
+    if(docEl) docEl.innerHTML = `
+      <div style="background:#fff">
+        <div style="background:#fff;padding:10px 16px;display:flex;align-items:center;justify-content:space-between;gap:10px;border-bottom:1px solid #e8ddd4">
+          <img src="${logoSrc}" style="height:40px" alt="Vanguard Life">
+          <div style="text-align:right">
+            <div style="font-size:10px;color:var(--M);font-weight:600;letter-spacing:.04em">Life Assurance · Pension Services</div>
+            <div style="font-size:9px;color:var(--T2);margin-top:2px">🌐 vanguardlifemw.com</div>
+          </div>
+        </div>
+        <div style="background:#f9f5f0;padding:4px 16px;font-size:9px;color:var(--M);font-weight:500;border-bottom:1px solid var(--CR)">
+          Robins Road, P.O. Box 1625, Blantyre · 📱 +265 887 094 872 · ✉ info@vanguardlifemw.com
+        </div>
+        <div style="height:3px;background:linear-gradient(90deg,var(--M) 0%,#8b1a1a 40%,var(--RS) 70%,var(--CR) 100%)"></div>
+        <div style="background:var(--M);padding:8px 16px;display:flex;align-items:center;justify-content:space-between">
+          <div>
+            <div style="font-family:'Playfair Display',serif;font-size:16px;font-weight:700;color:var(--CR);letter-spacing:.1em;text-transform:uppercase">Quotation</div>
+            <div style="font-size:9px;color:rgba(255,255,255,.6);text-transform:uppercase;letter-spacing:.05em">Pure Savings Plan</div>
+          </div>
+          <div style="text-align:right">
+            <div id="hm-q-ref" style="font-size:9px;color:rgba(255,255,255,.9);font-weight:600"></div>
+            <div id="hm-q-date" style="font-size:9px;color:rgba(255,255,255,.65);margin-top:2px"></div>
+          </div>
+        </div>
+        <div style="padding:14px 16px">
+          <div class="cli-block" id="hm-q-client"></div>
+          <div class="q-sec">Policy summary</div>
+          <div class="opt-cards" id="hm-q-opt-cards"></div>
+          <div class="q-sec" style="margin-top:10px">Premium breakdown</div>
+          <div class="bd-compare" id="hm-q-bd-compare"></div>
+          <div class="feat-box" id="hm-q-features"></div>
+          <div class="disclaimer" style="font-size:10px;margin-top:10px">Indicative quotation only. Subject to underwriting. Projected maturity assumes 10% p.a. compound annual bonus — <strong>not guaranteed</strong>. Regulated by Reserve Bank of Malawi.</div>
+        </div>
+        <div style="background:var(--M);padding:8px 16px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px">
+          <div style="font-size:9px;color:rgba(255,255,255,.85)">📱 +265 887 094 872 · ✉ info@vanguardlifemw.com · 🌐 vanguardlifemw.com</div>
+          <div style="text-align:right">
+            <div style="font-size:10px;color:var(--CR);font-weight:700;letter-spacing:.05em">Life Assurance · Pension Services</div>
+            <div id="hm-q-agent-foot" style="font-size:9px;color:rgba(255,255,255,.75);margin-top:2px;text-align:right"></div>
+          </div>
+        </div>
+      </div>`;
+  }
+
+  const _refEl  = document.getElementById(isModal ? 'hm-q-ref'  : 'q-ref');
+  const _dateSub = document.getElementById(isModal ? 'hm-q-date' : 'q-date-sub');
+  if(_refEl)  _refEl.textContent  = 'Ref: ' + ref;
+  if(_dateSub) _dateSub.textContent = fmtDate(doq);
+  // shadow the outer refEl/dateSub so the rest of the function below uses the correct elements
 
   const clientEl = document.getElementById(isModal ? 'hm-q-client' : 'q-client');
   const addrLine = (q.clientAddress||'').trim();
@@ -5452,95 +5513,222 @@ function renderHistory(){
 /* ═══════════════════════════════════════════
    HISTORY MODAL
 ═══════════════════════════════════════════ */
+/* ═══════════════════════════════════════════════════════════════════
+   UNIFIED HISTORY MODAL  v4.0
+   Handles all 4 products inline — no tab switching, no navigation.
+   Resolves quote from all local stores by ref, renders into #hm-doc,
+   then shows appropriate action buttons.
+═══════════════════════════════════════════════════════════════════ */
+
+// Track which product the open modal contains
+let _hmProduct = null;  // 'PSP','EDU','MY','PHINDU'
+let _hmFilename = '';   // for PDF save
+
 function openHistModal(refOrIdx){
-  // Support both ref string (new) and index (legacy)
-  let q;
+  let q = null;
+  let product = null;
+
   if(typeof refOrIdx === 'string'){
-    // Check Phindu quotes first
-    const phinduRaw=JSON.parse(localStorage.getItem(PHINDU_QUOTES_KEY)||'[]');
-    if(phinduRaw.find(x=>x.ref===refOrIdx)){
-      openPhinduHist(refOrIdx);
-      return;
+    const ref = refOrIdx;
+
+    // 1. Search Phindu store
+    const phinduRaw = JSON.parse(localStorage.getItem(PHINDU_QUOTES_KEY)||'[]');
+    const pq = phinduRaw.find(x=>x.ref===ref);
+    if(pq){ q=pq; product='PHINDU'; }
+
+    // 2. Search MY store
+    if(!q){
+      const myRaw = getLocalMyQuotes();
+      const mq = myRaw.find(x=>x.ref===ref);
+      if(mq){ q=mq; product='MY'; }
     }
-    // Check Educational Plans quotes
-    const eduRaw = getLocalQuotes().filter(x=>x.product==='Educational Plans');
-    if(eduRaw.find(x=>x.ref===refOrIdx)){
-      openEduHistModal(refOrIdx);
-      return;
+
+    // 3. Search vla_quotes (PSP + EDU — both live here)
+    if(!q){
+      const allLocal = getLocalQuotes();
+      const lq = allLocal.find(x=>x.ref===ref);
+      if(lq){
+        q = lq;
+        product = (lq.product==='Educational Plans') ? 'EDU' : 'PSP';
+      }
     }
-    const all=[...getLocalQuotes().map(x=>({...x,_product:'PSP'})),
-               ...getLocalMyQuotes().map(x=>({...x,_product:'MY'}))];
-    q = all.find(x=>x.ref===refOrIdx);
   } else {
+    // Legacy numeric index — PSP only
     q = getLocalQuotes()[refOrIdx];
+    if(q) product = (q.product==='Educational Plans') ? 'EDU' : 'PSP';
   }
-  if(!q)return;
-  if(q._product==='MY'){
-    openMyHistModal(q);
-    return;
+
+  if(!q){ showToast('Quote not found — try syncing with Sheets', 3500); return; }
+
+  // Store for action buttons
+  histModalQuote  = q;
+  currentHistQuote= {...q, product: product==='EDU' ? 'Educational Plans'
+                                  : product==='MY'  ? 'Manga Yako'
+                                  : product==='PHINDU'? 'Phindu'
+                                  : 'Pure Savings Plan'};
+  _hmProduct = product;
+
+  // Set modal title
+  const titleMap = {PSP:'Pure Savings Plan', EDU: q.planName||'Educational Plans',
+                    MY:'Manga Yako', PHINDU:'Phindu Savings Plan'};
+  const el = document.getElementById('hm-modal-title');
+  const sub = document.getElementById('hm-modal-sub');
+  if(el) el.textContent = titleMap[product] || 'Past Quotation';
+  if(sub) sub.textContent = q.ref || '';
+
+  // Render into unified #hm-doc
+  const docEl = document.getElementById('hm-doc');
+  if(!docEl) return;
+  docEl.innerHTML = '';
+
+  if(product==='PSP'){
+    renderQuoteDoc(q, 'hm-q-doc', true);  // renderQuoteDoc injects scaffold into #hm-doc when isModal=true
+    _hmFilename = 'VLA-PSPQuote-'+q.ref+'.pdf';
+  } else if(product==='EDU'){
+    // Temporarily reassign edu-q-doc to hm-doc so eduRenderDoc writes there
+    const orig = document.getElementById('edu-q-doc');
+    if(orig) orig.id = '__edu_hidden';
+    docEl.id = 'edu-q-doc';
+    eduRenderDoc(q);
+    docEl.id = 'hm-doc';
+    if(orig) orig.id = 'edu-q-doc';
+    _hmFilename = 'VLA-EduQuote-'+q.ref+'.pdf';
+  } else if(product==='MY'){
+    _hmRenderMyDoc(q, docEl);
+    _hmFilename = 'VLA-MyQuote-'+q.ref+'.pdf';
+  } else if(product==='PHINDU'){
+    // Temporarily reassign phindu-q-doc to hm-doc so phinduRenderDoc writes there
+    const origPh = document.getElementById('phindu-q-doc');
+    if(origPh) origPh.id = '__ph_hidden';
+    docEl.id = 'phindu-q-doc';
+    phinduRenderDoc(q);
+    docEl.id = 'hm-doc';
+    if(origPh) origPh.id = 'phindu-q-doc';
+    _hmFilename = 'VLA-PhinduQuote-'+q.ref+'.pdf';
   }
-  histModalQuote=q;
-  currentHistQuote=q;  // expose to reviseQuote()
-  const LOGO_SRC = (document.getElementById('vla-full-logo')||{src:''}).src;
-  document.getElementById('hist-modal-body').innerHTML=`
-    <div id="hm-q-doc" style="background:#fff">
-      <!-- LETTERHEAD — official VLA style -->
-      <div style="background:#fff;padding:10px 16px;display:flex;align-items:center;justify-content:space-between;gap:10px;border-bottom:1px solid #e8ddd4">
-        <img src="${LOGO_SRC}" style="height:44px" alt="Vanguard Life">
-        <div style="text-align:right">
-          <div style="font-size:10px;color:var(--M);font-weight:600;letter-spacing:.04em">Life Assurance &nbsp;·&nbsp; Pension Services</div>
-          <div style="font-size:9px;color:var(--T2);margin-top:2px">🌐 vanguardlifemw.com</div>
-        </div>
-      </div>
-      <div style="background:#f9f5f0;padding:5px 16px;font-size:9px;color:var(--M);font-weight:500;display:flex;gap:14px;flex-wrap:wrap;border-bottom:1px solid var(--CR)">
-        <span>🏠 Robins Road, P.O. Box 1625, Blantyre, Malawi</span>
-        <span>📱 +265 887 094 872</span>
-        <span>✉ info@vanguardlifemw.com</span>
-      </div>
-      <div style="height:3px;background:linear-gradient(90deg,var(--M) 0%,#8b1a1a 40%,var(--RS) 70%,var(--CR) 100%)"></div>
-      <!-- QUOTATION TITLE -->
-      <div style="background:var(--M);padding:8px 16px;display:flex;align-items:center;justify-content:space-between">
-        <div>
-          <div style="font-family:'Playfair Display',serif;font-size:16px;font-weight:700;color:var(--CR);letter-spacing:.1em;text-transform:uppercase">Quotation</div>
-          <div style="font-size:9px;color:rgba(255,255,255,.6);text-transform:uppercase;letter-spacing:.05em">Pure Savings Plan</div>
-        </div>
-        <div style="text-align:right">
-          <div id="hm-q-ref" style="font-size:9px;color:rgba(255,255,255,.9);font-weight:600"></div>
-          <div id="hm-q-date" style="font-size:9px;color:rgba(255,255,255,.65);margin-top:2px"></div>
-        </div>
-      </div>
-      <div style="padding:14px 16px">
-        <div class="cli-block" id="hm-q-client"></div>
-        <div class="q-sec">Policy summary</div>
-        <div class="opt-cards" id="hm-q-opt-cards"></div>
-        <div class="q-sec" style="margin-top:10px">Premium breakdown</div>
-        <div class="bd-compare" id="hm-q-bd-compare"></div>
-        <div class="feat-box" id="hm-q-features"></div>
-        <div class="disclaimer" style="font-size:10px">Indicative quotation only. Subject to underwriting. Projected maturity assumes 10% p.a. compound annual bonus — <strong>not guaranteed</strong>. Regulated by Reserve Bank of Malawi.</div>
-      </div>
-      <div style="background:var(--M);padding:8px 16px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px">
-        <div style="font-size:9px;color:rgba(255,255,255,.85)">📱 +265 887 094 872 &nbsp;·&nbsp; ✉ info@vanguardlifemw.com &nbsp;·&nbsp; 🌐 vanguardlifemw.com</div>
-        <div style="text-align:right">
-          <div style="font-size:10px;color:var(--CR);font-weight:700;letter-spacing:.05em">Life Assurance &nbsp;·&nbsp; Pension Services</div>
-          <div id="hm-q-agent-foot" style="font-size:9px;color:rgba(255,255,255,.75);margin-top:2px;text-align:right"></div>
-        </div>
-      </div>
-    </div>`;
-  renderQuoteDoc(q, 'hm-q-doc', true);
+
+  // Configure action buttons
+  const isDeleted = (q.status||'').toLowerCase() === 'deleted';
+  _hmSetButtons(isDeleted);
+
   document.getElementById('hist-modal').classList.add('open');
-  // Show delete button for Admin only, and only if not already deleted
-  const delBtn = document.getElementById('hist-delete-btn');
-  if(delBtn){
-    const alreadyDeleted = (q.status||'').toLowerCase() === 'deleted';
-    delBtn.style.display = isAdmin ? 'inline-flex' : 'none';
-    delBtn.textContent   = alreadyDeleted ? '↩ Deleted' : '🗑 Delete';
-    delBtn.style.opacity = alreadyDeleted ? '0.5' : '1';
-    delBtn.disabled      = alreadyDeleted;
+}
+
+function _hmSetButtons(isDeleted){
+  // PDF and WhatsApp always visible
+  const pdfBtn    = document.getElementById('hm-pdf-btn');
+  const waBtn     = document.getElementById('hm-wa-btn');
+  const reviseBtn = document.getElementById('hm-revise-btn');
+  const deleteBtn = document.getElementById('hist-delete-btn');
+
+  if(pdfBtn)    pdfBtn.style.opacity    = isDeleted ? '0.5' : '1';
+  if(waBtn)     waBtn.style.opacity     = isDeleted ? '0.5' : '1';
+
+  // Revise: show for agents on non-deleted PSP/MY/PHINDU quotes (not EDU — complex restate)
+  const canRevise = !isDeleted && !isAdmin && (_hmProduct==='PSP' || _hmProduct==='MY' || _hmProduct==='PHINDU');
+  if(reviseBtn) reviseBtn.style.display = canRevise ? 'inline-flex' : 'none';
+
+  // Delete: Admin only
+  if(deleteBtn){
+    deleteBtn.style.display  = isAdmin ? 'inline-flex' : 'none';
+    deleteBtn.disabled       = isDeleted;
+    deleteBtn.innerHTML      = isDeleted
+      ? '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg> Deleted'
+      : '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg> Delete';
+    deleteBtn.style.opacity  = isDeleted ? '0.5' : '1';
   }
+}
+
+/* ── Manga Yako inline render for the modal ── */
+function _hmRenderMyDoc(q, targetEl){
+  // Build a self-contained MY quote doc and inject into targetEl
+  const f = n => 'USD ' + Math.round(n).toLocaleString('en');
+  const logoSrc = (document.querySelector('.q-lh-logo')||document.querySelector('.login-logo')||{src:''}).src||'';
+  const doqFmt = q.doq ? fmtDate(q.doq) : (q.savedAt ? fmtDate(q.savedAt.split('T')[0]) : '');
+  const {mobile:agMobile} = loadProfileData();
+
+  targetEl.innerHTML = `
+  <div style="background:#fff;font-family:'DM Sans',sans-serif;padding:0">
+    <!-- Letterhead -->
+    <div style="background:#fff;padding:10px 16px;display:flex;align-items:center;justify-content:space-between;gap:10px;border-bottom:1px solid #e8ddd4">
+      <img src="${logoSrc}" style="height:40px" alt="Vanguard Life">
+      <div style="text-align:right">
+        <div style="font-size:10px;color:var(--M);font-weight:600;letter-spacing:.04em">Life Assurance · Pension Services</div>
+        <div style="font-size:9px;color:var(--T2);margin-top:2px">🌐 vanguardlifemw.com</div>
+      </div>
+    </div>
+    <div style="background:#f9f5f0;padding:4px 16px;font-size:9px;color:var(--M);font-weight:500;border-bottom:1px solid var(--CR)">
+      Robins Road, P.O. Box 1625, Blantyre · +265 887 094 872 · info@vanguardlifemw.com
+    </div>
+    <div style="height:3px;background:linear-gradient(90deg,var(--M) 0%,#8b1a1a 40%,var(--RS) 70%,var(--CR) 100%)"></div>
+    <!-- Title -->
+    <div style="background:var(--M);padding:8px 16px;display:flex;align-items:center;justify-content:space-between">
+      <div>
+        <div style="font-family:'Playfair Display',serif;font-size:16px;font-weight:700;color:var(--CR);letter-spacing:.1em;text-transform:uppercase">Quotation</div>
+        <div style="font-size:9px;color:rgba(255,255,255,.6);text-transform:uppercase;letter-spacing:.05em">Manga Yako Savings Plan</div>
+      </div>
+      <div style="text-align:right">
+        <div style="font-size:9px;color:rgba(255,255,255,.9);font-weight:600">${q.ref||''}</div>
+        <div style="font-size:9px;color:rgba(255,255,255,.65);margin-top:2px">${doqFmt}</div>
+      </div>
+    </div>
+    <!-- Client -->
+    <div style="padding:12px 16px;border-bottom:1px solid #f0e8e8">
+      <div style="font-size:14px;font-weight:700;color:var(--T)">${q.clientName||'—'} <span style="font-size:11px;font-weight:400;color:var(--T2)">(${q.gender||''})</span></div>
+      <div style="font-size:12px;color:var(--T2);margin-top:3px">📞 ${q.clientPhone||q.phone||'—'}${q.clientEmail?' · ✉️ '+q.clientEmail:''}</div>
+      <div style="font-size:11px;color:var(--T2);margin-top:2px">ANB ${q.anb||'—'} · ${[q.clientCity||q.city,q.clientCountry||q.country].filter(Boolean).join(', ')||'—'}</div>
+    </div>
+    <!-- Numbers -->
+    <div style="padding:12px 16px">
+      <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--M);border-bottom:1.5px solid var(--CR);padding-bottom:5px;margin-bottom:10px">Plan Summary — 15 Year Savings</div>
+      ${[
+        ['Monthly Premium', 'USD '+Math.round(q.prem||0).toLocaleString()],
+        ['Target Maturity Value', 'USD '+Math.round(q.tmv||0).toLocaleString()],
+        ['Total Contributions (15 yrs)', 'USD '+Math.round(q.totalContrib||0).toLocaleString()],
+        ['Death Benefit', 'USD '+Math.round(q.deathBenefit||Math.max(1000,q.tmv||0)).toLocaleString()],
+      ].map(([l,v])=>`<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #f2e9ea"><span style="font-size:12px;color:#666">${l}</span><span style="font-size:13px;font-weight:700;color:var(--M)">${v}</span></div>`).join('')}
+    </div>
+    <!-- Footer -->
+    <div style="background:var(--M);padding:8px 16px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px">
+      <div style="font-size:9px;color:rgba(255,255,255,.85)">📱 +265 887 094 872 · ✉ info@vanguardlifemw.com · 🌐 vanguardlifemw.com</div>
+      <div style="font-size:9px;color:rgba(255,255,255,.75);text-align:right">Agent: ${q.agent||''}${agMobile?'<br>📱 '+agMobile:''}
+      </div>
+    </div>
+  </div>`;
+}
+
+/* ── Unified PDF save from modal ── */
+function histSavePDF(){
+  const docEl = document.getElementById('hm-doc');
+  if(!docEl || !_hmFilename){ showToast('No quote to save'); return; }
+  captureQuotePDF('hm-doc', _hmFilename, function(pdf, fn){
+    pdf.save(fn);
+    showToast('✓ PDF saved — check Downloads', 3000);
+  });
+}
+
+/* ── Unified WhatsApp share from modal ── */
+function histShareWA(){
+  const q = histModalQuote;
+  if(!q){ showToast('No quote open'); return; }
+  const docEl = document.getElementById('hm-doc');
+  if(!docEl){ showToast('No quote to share'); return; }
+  captureQuoteImageFromEl(docEl, canvas => {
+    const link = document.createElement('a');
+    link.download = (_hmFilename||'VLA-Quote').replace('.pdf','.png');
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+    setTimeout(()=> showToast('✓ Image saved — open WhatsApp and attach from gallery', 4500), 800);
+  });
 }
 function closeHistModal(){
   document.getElementById('hist-modal').classList.remove('open');
-  histModalQuote=null;
+  histModalQuote = null;
+  _hmProduct = null;
+  _hmFilename = '';
+  // Clear the doc to free memory
+  const docEl = document.getElementById('hm-doc');
+  if(docEl) docEl.innerHTML = '';
 }
 
 /* ═══════════════════════════════════════════
@@ -5617,38 +5805,7 @@ document.getElementById('hist-modal').addEventListener('click',e=>{
 });
 
 /* History share helpers */
-function shareHistWA(){
-  if(!histModalQuote)return;
-  captureQuoteImageFromEl(document.getElementById('hm-q-doc'), canvas=>{
-    const link=document.createElement('a');
-    link.download='VLA-Quote-'+histModalQuote.ref+'.png';
-    link.href=canvas.toDataURL('image/png');link.click();
-    setTimeout(()=>showToast('✓ Image saved! Open WhatsApp → attach from gallery',4500),800);
-  });
-}
-function shareHistEmail(){
-  if(!histModalQuote)return;
-  const q=histModalQuote;
-  const fee=q.isMo?FEE_M:FEE_A;
-  const aTotal=Math.round(q.basicP+fee);
-  const sub=encodeURIComponent('Vanguard Life — Pure Savings Plan Quotation for '+q.clientName);
-  const body=encodeURIComponent(
-    'Dear '+q.clientName+',\n\n'+
-    'Please find your Pure Savings Plan quotation attached (PDF).\n\n'+
-    'Ref: '+q.ref+'\nSum Assured: '+mk(q.SA)+'\n\n'+
-    'Option A — Savings Only: '+mk(aTotal)+'/'+( q.isMo?'month':'year')+'\n'+
-    'Option B — Savings + DAB: '+mk(q.totalP)+'/'+( q.isMo?'month':'year')+'\n'+
-    'Projected Maturity: '+mk(q.projM)+'\n\n'+
-    'Full Terms and Conditions apply.\n\n'+
-    'Kind regards,\n'+q.agent+
-    (loadProfileData().mobile ? '\n📱 '+loadProfileData().mobile+'\n' : '')+
-    '📞 3043 (VLA Call Centre)\n'+
-    'Vanguard Life Assurance Company Limited'
-  );
-  window.open('mailto:'+encodeURIComponent(q.clientEmail||'')+'?subject='+sub+'&body='+body,'_blank');
-  showToast('Opening email… PDF downloading for attachment',3500);
-  setTimeout(()=>{ printQuote(); }, 2000);
-}
+/* shareHistWA and shareHistEmail removed in v4.0 — replaced by histShareWA() and histSavePDF() in unified modal */
 
 /* ═══════════════════════════════════════════
    ADMIN PANEL
@@ -6876,37 +7033,13 @@ function printViaIframe(el){ captureQuotePDF(el.id, 'VLA-Quote.pdf', function(pd
 
 /* ── MY Quote History Modal ── */
 function openEduHistModal(ref){
-  const q = getLocalQuotes().find(x=>x.ref===ref && x.product==='Educational Plans');
-  if(!q){ showToast('Quote not found'); return; }
-  currentHistQuote = {...q, product:'Educational Plans'};  // expose to reviseQuote()
-  eduCurrentQuote = q;
-  switchTab('edu-plans');
-  setTimeout(()=>{
-    eduRenderDoc(q);
-    document.getElementById('edu-quote-output').style.display='block';
-    document.getElementById('edu-sync-status').style.display='none';
-    document.getElementById('edu-quote-output').scrollIntoView({behavior:'smooth',block:'start'});
-    showToast('Quote '+ref+' loaded',2500);
-  },250);
+  // Route through unified modal — no tab switching
+  openHistModal(ref);
 }
 
 function openMyHistModal(q){
-  myQuoteData = q;
-  currentHistQuote = {...q, product:'Manga Yako'};  // expose to reviseQuote()
-  // Switch to MY tab and render the quote
-  switchTab('manga-yako');
-  setTimeout(()=>{
-    // Clear stale form fields so nothing old shows above the quote output
-    ['my-fname','my-mname','my-lname','my-phone','my-email','my-city','my-country','my-tmv','my-prem']
-      .forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
-    const gEl=document.getElementById('my-gender');if(gEl)gEl.value='';
-    const dEl=document.getElementById('my-dob');if(dEl)dEl.value='';
-    myRenderQuoteDoc(q);
-    document.getElementById('my-quote-output').style.display='block';
-    document.getElementById('my-gen-btn').style.display='none';
-    document.getElementById('my-quote-output').scrollIntoView({behavior:'smooth',block:'start'});
-    showToast('Quote '+q.ref+' loaded from history',2500);
-  },200);
+  // Route through unified modal — no tab switching
+  openHistModal(q.ref);
 }
 
 /* ═══════════════════════════════════════════
@@ -8340,20 +8473,8 @@ function renderPhinduHistory(){
 }
 
 function openPhinduHist(ref){
-  const quotes=JSON.parse(localStorage.getItem(PHINDU_QUOTES_KEY)||'[]');
-  const q=quotes.find(x=>x.ref===ref);
-  if(!q){showToast('Quote not found');return;}
-  currentHistQuote = {...q, product:'Phindu'};  // expose to reviseQuote()
-  phinduQuoteData=q;
-  switchTab('phindu');
-  setTimeout(()=>{
-    phinduRenderDoc(q);
-    document.getElementById('phindu-gen-btn').style.display='none';
-    document.getElementById('phindu-quote-output').style.display='block';
-    const ab=document.getElementById('app-body'),out=document.getElementById('phindu-quote-output');
-    if(ab&&out)ab.scrollTop=out.offsetTop-10;
-    showToast('Loaded: '+ref,2500);
-  },200);
+  // Route through unified modal — no tab switching
+  openHistModal(ref);
 }
 
 /* ── PHINDU PROPOSAL ── */
