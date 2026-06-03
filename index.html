@@ -1007,6 +1007,11 @@ input:checked+.tog-trk:before{transform:translateX(17px)}
       <div class="hist-toolbar">
         <input type="search" class="hist-search f-inp" id="hist-search" placeholder="Search name or ref…" oninput="renderHistory()">
         <select class="hist-filter f-inp" id="hist-filter-agent" onchange="renderHistory()" style="max-width:140px"></select>
+        <select class="hist-filter f-inp" id="hist-filter-status" onchange="renderHistory()" style="max-width:120px">
+          <option value="active">Active quotes</option>
+          <option value="all">All statuses</option>
+          <option value="Deleted">Deleted only</option>
+        </select>
         <select class="hist-filter f-inp" id="hist-filter-sort" onchange="renderHistory()" style="max-width:130px">
           <option value="newest">Newest first</option>
           <option value="oldest">Oldest first</option>
@@ -3050,6 +3055,10 @@ input:checked+.tog-trk:before{transform:translateX(17px)}
         <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
         Revise
       </button>
+      <button class="btn-sm" id="hist-delete-btn" onclick="adminDeleteQuote()" style="display:none;background:#fee2e2;color:#991b1b;border:1.5px solid #fca5a5;font-weight:600">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+        Delete
+      </button>
       <button class="btn-sm btn-outline" onclick="closeHistModal()" style="margin-left:auto">Close</button>
     </div>
   </div>
@@ -4625,8 +4634,10 @@ async function restoreHistoryFromSheets(agentName, showFeedback){
     try { pingData = JSON.parse(pingText); } catch(e){ throw new Error('Script error (ping bad JSON): '+pingText.slice(0,120)); }
     if(pingData.status !== 'ok') throw new Error('Script unhealthy: '+JSON.stringify(pingData));
 
-    // ── Fetch quotes ──────────────────────────────────────────────────────
-    const fetchUrl = url + '?action=getQuotes&agent=' + encodeURIComponent(agentName);
+    // ── Fetch quotes — Admin gets all, agents get their own only ─────────
+    const fetchUrl = isAdmin
+      ? url + '?action=getQuotes'
+      : url + '?action=getQuotes&agent=' + encodeURIComponent(agentName);
     console.log('[RESTORE] Fetching:', fetchUrl);
     const res = await Promise.race([
       fetch(fetchUrl),
@@ -4725,6 +4736,10 @@ async function restoreHistoryFromSheets(agentName, showFeedback){
         prem:         Number(r['Monthly Premium (MK)']         || 0),
         tmv:          Number(r['Target Maturity Value (MK)']   || 0),
         totalContrib: Number(r['Total Contributions (MK)']     || 0),
+        // ── Soft delete fields ────────────────────────────────────────
+        status:      String(r['Status']      || ''),
+        deletedAt:   String(r['Deleted At']  || ''),
+        deletedBy:   String(r['Deleted By']  || ''),
       };
     }
 
@@ -5304,6 +5319,7 @@ function renderHistory(){
   const cntTxt=document.getElementById('hist-count-text');
   const search=(document.getElementById('hist-search').value||'').toLowerCase().trim();
   const filterAgent=document.getElementById('hist-filter-agent').value||'';
+  const filterStatus=document.getElementById('hist-filter-status')?document.getElementById('hist-filter-status').value||'active':'active';
   const sort=document.getElementById('hist-filter-sort').value||'newest';
 
   // Combine PSP + EDU + MY + Phindu quotes with product tag
@@ -5362,6 +5378,15 @@ function renderHistory(){
   // Filter — agents see only their own unless admin
   let quotes = isAdmin ? allQuotes : allQuotes.filter(q=>q.agent===currentAgent);
   if(filterAgent) quotes=quotes.filter(q=>q.agent===filterAgent);
+
+  // Status filter — default hides deleted, 'Deleted' shows only deleted, 'all' shows everything
+  if(filterStatus === 'active'){
+    quotes = quotes.filter(q => (q.status||'').toLowerCase() !== 'deleted');
+  } else if(filterStatus === 'Deleted'){
+    quotes = quotes.filter(q => (q.status||'').toLowerCase() === 'deleted');
+  }
+  // filterStatus === 'all' — no filter applied
+
   if(search) quotes=quotes.filter(q=>(q.clientName||'').toLowerCase().includes(search)||(q.ref||'').toLowerCase().includes(search)||(q.occupation||'').toLowerCase().includes(search));
 
   // Sort
@@ -5377,6 +5402,7 @@ function renderHistory(){
   cntTxt.textContent=quotes.length+' quote'+(quotes.length>1?'s':'');
 
   list.innerHTML=quotes.map((q,i)=>{
+    const isDeleted = (q.status||'').toLowerCase() === 'deleted';
     const agentLabel = isAdmin ? `<span class="hist-tag admin-tag">${q.agent||'Unknown'}</span> ` : '';
     /* Badge */
     const eduPlanBadge = q._product==='EDU'
@@ -5387,6 +5413,9 @@ function renderHistory(){
       : q._product==='PHINDU'
       ? `<span style='font-size:9px;background:#D8C9B4;color:#641414;padding:1px 6px;border-radius:8px;font-weight:700;margin-left:5px'>PHINDU</span>`
       : eduPlanBadge;
+    const deletedBadge = isDeleted
+      ? `<span style='font-size:9px;background:#fee2e2;color:#991b1b;padding:1px 6px;border-radius:8px;font-weight:700;margin-left:5px'>DELETED</span>`
+      : '';
     /* Meta line */
     const meta = q._product==='MY'    ? '15 yrs · Monthly'
                 : q._product==='PHINDU'? '10 yrs · '+q.mt+'% MT · ANB '+q.anb
@@ -5400,18 +5429,21 @@ function renderHistory(){
     const subLabel  = q._product==='PHINDU'? 'Profit: '+mk(q.profit)
                     : q._product==='EDU'   ? 'SA: '+mk(q.totalSA)+(q.hasCollege?' + College':'')
                     : mk(q.projM)+' at mat.';
+    const cardStyle = isDeleted ? 'opacity:0.55;background:#fafafa;' : '';
+    const nameStyle = isDeleted ? 'text-decoration:line-through;color:#999;' : '';
     return `
-    <div class="hist-item" onclick="openHistModal('${q.ref}')">
+    <div class="hist-item" style="${cardStyle}" onclick="openHistModal('${q.ref}')">
       <div style="flex:1;min-width:0">
-        <div class="hist-name">${q.clientName||q.parentName||'—'}${badge}</div>
+        <div class="hist-name" style="${nameStyle}">${q.clientName||q.parentName||'—'}${badge}${deletedBadge}</div>
         <div class="hist-meta">${meta}</div>
         <div class="hist-meta" style="font-size:10px;margin-top:2px;color:var(--BD)">${q.ref}</div>
         <div style="margin-top:6px">${agentLabel}${q._product==='PSP'?`<span class='hist-tag'>${q.occupation||''}</span>`:''}</div>
       </div>
       <div style="text-align:right;flex-shrink:0">
-        <div class="hist-prem">${premLabel}</div>
+        <div class="hist-prem" style="${isDeleted?'color:#999;':''}">${premLabel}</div>
         <div class="hist-date">${fmtDate(q.doq)}</div>
         <div class="hist-date" style="color:var(--RS)">${subLabel}</div>
+        ${isDeleted && q.deletedBy ? `<div class="hist-date" style="color:#991b1b;font-size:10px">Del by: ${q.deletedBy}</div>` : ''}
       </div>
     </div>`;
   }).join('');
@@ -5496,10 +5528,89 @@ function openHistModal(refOrIdx){
     </div>`;
   renderQuoteDoc(q, 'hm-q-doc', true);
   document.getElementById('hist-modal').classList.add('open');
+  // Show delete button for Admin only, and only if not already deleted
+  const delBtn = document.getElementById('hist-delete-btn');
+  if(delBtn){
+    const alreadyDeleted = (q.status||'').toLowerCase() === 'deleted';
+    delBtn.style.display = isAdmin ? 'inline-flex' : 'none';
+    delBtn.textContent   = alreadyDeleted ? '↩ Deleted' : '🗑 Delete';
+    delBtn.style.opacity = alreadyDeleted ? '0.5' : '1';
+    delBtn.disabled      = alreadyDeleted;
+  }
 }
 function closeHistModal(){
   document.getElementById('hist-modal').classList.remove('open');
   histModalQuote=null;
+}
+
+/* ═══════════════════════════════════════════
+   ADMIN SOFT DELETE
+═══════════════════════════════════════════ */
+async function adminDeleteQuote(){
+  const q = histModalQuote || currentHistQuote;
+  if(!q || !isAdmin) return;
+  const ref = q.ref;
+  if(!ref){ showToast('No reference — cannot delete'); return; }
+
+  // Confirm
+  if(!confirm('Mark quote ' + ref + ' as DELETED?\n\nThe quote will remain visible in Sheets and in History (filtered by "Deleted only") but will be hidden from the default view.\n\nThis action is logged with your name and cannot be undone.')) return;
+
+  // Offline guard
+  if(!navigator.onLine){ showToast('⚠️ No connection — cannot delete right now', 4000); return; }
+
+  const delBtn = document.getElementById('hist-delete-btn');
+  if(delBtn){ delBtn.disabled=true; delBtn.textContent='Deleting…'; }
+
+  const url = localStorage.getItem(SHEETS_URL_KEY) || APPS_SCRIPT_URL;
+  const qs  = 'action=deletequote&token='+encodeURIComponent(GAS_APP_TOKEN)
+             +'&ref='+encodeURIComponent(ref)
+             +'&agent='+encodeURIComponent(currentAgent);
+
+  try {
+    const res  = await Promise.race([
+      fetch(url+'?'+qs, {redirect:'follow'}),
+      new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')),15000))
+    ]);
+    const text = await res.text();
+    let data;
+    try{ data=JSON.parse(text); }catch(e){ throw new Error('Bad response: '+text.slice(0,80)); }
+
+    if(data.status !== 'ok') throw new Error(data.message || 'GAS error');
+
+    // Update local storage — mark as deleted across all quote stores
+    const now = data.deletedAt || new Date().toISOString();
+    _markDeletedLocally(ref, currentAgent, now);
+
+    showToast('✓ Quote '+ref+' marked as Deleted', 3500);
+    closeHistModal();
+    renderHistory();
+
+  } catch(err){
+    console.error('[adminDeleteQuote]', err.message);
+    showToast('Delete failed: '+err.message, 5000);
+    if(delBtn){ delBtn.disabled=false; delBtn.textContent='🗑 Delete'; }
+  }
+}
+
+function _markDeletedLocally(ref, deletedBy, deletedAt){
+  // PSP / EDU quotes
+  try{
+    const psp = JSON.parse(localStorage.getItem('vla_quotes')||'[]');
+    const upd = psp.map(q => q.ref===ref ? {...q, status:'Deleted', deletedBy, deletedAt} : q);
+    localStorage.setItem('vla_quotes', JSON.stringify(upd));
+  }catch(e){}
+  // Manga Yako quotes
+  try{
+    const my = JSON.parse(localStorage.getItem('vla_my_quotes')||'[]');
+    const upd = my.map(q => q.ref===ref ? {...q, status:'Deleted', deletedBy, deletedAt} : q);
+    localStorage.setItem('vla_my_quotes', JSON.stringify(upd));
+  }catch(e){}
+  // Phindu quotes
+  try{
+    const ph = JSON.parse(localStorage.getItem(PHINDU_QUOTES_KEY)||'[]');
+    const upd = ph.map(q => q.ref===ref ? {...q, status:'Deleted', deletedBy, deletedAt} : q);
+    localStorage.setItem(PHINDU_QUOTES_KEY, JSON.stringify(upd));
+  }catch(e){}
 }
 document.getElementById('hist-modal').addEventListener('click',e=>{
   if(e.target===document.getElementById('hist-modal'))closeHistModal();
