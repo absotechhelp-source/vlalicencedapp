@@ -3063,7 +3063,7 @@ input:checked+.tog-trk:before{transform:translateX(17px)}
 ═══════════════════════════════════════════ */
 const AGENTS_KEY = 'vla_agents_v2';
 const SHEETS_URL_KEY = 'vla_sheets_url';
-const SHEETS_URL_VERSION = 'v3.4';  // Bump this when APPS_SCRIPT_URL changes
+const SHEETS_URL_VERSION = 'v4.0';  // Bump this when APPS_SCRIPT_URL changes
 const SHEETS_URL_VER_KEY = 'vla_sheets_url_ver';
 const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwG5yrxCV3qq2OZU9n5qSAZRI8fxMgOAbUKLXOSrQ0-5ueb6_MhvPV73M-XWESj6lg5Zw/exec';
 const ADMIN_USER = 'VLA Admin';
@@ -3664,12 +3664,58 @@ const OCC_MAP = {
 };
 
 /* ═══════════════════════════════════════════
-   RATE TABLES
+   RATE TABLES — REMOVED (v4.0)
+   All calculation logic has been migrated to
+   Google Apps Script server-side (getQuote action).
+   The browser sends inputs; GAS returns results.
+   This keeps proprietary actuarial IP off the client.
 ═══════════════════════════════════════════ */
-const MR={18:{5:175.38,10:84.69,15:54.19,20:37.89,25:28.10,30:21.52,35:16.78},19:{5:175.38,10:84.68,15:54.17,20:37.86,25:28.04,30:21.45,35:16.68},20:{5:175.38,10:84.67,15:54.15,20:37.82,25:27.99,30:21.36,35:16.57},21:{5:175.37,10:84.66,15:54.13,20:37.78,25:27.92,30:21.27,35:16.45},22:{5:175.37,10:84.65,15:54.10,20:37.73,25:27.84,30:21.17,35:16.31},23:{5:175.36,10:84.63,15:54.06,20:37.67,25:27.76,30:21.05,35:16.17},24:{5:175.35,10:84.60,15:54.02,20:37.60,25:27.66,30:20.92,35:16.01},25:{5:175.34,10:84.57,15:53.97,20:37.53,25:27.56,30:20.78,35:15.84},26:{5:175.32,10:84.54,15:53.91,20:37.44,25:27.44,30:20.63,35:15.65},27:{5:175.30,10:84.50,15:53.84,20:37.35,25:27.31,30:20.46,35:15.45},28:{5:175.27,10:84.45,15:53.77,20:37.24,25:27.16,30:20.28,35:15.24},29:{5:175.23,10:84.39,15:53.68,20:37.12,25:27.00,30:20.08,35:15.01},30:{5:175.19,10:84.33,15:53.59,20:36.99,25:26.83,30:19.87,35:14.76},31:{5:175.14,10:84.25,15:53.48,20:36.84,25:26.64,30:19.64,35:14.49},32:{5:175.08,10:84.17,15:53.36,20:36.67,25:26.43,30:19.39,35:14.21},33:{5:175.02,10:84.08,15:53.23,20:36.49,25:26.20,30:19.12,35:13.91},34:{5:174.94,10:83.97,15:53.08,20:36.30,25:25.95,30:18.83,35:13.59},35:{5:174.85,10:83.85,15:52.91,20:36.08,25:25.69,30:18.52,35:13.25},36:{5:174.75,10:83.72,15:52.73,20:35.84,25:25.41,30:18.19,35:12.90},37:{5:174.64,10:83.57,15:52.53,20:35.58,25:25.10,30:17.83,35:12.52},38:{5:174.52,10:83.41,15:52.30,20:35.30,25:24.76,30:17.46,35:12.13},39:{5:174.38,10:83.22,15:52.06,20:35.00,25:24.41,30:17.06,35:11.73},40:{5:174.23,10:83.02,15:51.79,20:34.67,25:24.02,30:16.63,35:11.31},41:{5:174.06,10:82.79,15:51.49,20:34.32,25:23.61,30:16.19,35:10.88},42:{5:173.86,10:82.54,15:51.18,20:33.94,25:23.16,30:15.72,35:10.44},43:{5:173.65,10:82.27,15:50.83,20:33.53,25:22.69,30:15.22,35:9.99},44:{5:173.41,10:81.97,15:50.46,20:33.08,25:22.19,30:14.71,35:9.54},45:{5:173.14,10:81.64,15:50.06,20:32.61,25:21.66,30:14.18,35:9.08},46:{5:172.85,10:81.28,15:49.63,20:32.09,25:21.10,30:13.63,35:8.63},47:{5:172.53,10:80.89,15:49.16,20:31.54,25:20.51,30:13.07,35:8.18},48:{5:172.17,10:80.47,15:48.65,20:30.96,25:19.88,30:12.49,35:7.75},49:{5:171.78,10:80.02,15:48.11,20:30.33,25:19.23,30:11.91,35:7.32},50:{5:171.36,10:79.53,15:47.52,20:29.66,25:18.55,30:11.32,35:6.92},51:{5:170.91,10:79.02,15:46.88,20:28.95,25:17.85,30:10.73,35:6.54},52:{5:170.41,10:78.45,15:46.19,20:28.20,25:17.12,30:10.14,35:6.18},53:{5:169.88,10:77.83,15:45.46,20:27.41,25:16.38,30:9.57,35:5.86},54:{5:169.31,10:77.16,15:44.67,20:26.58,25:15.61,30:9.00,35:5.56},55:{5:168.69,10:76.43,15:43.82,20:25.70,25:14.84,30:8.46,35:5.30},56:{5:168.04,10:75.63,15:42.92,20:24.79,25:14.06,30:7.95,35:5.08},57:{5:167.31,10:74.78,15:41.96,20:23.84,25:13.28,30:7.46,35:4.90},58:{5:166.50,10:73.86,15:40.95,20:22.86,25:12.50,30:7.01,35:4.75},59:{5:165.62,10:72.86,15:39.87,20:21.85,25:11.74,30:6.61,35:4.63},60:{5:164.65,10:71.79,15:38.73,20:20.82,25:10.99,30:6.24,35:4.55},61:{5:163.61,10:70.65,15:37.54,20:19.77,25:10.28,30:5.93,35:4.51},62:{5:162.48,10:69.43,15:36.29,20:18.70,25:9.60,30:5.66,35:4.49},63:{5:161.26,10:68.13,15:34.98,20:17.63,25:8.96,30:5.44,35:4.49},64:{5:159.94,10:66.74,15:33.62,20:16.57,25:8.38,30:5.28,35:4.52},65:{5:158.52,10:65.26,15:32.21,20:15.52,25:7.84,30:5.15,35:4.57}};
-const AR={18:{5:2192.69,10:991.82,15:616.40,20:431.00,25:319.58,30:244.81,35:190.87},19:{5:2192.65,10:991.74,15:616.20,20:430.62,25:318.99,30:243.95,35:189.72},20:{5:2192.61,10:991.64,15:615.97,20:430.19,25:318.32,30:243.00,35:188.45},21:{5:2192.56,10:991.50,15:615.67,20:429.68,25:317.57,30:241.93,35:187.05},22:{5:2192.50,10:991.33,15:615.32,20:429.10,25:316.71,30:240.74,35:185.53},23:{5:2192.42,10:991.10,15:614.90,20:428.44,25:315.75,30:239.42,35:183.88},24:{5:2192.30,10:990.83,15:614.41,20:427.69,25:314.67,30:237.97,35:182.08},25:{5:2192.13,10:990.50,15:613.84,20:426.84,25:313.46,30:236.37,35:180.14},26:{5:2191.91,10:990.10,15:613.18,20:425.88,25:312.11,30:234.62,35:178.05},27:{5:2191.62,10:989.62,15:612.43,20:424.79,25:310.62,30:232.72,35:175.79},28:{5:2191.27,10:989.05,15:611.58,20:423.58,25:308.97,30:230.64,35:173.34},29:{5:2190.87,10:988.40,15:610.62,20:422.22,25:307.15,30:228.39,35:170.71},30:{5:2190.38,10:987.64,15:609.54,20:420.70,25:305.15,30:225.97,35:167.88},31:{5:2189.80,10:986.79,15:608.33,20:419.02,25:302.97,30:223.36,35:164.86},32:{5:2189.11,10:985.82,15:606.97,20:417.15,25:300.59,30:220.54,35:161.63},33:{5:2188.30,10:984.73,15:605.45,20:415.10,25:298.01,30:217.49,35:158.20},34:{5:2187.37,10:983.51,15:603.75,20:412.84,25:295.22,30:214.20,35:154.56},35:{5:2186.33,10:982.15,15:601.86,20:410.36,25:292.21,30:210.67,35:150.72},36:{5:2185.16,10:980.62,15:599.77,20:407.66,25:288.98,30:206.90,35:146.68},37:{5:2183.86,10:978.92,15:597.46,20:404.71,25:285.47,30:202.86,35:142.44},38:{5:2182.39,10:977.01,15:594.91,20:401.52,25:281.69,30:198.57,35:138.02},39:{5:2180.76,10:974.88,15:592.11,20:398.08,25:277.60,30:194.01,35:133.42},40:{5:2178.94,10:972.52,15:589.05,20:394.36,25:273.21,30:189.19,35:128.66},41:{5:2176.90,10:969.90,15:585.72,20:390.38,25:268.51,30:184.10,35:123.76},42:{5:1977.60,10:938.87,15:582.09,20:386.05,25:263.48,30:178.76,35:118.75},43:{5:1975.14,10:935.74,15:578.16,20:381.37,25:258.12,30:173.18,35:113.65},44:{5:1972.42,10:932.31,15:573.93,20:376.32,25:252.41,30:167.35,35:108.49},45:{5:1969.39,10:928.56,15:569.37,20:370.89,25:246.36,30:161.31,35:103.32},46:{5:1966.04,10:924.49,15:564.49,20:365.05,25:239.97,30:155.07,35:98.17},47:{5:1962.37,10:920.08,15:559.18,20:358.79,25:233.23,30:148.65,35:93.09},48:{5:1958.34,10:915.31,15:553.42,20:352.10,25:226.16,30:142.10,35:88.12},49:{5:1953.94,10:910.18,15:547.19,20:344.96,25:218.76,30:135.46,35:83.31},50:{5:1949.15,10:904.66,15:540.46,20:337.36,25:211.04,30:128.75,35:78.71},51:{5:1943.96,10:898.76,15:533.21,20:329.30,25:203.04,30:122.04,35:74.36},52:{5:1938.34,10:892.30,15:525.41,20:320.77,25:194.77,30:115.37,35:70.31},53:{5:1932.29,10:885.26,15:517.03,20:311.77,25:186.28,30:108.81,35:66.60},54:{5:1925.78,10:877.61,15:508.06,20:302.30,25:177.60,30:102.42,35:63.27},55:{5:1918.80,10:869.30,15:498.46,20:292.37,25:168.78,30:96.25,35:60.32},56:{5:1911.34,10:860.30,15:488.22,20:282.00,25:159.90,30:90.39,35:57.79},57:{5:1903.03,10:850.57,15:477.32,20:271.22,25:151.00,30:84.88,35:55.69},58:{5:1893.86,10:840.07,15:465.75,20:260.06,25:142.17,30:79.78,35:53.99},59:{5:1883.81,10:828.76,15:453.50,20:248.56,25:133.49,30:75.15,35:52.71},60:{5:1872.84,10:816.62,15:440.58,20:236.79,25:125.04,30:71.02,35:51.81},61:{5:1860.95,10:803.62,15:426.99,20:224.82,25:116.91,30:67.43,35:51.27},62:{5:1848.09,10:789.72,15:412.75,20:212.71,25:109.18,30:64.40,35:51.05},63:{5:1834.21,10:774.89,15:397.88,20:200.56,25:101.94,30:61.92,35:51.12},64:{5:1819.23,10:759.07,15:382.41,20:188.46,25:95.26,30:60.00,35:51.44},65:{5:1803.07,10:742.25,15:366.39,20:176.52,25:89.21,30:58.61,35:51.98}};
+// Only the BONUS table is retained for the quote DISPLAY/render
+// path (renderQuoteDoc uses it for the projM fallback display).
+// The authoritative calculation lives in GAS.
 const BONUS={1:1.10,2:1.21,3:1.331,4:1.4641,5:1.61051,6:1.771561,7:1.9487171,8:2.14358881,9:2.357947691,10:2.5937424601,11:2.85311670611,12:3.138428376721,13:3.4522712143931,14:3.79749833582741,15:4.177248369410151,16:4.5949732063512,17:5.05447052698632,18:5.559917579685,19:6.115909337653,20:6.7274002714183,21:7.39912929856,22:8.139042228416,23:8.9529464512576,24:9.84824109638336,25:10.8330651605183,26:11.91636967657,27:13.10799664323,28:14.4187962875,29:15.86067591625,30:17.4493434779,31:19.19427782569,32:21.1137255883,33:23.2251381471,34:25.55765195881,35:28.1024171148};
 const FEE_M=600,FEE_A=7128.74,MIN_SA=12000000;
+
+/* ── GAS QUOTE HELPER ─────────────────────────────────────────────────
+   Single async function used by ALL four products.
+   Uses GET + URL-encoded params (the established pattern).
+   Offline check built in — shows toast and returns null if no connection.
+──────────────────────────────────────────────────────────────────────── */
+const GAS_APP_TOKEN = '7c4d7639399fce9785df19a3152f27369895b0fb450c8574';
+
+async function gasGetQuote(params) {
+  // Offline guard
+  if (!navigator.onLine) {
+    showToast('⚠️ No connection — cannot generate quote', 4000);
+    return null;
+  }
+  const url = localStorage.getItem(SHEETS_URL_KEY) || APPS_SCRIPT_URL;
+  const qs = Object.entries({ ...params, action: 'getquote', token: GAS_APP_TOKEN })
+    .map(([k, v]) => encodeURIComponent(k) + '=' + encodeURIComponent(v))
+    .join('&');
+  try {
+    const res = await Promise.race([
+      fetch(url + '?' + qs, { redirect: 'follow' }),
+      new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 20000))
+    ]);
+    const text = await res.text();
+    let data;
+    try { data = JSON.parse(text); } catch (e) {
+      console.error('[gasGetQuote] non-JSON response:', text.slice(0, 200));
+      showToast('Quote server error — please retry', 4000);
+      return null;
+    }
+    if (data.status !== 'ok') {
+      showToast('Quote error: ' + (data.message || 'Unknown'), 4000);
+      return null;
+    }
+    return data;
+  } catch (err) {
+    console.error('[gasGetQuote] error:', err.message);
+    showToast('⚠️ No connection — cannot generate quote', 4000);
+    return null;
+  }
+}
 
 /* ═══════════════════════════════════════════
    STATE
@@ -4332,11 +4378,10 @@ function showToast(msg,dur=2500){
 }
 
 /* ═══════════════════════════════════════════
-   GENERATE QUOTE
+   GENERATE QUOTE  (v4.0 — server-side calc)
 ═══════════════════════════════════════════ */
-function generateQuote(){
+async function generateQuote(){
   clrErr();let ok=true;
-  // Read name + address fields FIRST before any validation
   const fname=(document.getElementById('c-fname')||{value:''}).value.trim();
   const mname=(document.getElementById('c-mname')||{value:''}).value.trim();
   const lname=(document.getElementById('c-lname')||{value:''}).value.trim();
@@ -4345,7 +4390,6 @@ function generateQuote(){
   const city=(document.getElementById('c-city')||{value:''}).value.trim();
   const district=(document.getElementById('c-district')||{value:''}).value.trim();
   const address=[area,city,district].filter(Boolean).join(', ');
-  // Now validate
   if(!fname){showToast('First name required');ok=false;}
   if(!lname){showToast('Last name required');ok=false;}
   if(!document.getElementById('c-gender').value){showToast('Gender required');ok=false;}
@@ -4362,12 +4406,10 @@ function generateQuote(){
   const freq=document.getElementById('p-freq').value,isMo=freq==='monthly';
   const dab=document.getElementById('p-dab').checked;
   const dabR1k=dab&&selectedOcc?selectedOcc.rate:0;
-  const dabR10k_M=dabR1k*10,dabR10k_A=dabR10k_M*11.3744;
-  const rt=isMo?MR:AR,fee=isMo?FEE_M:FEE_A;
-  let SA=null,totalP=null,basicP=null,dabP=null;
+  let saInput=null, premInput=null;
   if(mode==='sa'){
-    SA=parseFloat(document.getElementById('p-sa').value);
-    if(!SA||SA<MIN_SA){document.getElementById('sa-err').style.display='block';ok=false;}
+    saInput=parseFloat(document.getElementById('p-sa').value);
+    if(!saInput||saInput<MIN_SA){document.getElementById('sa-err').style.display='block';ok=false;}
   } else {
     const pi=parseFloat(document.getElementById('p-prem').value),minP=isMo?2500:28748.80;
     if(!pi||pi<minP){
@@ -4375,30 +4417,36 @@ function generateQuote(){
       e.textContent=`Min ${isMo?'monthly':'annual'} premium is ${mk(minP)}.`;
       e.style.display='block';ok=false;
     }
-    if(ok)totalP=pi;
+    if(ok)premInput=pi;
   }
   if(!ok)return;
-  const baseR=rt[anb][term];
-  const dabRU=isMo?dabR10k_M:dabR10k_A;
-  const totalR=baseR+(dab?dabRU:0);
-  if(mode==='sa'){
-    const u=SA/10000;basicP=baseR*u;dabP=dab?dabRU*u:0;totalP=basicP+dabP+fee;
-  } else {
-    const net=totalP-fee;
-    if(net<=0){showToast('Premium too low to cover policy fee');return;}
-    SA=net*10000/totalR;
-    if(SA<MIN_SA){const e=document.getElementById('prem-err');e.textContent=`Premium gives SA of ${mk(SA)}, below minimum.`;e.style.display='block';return;}
-    const u=SA/10000;basicP=baseR*u;dabP=dab?dabRU*u:0;
-  }
-  const mult=BONUS[term]||Math.pow(1.07,term),projM=SA*mult;
-  const matAge=anb+term-1;
-  const ref=genRef();
+
+  // ── Show loading state ──
+  const gb=document.getElementById('gen-btn');
+  if(gb){gb.disabled=true;gb.textContent='Calculating…';}
+
+  // ── Call GAS calculation engine ──
+  const params={
+    product:'psp', anb, term, freq, mode,
+    dab: dab ? 'true' : 'false',
+    dabR1k,
+    ...(mode==='sa' ? {sa:saInput} : {prem:premInput})
+  };
+  const result = await gasGetQuote(params);
+
+  if(gb){gb.disabled=false;gb.textContent='Generate Quote';gb.style.display='none';}
+  if(!result) return;  // gasGetQuote already showed toast
+
+  const {SA, basicP, dabP, policyFee, totalP, projM, matAge, bonusMult} = result;
+  const fee = policyFee;
+  const mult = bonusMult;
   const doq=document.getElementById('c-doq').value;
   const dob=document.getElementById('c-dob').value;
   const phone=document.getElementById('c-phone').value.trim();
   const email=document.getElementById('c-email').value.trim();
   const gender=document.getElementById('c-gender').value;
   const occ=document.getElementById('c-occ').value.trim();
+  const ref=genRef();
   quoteData={
     ref,agent:currentAgent,
     product:'Pure Savings Plan',planName:'Pure Savings Plan',
@@ -4413,11 +4461,9 @@ function generateQuote(){
   renderQuoteDoc(quoteData, 'q-doc', false);
   document.getElementById('quote-output').style.display='block';
   document.getElementById('quote-output').scrollIntoView({behavior:'smooth',block:'start'});
-  const gb=document.getElementById('gen-btn');if(gb)gb.style.display='none';
   saveQuoteLocally(quoteData);
   syncToSheets(quoteData);
   try{renderRecentQuotes();}catch(e){}
-  // Set page title to quote ref — ensures PDF filename is correct on ALL browsers/devices
   document.title = 'VLA-Quote-' + quoteData.ref;
 }
 
@@ -6306,13 +6352,13 @@ function resetQuote(silent){
 /* ═══════════════════════════════════════════
    MANGA YAKO — STATE & CONSTANTS
 ═══════════════════════════════════════════ */
-const MY_RATE      = 50.648;                              // Rate per USD 13,000 target (flat, all ages 18-60)
-const MY_DIVISOR   = 13000;                               // Divisor in formula
-const MY_TERM      = 15;                                  // Fixed 15-year term
-const MY_MIN_PREM  = 45;                                  // Minimum monthly premium (USD)
-const MY_MIN_ANB   = 18;                                  // Minimum entry age
-const MY_MAX_ANB   = 60;                                  // Maximum entry age
-const MY_MIN_TMV   = Math.ceil(MY_MIN_PREM * 13000 / 50.648); // Min TMV = ~11,551 (USD 45/mo)
+// MY_ constants retained for client-side validation only (age/premium range checks)
+// Calculation formula (MY_RATE, MY_DIVISOR) has moved to GAS server-side
+const MY_TERM      = 15;
+const MY_MIN_PREM  = 45;
+const MY_MIN_ANB   = 18;
+const MY_MAX_ANB   = 60;
+const MY_MIN_TMV   = Math.ceil(45 * 13000 / 50.648); // ~11,551
 
 let myMode      = 'tmv';   // 'tmv' or 'prem'
 let myAnb       = null;
@@ -6437,8 +6483,8 @@ function usd(n){ return 'USD '+Math.round(n).toLocaleString('en'); }
 /* -- Generate reference -- */
 function myGenRef(){ return 'MY-'+Date.now().toString(36).toUpperCase(); }
 
-/* -- Generate Quote -- */
-function myGenerateQuote(){
+/* -- Generate Quote (v4.0 — server-side calc) -- */
+async function myGenerateQuote(){
   document.querySelectorAll('#tab-manga-yako .err').forEach(e=>e.style.display='none');
   let errors=[];
   const fname=(document.getElementById('my-fname').value||'').trim();
@@ -6455,51 +6501,59 @@ function myGenerateQuote(){
     e.textContent='Age at Next Birthday '+myAnb+' is outside eligible range 18–60.';
     e.style.display='block'; errors.push('age');
   }
-  let prem=0, tmv=0;
+  let premInput=0, tmvInput=0;
   if(myMode==='tmv'){
-    tmv=parseFloat(document.getElementById('my-tmv').value)||0;
-    if(tmv<MY_MIN_TMV){document.getElementById('my-tmv-err').style.display='block';errors.push('tmv');}
-    else prem=tmv*MY_RATE/MY_DIVISOR;
+    tmvInput=parseFloat(document.getElementById('my-tmv').value)||0;
+    if(tmvInput<MY_MIN_TMV){document.getElementById('my-tmv-err').style.display='block';errors.push('tmv');}
   } else {
-    prem=parseFloat(document.getElementById('my-prem').value)||0;
-    if(prem<MY_MIN_PREM){document.getElementById('my-prem-err').style.display='block';errors.push('prem');}
-    else tmv=prem*MY_DIVISOR/MY_RATE;
+    premInput=parseFloat(document.getElementById('my-prem').value)||0;
+    if(premInput<MY_MIN_PREM){document.getElementById('my-prem-err').style.display='block';errors.push('prem');}
   }
   if(errors.length){
     const msg=errors.filter(e=>e!=='age'&&e!=='tmv'&&e!=='prem');
     if(msg.length) showToast(msg[0]);
     return;
   }
-  prem=Math.round(prem*100)/100;
-  tmv=Math.round(tmv);
-  const totalContrib=Math.round(prem*12*MY_TERM);
-  const deathBenefit=Math.max(1000,tmv);
+
+  // ── Call GAS ──
+  const params = {
+    product:'manga', anb:myAnb, mode:myMode,
+    ...(myMode==='tmv' ? {tmv:tmvInput} : {prem:premInput})
+  };
+  const result = await gasGetQuote(params);
+  if(!result) return;
+
+  const {prem, tmv, totalContrib, deathBenefit} = result;
   const mname=(document.getElementById('my-mname').value||'').trim();
   const clientName=[fname,mname,lname].filter(Boolean).join(' ');
   const ref=myGenRef();
   const doq=document.getElementById('my-doq').value;
   const dob=document.getElementById('my-dob').value;
-  myQuoteData={
-    ref,agent:currentAgent,product:'Manga Yako',
-    clientName,clientFirstName:fname,clientMiddleName:mname,clientLastName:lname,
-    clientPhone:document.getElementById('my-phone').value.trim(),
-    clientEmail:document.getElementById('my-email').value.trim(),
-    clientCity:document.getElementById('my-city').value.trim(),
-    clientCountry:document.getElementById('my-country').value.trim(),
-    gender:document.getElementById('my-gender').value,
-    dob,anb:myAnb,doq,term:MY_TERM,prem,tmv,totalContrib,deathBenefit,mode:myMode
+  const gender=document.getElementById('my-gender').value;
+  const phone=document.getElementById('my-phone').value.trim();
+  const email=(document.getElementById('my-email')||{value:''}).value.trim();
+  const city=(document.getElementById('my-city')||{value:''}).value.trim();
+  const country=(document.getElementById('my-country')||{value:''}).value.trim();
+  const mode2=(document.getElementById('my-mode-sel')||{value:'MWK'}).value;
+  const myQ={
+    ref,agent:currentAgent,savedAt:new Date().toISOString(),
+    clientName,firstName:fname,middleName:mname,lastName:lname,
+    clientEmail:email,clientPhone:phone,city,country,
+    gender,dob,anb:myAnb,doq,term:15,prem,tmv,
+    totalContrib,deathBenefit,mode:myMode
   };
-  myRenderQuoteDoc(myQuoteData);
+  myCurrentQuote=myQ;
+  myQuoteData=myQ;  // backward-compat: sharing/proposal functions still reference myQuoteData
+  myRenderQuoteDoc(myQ);
   document.getElementById('my-quote-output').style.display='block';
   document.getElementById('my-quote-output').scrollIntoView({behavior:'smooth',block:'start'});
-  document.getElementById('my-gen-btn').style.display='none';
-  document.title='VLA-Quote-'+ref;
-  // Save to local history
-  const myHistory=JSON.parse(localStorage.getItem('vla_my_quotes')||'[]');
-  myHistory.unshift({...myQuoteData, savedAt:new Date().toISOString()});
-  localStorage.setItem('vla_my_quotes',JSON.stringify(myHistory.slice(0,200)));
+  // Save to local Manga Yako history
+  const _myHist=JSON.parse(localStorage.getItem('vla_my_quotes')||'[]');
+  _myHist.unshift({...myQ, savedAt:new Date().toISOString()});
+  localStorage.setItem('vla_my_quotes',JSON.stringify(_myHist.slice(0,200)));
+  mySyncToSheets(myQ);
   try{renderRecentQuotes();}catch(e){}
-  mySyncToSheets(myQuoteData);
+  document.title = 'VLA-Quote-'+ref;
 }
 function myRenderQuoteDoc(q){
   document.getElementById('my-q-ref').textContent='Ref: '+q.ref;
@@ -7727,36 +7781,8 @@ const PHINDU_MAX_PREM = 500000;
 const PHINDU_TERM = 10;
 
 /* -- Lookup tables [basicSA, saWithBonus] per [mt][ageBand][premium] -- */
-const PHINDU_DATA = {
-  10: {
-    '18-27': {25000:[2301192,4526793],30000:[2776042,5460895],50000:[4664467,9175712],100000:[9374529,18441117]},
-    '28-37': {25000:[2258980,4443755],30000:[2717449,5345634],50000:[4566015,8982043],100000:[9202565,18102838]},
-    '38-47': {25000:[2251334,4428715],30000:[2710708,5332373],50000:[4554689,8959762],100000:[9171419,18041570]},
-    '48-57': {25000:[2201781,4331231],30000:[2644228,5201597],50000:[4442985,8740023],100000:[8969552,17644466]},
-    '58-65': {25000:[2028518,3990403],30000:[2436300,4792571],50000:[4093613,8052755],100000:[8263719,16255986]}
-  },
-  15: {
-    '18-27': {25000:[2135070,4200005],30000:[2575389,5066180],50000:[4327360,8512572],100000:[8697783,17109856]},
-    '28-37': {25000:[2095904,4122961],30000:[2521031,4959249],50000:[4236024,8332900],100000:[8538233,16795997]},
-    '38-47': {25000:[2088811,4109007],30000:[2514777,4946947],50000:[4225516,8312229],100000:[8509336,16739152]},
-    '48-57': {25000:[2042835,4018566],30000:[2453102,4825623],50000:[4121885,8108371],100000:[8322041,16370715]},
-    '58-65': {25000:[1882080,3702336],30000:[2260203,4446162],50000:[3767762,7470773],100000:[7667162,15082468]}
-  },
-  20: {
-    '18-27': {25000:[1991317,3917221],30000:[2401802,4724709],50000:[4065663,7938760],100000:[8112167,15957860]},
-    '28-37': {25000:[1954788,3845365],30000:[2351108,4624985],50000:[3950483,7771199],100000:[7963359,15665133]},
-    '38-47': {25000:[1948173,3832350],30000:[2345276,4613513],50000:[3940684,7751921],100000:[7936408,15612116]},
-    '48-57': {25000:[1905292,3747998],30000:[2287758,4500366],50000:[3844038,7561805],100000:[7761724,15268485]},
-    '58-65': {25000:[1755361,3453060],30000:[2107861,4146482],50000:[3541764,6967186],100000:[7150937,14066976]}
-  },
-  25: { /* Corrected values per actuarial table */
-    '18-27': {25000:[1865700,3670115],30000:[2250138,4426361],50000:[3780876,7437555],100000:[7600435,14951205]},
-    '28-37': {25000:[1831476,3602791],30000:[2202645,4332935],50000:[3701074,7280572],100000:[7461014,14676944]},
-    '38-47': {25000:[1825278,3590598],30000:[2197181,4322187],50000:[3691893,7262512],100000:[7435763,14627271]},
-    '48-57': {25000:[1785103,3511567],30000:[2143295,4216185],50000:[3601349,7084398],100000:[7272098,14305317]},
-    '58-65': {25000:[1644629,3235234],30000:[1974758,3884647],50000:[3318158,6527320],100000:[6699841,13179601]}
-  }
-};
+// PHINDU_DATA, phinduInterp, phinduInvPrem removed in v4.0
+// All Phindu calculations now run server-side in GAS (getQuote?product=phindu)
 
 /* -- State -- */
 let phinduQuoteMode = 'prem';
@@ -7816,33 +7842,7 @@ function phinduCheckAge(){
   else{errEl.style.display='none';pillEl.textContent='ANB: '+anb+' · Age Band: '+band;pillEl.style.display='block';}
 }
 
-/* -- Interpolation engine -- */
-function phinduInterp(mt, band, prem){
-  const pts=[25000,30000,50000,100000];
-  const d=PHINDU_DATA[mt][band];
-  if(prem<=25000){const r=prem/25000;return[d[25000][0]*r,d[25000][1]*r];}
-  for(let i=0;i<pts.length-1;i++){
-    if(prem<=pts[i+1]){
-      const t=(prem-pts[i])/(pts[i+1]-pts[i]);
-      return[d[pts[i]][0]+t*(d[pts[i+1]][0]-d[pts[i]][0]),
-             d[pts[i]][1]+t*(d[pts[i+1]][1]-d[pts[i]][1])];
-    }
-  }
-  /* extrapolate beyond 100k using 50k→100k slope */
-  const slopeA=(d[100000][0]-d[50000][0])/50000;
-  const slopeB=(d[100000][1]-d[50000][1])/50000;
-  return[d[100000][0]+slopeA*(prem-100000), d[100000][1]+slopeB*(prem-100000)];
-}
-
-/* -- Reverse: SA → Premium (binary search) -- */
-function phinduInvPrem(mt, band, targetSA){
-  let lo=PHINDU_MIN_PREM, hi=PHINDU_MAX_PREM;
-  for(let i=0;i<60;i++){
-    const mid=(lo+hi)/2;
-    phinduInterp(mt,band,mid)[0]<targetSA?lo=mid:hi=mid;
-  }
-  return Math.round((lo+hi)/2);
-}
+/* -- phinduInterp and phinduInvPrem removed in v4.0 (now server-side in GAS) -- */
 
 /* -- Name assembly -- */
 function phinduName(){
@@ -7852,8 +7852,8 @@ function phinduName(){
   return[f,m,l].filter(Boolean).join(' ');
 }
 
-/* -- Quote engine: Premium → SA -- */
-function phinduGenerateQuote(){
+/* -- Quote engine: Premium → SA (v4.0 — server-side calc) -- */
+async function phinduGenerateQuote(){
   const name=phinduName(), dob=document.getElementById('phindu-dob').value;
   const premRaw=parseFloat(document.getElementById('phindu-prem').value);
   const mt=parseInt(document.getElementById('phindu-mt').value);
@@ -7870,12 +7870,15 @@ function phinduGenerateQuote(){
   const anb=phinduCalcAnb(dob), band=phinduGetBand(anb);
   if(!band){showToast('Age must be 18–65');return;}
   phinduAnb=anb;
-  const[basicSA,saWithBonus]=phinduInterp(mt,band,premRaw);
-  phinduBuildAndShow(name,dob,gender,anb,band,premRaw,mt,basicSA,saWithBonus,'prem',phone,town,district);
+
+  const result = await gasGetQuote({product:'phindu', anb, mt, mode:'prem', prem:premRaw});
+  if(!result) return;
+  const {prem, basicSA, saWithBonus} = result;
+  phinduBuildAndShow(name,dob,gender,anb,band,prem,mt,basicSA,saWithBonus,'prem',phone,town,district);
 }
 
-/* -- Quote engine: SA → Premium -- */
-function phinduGenerateQuote2(){
+/* -- Quote engine: SA → Premium (v4.0 — server-side calc) -- */
+async function phinduGenerateQuote2(){
   const name=phinduName(), dob=document.getElementById('phindu-dob').value;
   const tSA=parseFloat(document.getElementById('phindu-target-sa').value);
   const mt=parseInt(document.getElementById('phindu-mt').value);
@@ -7890,11 +7893,10 @@ function phinduGenerateQuote2(){
   const anb=phinduCalcAnb(dob), band=phinduGetBand(anb);
   if(!band){showToast('Age must be 18–65');return;}
   phinduAnb=anb;
-  const[maxSA]=phinduInterp(mt,band,PHINDU_MAX_PREM);
-  if(tSA>maxSA){showToast('Max achievable SA: MWK '+Math.round(maxSA).toLocaleString());return;}
-  const prem=phinduInvPrem(mt,band,tSA);
-  if(prem<PHINDU_MIN_PREM){showToast('Target SA too low — min premium is MWK 25,000');return;}
-  const[basicSA,saWithBonus]=phinduInterp(mt,band,prem);
+
+  const result = await gasGetQuote({product:'phindu', anb, mt, mode:'sa', sa:tSA});
+  if(!result) return;
+  const {prem, basicSA, saWithBonus} = result;
   phinduBuildAndShow(name,dob,gender,anb,band,prem,mt,basicSA,saWithBonus,'sa',phone,town,district);
 }
 
@@ -8497,343 +8499,13 @@ function phinduPropReset(){
    Plans: lgp-lc | lgp-nl | lge-wp | tep
 ═══════════════════════════════════════════════════════════════ */
 
-/* ── 1. RATE TABLES ── */
+/* ── 1. RATE TABLES ── REMOVED v4.0 ──────────────────────────────────────
+   LGP_LC, LGP_NL, LGE_ANN, LGE_MON, COL_ANN, COL_MON, TEP_ANN, TEP_MON
+   All edu plan rate tables have been migrated to GAS server-side.
+   The browser sends inputs; GAS returns totalPrem, basicPrem etc.
+─────────────────────────────────────────────────────────────────────── */
 
-/* LGP-LC: Little Genius Primary WITH Life Cover
-   Child ANB=1, Premium Term=4 yrs, Annual only, per 2,000 unit */
-const LGP_LC = {
-  18:3086.46,19:3086.47,20:3086.48,21:3086.51,22:3086.53,23:3086.58,
-  24:3086.62,25:3086.67,26:3086.74,27:3086.86,28:3087.02,29:3087.22,
-  30:3087.47,31:3087.76,32:3088.10,33:3088.51,34:3089.00,35:3089.58,
-  36:3090.25,37:3091.01,38:3091.86,39:3092.80,40:3093.84,41:3095.03,
-  42:3096.35,43:3097.82,44:3099.48,45:3101.33,46:3103.41,47:3105.00,
-  48:3108.26,49:3111.07,50:3114.16,51:3121.23,52:3117.54,53:3125.25,
-  54:3129.60,55:3134.31,56:3139.39,57:3144.86,58:3150.75,59:3157.18,
-  60:3164.34,61:3172.48,62:3181.32,63:3190.91,64:3201.36,65:3212.74
-};
-
-/* LGP-NL: Little Genius Primary WITHOUT Life Cover
-   Child ANB=1, Premium Term=4 yrs, Annual only, per 2,000 unit */
-const LGP_NL = {
-  18:2568.57,19:2568.55,20:2568.51,21:2568.46,22:2568.41,23:2568.34,
-  24:2568.26,25:2568.13,26:2567.94,27:2567.69,28:2567.38,29:2567.01,
-  30:2566.57,31:2566.05,32:2565.43,33:2564.68,34:2563.81,35:2562.82,
-  36:2561.70,37:2560.46,38:2559.07,39:2557.51,40:2555.78,41:2553.83,
-  42:2551.65,43:2549.21,44:2546.48,45:2543.45,46:2540.09,47:2536.38,
-  48:2532.30,49:2527.83,50:2522.96,51:2517.66,52:2511.92,53:2505.71,
-  54:2499.02,55:2491.83,56:2484.12,57:2475.87,58:2466.63,59:2456.40,
-  60:2445.17,61:2432.94,62:2419.72,63:2405.41,64:2389.96,65:2373.25
-};
-
-/* LGE Annual — Little Genius Education Plan With Profits
-   [pANB][cANB], per 2,000 unit */
-const LGE_ANN = {
-  18:{9:2536.81,8:2023.60,7:1680.86,6:1435.55,5:1251.15,4:1107.37,3:992.03,2:897.40,1:818.30},
-  19:{9:2536.82,8:2023.60,7:1680.87,6:1435.56,5:1251.16,4:1107.38,3:992.05,2:897.42,1:818.32},
-  20:{9:2536.83,8:2023.62,7:1680.89,6:1435.58,5:1251.19,4:1107.41,3:992.08,2:897.45,1:818.36},
-  21:{9:2536.85,8:2023.65,7:1680.91,6:1435.61,5:1251.22,4:1107.44,3:992.12,2:897.49,1:818.40},
-  22:{9:2536.87,8:2023.67,7:1680.94,6:1435.64,5:1251.25,4:1107.48,3:992.16,2:897.54,1:818.46},
-  23:{9:2536.91,8:2023.71,7:1680.98,6:1435.69,5:1251.30,4:1107.54,3:992.23,2:897.62,1:818.54},
-  24:{9:2536.94,8:2023.75,7:1681.03,6:1435.74,5:1251.37,4:1107.62,3:992.31,2:897.71,1:818.64},
-  25:{9:2536.99,8:2023.80,7:1681.09,6:1435.82,5:1251.45,4:1107.71,3:992.42,2:897.82,1:818.77},
-  26:{9:2537.05,8:2023.88,7:1681.18,6:1435.92,5:1251.57,4:1107.84,3:992.55,2:897.97,1:818.93},
-  27:{9:2537.14,8:2023.99,7:1681.31,6:1436.06,5:1251.72,4:1108.00,3:992.73,2:898.16,1:819.13},
-  28:{9:2537.28,8:2024.14,7:1681.48,6:1436.25,5:1251.92,4:1108.21,3:992.95,2:898.40,1:819.38},
-  29:{9:2537.45,8:2024.33,7:1681.69,6:1436.47,5:1252.16,4:1108.47,3:993.22,2:898.68,1:819.68},
-  30:{9:2537.65,8:2024.56,7:1681.94,6:1436.74,5:1252.44,4:1108.77,3:993.54,2:899.02,1:820.03},
-  31:{9:2537.90,8:2024.83,7:1682.23,6:1437.06,5:1252.78,4:1109.13,3:993.92,2:899.41,1:820.44},
-  32:{9:2538.18,8:2025.15,7:1682.58,6:1437.43,5:1253.18,4:1109.55,3:994.36,2:899.87,1:820.91},
-  33:{9:2538.53,8:2025.54,7:1683.00,6:1437.88,5:1253.65,4:1110.04,3:994.87,2:900.40,1:821.46},
-  34:{9:2538.94,8:2026.00,7:1683.49,6:1438.40,5:1254.20,4:1110.61,3:995.46,2:901.01,1:822.09},
-  35:{9:2539.43,8:2026.53,7:1684.06,6:1439.00,5:1254.83,4:1111.27,3:996.14,2:901.70,1:822.80},
-  36:{9:2539.99,8:2027.14,7:1684.72,6:1439.69,5:1255.54,4:1112.00,3:996.90,2:902.49,1:823.61},
-  37:{9:2540.62,8:2027.83,7:1685.45,6:1440.46,5:1256.34,4:1112.83,3:997.76,2:903.37,1:824.51},
-  38:{9:2541.33,8:2028.61,7:1686.27,6:1441.32,5:1257.24,4:1113.76,3:998.71,2:904.36,1:825.52},
-  39:{9:2542.12,8:2029.47,7:1687.18,6:1442.28,5:1258.24,4:1114.80,3:999.78,2:905.46,1:826.65},
-  40:{9:2543.00,8:2030.43,7:1688.21,6:1443.35,5:1259.36,4:1115.96,3:1000.98,2:906.69,1:827.92},
-  41:{9:2543.99,8:2031.50,7:1689.35,6:1444.56,5:1260.61,4:1117.26,3:1002.32,2:908.07,1:829.33},
-  42:{9:2545.10,8:2032.71,7:1690.64,6:1445.90,5:1262.02,4:1118.71,3:1003.82,2:909.61,1:830.91},
-  43:{9:2546.34,8:2034.06,7:1692.08,6:1447.41,5:1263.59,4:1120.34,3:1005.49,2:911.32,1:832.66},
-  44:{9:2547.73,8:2035.58,7:1693.69,6:1449.10,5:1265.35,4:1122.15,3:1007.36,2:913.23,1:834.61},
-  45:{9:2549.28,8:2037.27,7:1695.49,6:1450.99,5:1267.30,4:1124.17,3:1009.43,2:915.35,1:836.77},
-  46:{9:2551.02,8:2039.16,7:1697.49,6:1453.09,5:1269.48,4:1126.41,3:1011.72,2:917.69,1:839.15},
-  47:{9:2552.96,8:2041.26,7:1699.72,6:1455.41,5:1271.88,4:1128.88,3:1014.25,2:920.27,1:841.78},
-  48:{9:2555.10,8:2043.58,7:1702.17,6:1457.96,5:1274.52,4:1131.59,3:1017.03,2:923.10,1:844.65},
-  49:{9:2557.46,8:2046.14,7:1704.87,6:1460.78,5:1277.43,4:1134.58,3:1020.08,2:926.20,1:847.80},
-  50:{9:2560.05,8:2048.94,7:1707.83,6:1463.86,5:1280.60,4:1137.83,3:1023.40,2:929.58,1:851.23},
-  51:{9:2562.89,8:2052.01,7:1711.06,6:1467.22,5:1284.07,4:1141.38,3:1027.02,2:933.26,1:854.96},
-  52:{9:2565.99,8:2055.36,7:1714.59,6:1470.88,5:1287.84,4:1145.24,3:1030.95,2:937.26,1:859.02},
-  53:{9:2569.36,8:2058.99,7:1718.41,6:1474.85,5:1291.93,4:1149.42,3:1035.22,2:941.61,1:863.45},
-  54:{9:2573.01,8:2062.93,7:1722.56,6:1479.15,5:1296.35,4:1153.96,3:1039.87,2:946.35,1:868.27},
-  55:{9:2576.97,8:2067.20,7:1727.04,6:1483.80,5:1301.15,4:1158.89,3:1044.92,2:951.51,1:873.52},
-  56:{9:2581.23,8:2071.80,7:1731.87,6:1488.84,5:1306.37,4:1164.27,3:1050.43,2:957.13,1:879.25},
-  57:{9:2585.83,8:2076.74,7:1737.11,6:1494.32,5:1312.05,4:1170.13,3:1056.44,2:963.28,1:885.51},
-  58:{9:2590.77,8:2082.13,7:1742.84,6:1500.32,5:1318.28,4:1176.55,3:1063.03,2:970.02,1:892.37},
-  59:{9:2596.17,8:2088.04,7:1749.13,6:1506.92,5:1325.13,4:1183.61,3:1070.27,2:977.41,1:899.90},
-  60:{9:2602.19,8:2094.61,7:1756.12,6:1514.23,5:1332.70,4:1191.41,3:1078.26,2:985.56,1:908.19},
-  61:{9:2609.03,8:2102.01,7:1763.94,6:1522.38,5:1341.13,4:1200.06,3:1087.11,2:994.58,1:917.35},
-  62:{9:2616.45,8:2110.06,7:1772.44,6:1531.24,5:1350.29,4:1209.48,3:1096.75,2:1004.40,1:927.33},
-  63:{9:2624.51,8:2118.80,7:1781.69,6:1540.90,5:1360.28,4:1219.75,3:1107.25,2:1015.11,1:938.21},
-  64:{9:2633.30,8:2128.33,7:1791.77,6:1551.42,5:1371.17,4:1230.95,3:1118.71,2:1026.79,1:950.08},
-  65:{9:2642.86,8:2138.71,7:1802.77,6:1562.91,5:1383.05,4:1243.17,3:1131.22,2:1039.54,1:963.03}
-};
-
-/* LGE Monthly — [pANB][cANB], per 2,000 unit */
-const LGE_MON = {
-  18:{9:223.03,8:177.91,7:147.78,6:126.21,5:110.00,4:97.36,3:87.22,2:78.90,1:71.94},
-  19:{9:223.03,8:177.91,7:147.78,6:126.21,5:110.00,4:97.36,3:87.22,2:78.90,1:71.94},
-  20:{9:223.03,8:177.91,7:147.78,6:126.21,5:110.00,4:97.36,3:87.22,2:78.90,1:71.95},
-  21:{9:223.03,8:177.91,7:147.78,6:126.21,5:110.00,4:97.36,3:87.22,2:78.90,1:71.95},
-  22:{9:223.03,8:177.91,7:147.78,6:126.22,5:110.01,4:97.37,3:87.23,2:78.91,1:71.96},
-  23:{9:223.04,8:177.92,7:147.79,6:126.22,5:110.01,4:97.37,3:87.23,2:78.92,1:71.96},
-  24:{9:223.04,8:177.92,7:147.79,6:126.23,5:110.02,4:97.38,3:87.24,2:78.92,1:71.97},
-  25:{9:223.04,8:177.93,7:147.80,6:126.23,5:110.02,4:97.39,3:87.25,2:78.93,1:71.98},
-  26:{9:223.05,8:177.93,7:147.80,6:126.24,5:110.03,4:97.40,3:87.26,2:78.95,1:72.00},
-  27:{9:223.06,8:177.94,7:147.82,6:126.25,5:110.05,4:97.41,3:87.28,2:78.96,1:72.02},
-  28:{9:223.07,8:177.96,7:147.83,6:126.27,5:110.06,4:97.43,3:87.30,2:78.98,1:72.04},
-  29:{9:223.08,8:177.97,7:147.85,6:126.29,5:110.09,4:97.45,3:87.32,2:79.01,1:72.06},
-  30:{9:223.10,8:177.99,7:147.87,6:126.31,5:110.11,4:97.48,3:87.35,2:79.04,1:72.09},
-  31:{9:223.12,8:178.02,7:147.90,6:126.34,5:110.14,4:97.51,3:87.38,2:79.07,1:72.13},
-  32:{9:223.15,8:178.04,7:147.93,6:126.37,5:110.18,4:97.55,3:87.42,2:79.11,1:72.17},
-  33:{9:223.18,8:178.08,7:147.96,6:126.41,5:110.22,4:97.59,3:87.47,2:79.16,1:72.22},
-  34:{9:223.22,8:178.12,7:148.01,6:126.46,5:110.27,4:97.64,3:87.52,2:79.21,1:72.28},
-  35:{9:223.26,8:178.17,7:148.06,6:126.51,5:110.32,4:97.70,3:87.58,2:79.27,1:72.34},
-  36:{9:223.31,8:178.22,7:148.11,6:126.57,5:110.38,4:97.76,3:87.64,2:79.34,1:72.41},
-  37:{9:223.36,8:178.28,7:148.18,6:126.64,5:110.45,4:97.84,3:87.72,2:79.42,1:72.49},
-  38:{9:223.43,8:178.35,7:148.25,6:126.72,5:110.53,4:97.92,3:87.80,2:79.51,1:72.58},
-  39:{9:223.49,8:178.42,7:148.33,6:126.80,5:110.62,4:98.01,3:87.90,2:79.60,1:72.68},
-  40:{9:223.57,8:178.51,7:148.42,6:126.89,5:110.72,4:98.11,3:88.00,2:79.71,1:72.79},
-  41:{9:223.66,8:178.60,7:148.52,6:127.00,5:110.83,4:98.23,3:88.12,2:79.83,1:72.91},
-  42:{9:223.76,8:178.71,7:148.64,6:127.12,5:110.95,4:98.35,3:88.25,2:79.97,1:73.05},
-  43:{9:223.87,8:178.83,7:148.76,6:127.25,5:111.09,4:98.50,3:88.40,2:80.12,1:73.20},
-  44:{9:223.99,8:178.96,7:148.90,6:127.40,5:111.25,4:98.66,3:88.56,2:80.29,1:73.38},
-  45:{9:224.12,8:179.11,7:149.06,6:127.57,5:111.42,4:98.83,3:88.75,2:80.47,1:73.57},
-  46:{9:224.28,8:179.28,7:149.24,6:127.75,5:111.61,4:99.03,3:88.95,2:80.68,1:73.78},
-  47:{9:224.45,8:179.46,7:149.43,6:127.95,5:111.82,4:99.25,3:89.17,2:80.91,1:74.01},
-  48:{9:224.64,8:179.67,7:149.65,6:128.18,5:112.05,4:99.49,3:89.41,2:81.16,1:74.26},
-  49:{9:224.84,8:179.89,7:149.89,6:128.43,5:112.31,4:99.75,3:89.68,2:81.43,1:74.54},
-  50:{9:225.07,8:180.14,7:150.15,6:128.70,5:112.59,4:100.03,3:89.97,2:81.73,1:74.84},
-  51:{9:225.32,8:180.41,7:150.43,6:128.99,5:112.89,4:100.35,3:90.29,2:82.05,1:75.17},
-  52:{9:225.59,8:180.70,7:150.74,6:129.32,5:113.22,4:100.69,3:90.64,2:82.40,1:75.52},
-  53:{9:225.89,8:181.02,7:151.08,6:129.66,5:113.58,4:101.05,3:91.01,2:82.78,1:75.91},
-  54:{9:226.21,8:181.37,7:151.44,6:130.04,5:113.97,4:101.45,3:91.42,2:83.20,1:76.34},
-  55:{9:226.56,8:181.74,7:151.84,6:130.45,5:114.39,4:101.89,3:91.87,2:83.65,1:76.80},
-  56:{9:226.93,8:182.15,7:152.26,6:130.89,5:114.85,4:102.36,3:92.35,2:84.15,1:77.30},
-  57:{9:227.34,8:182.58,7:152.72,6:131.38,5:115.35,4:102.87,3:92.88,2:84.69,1:77.85},
-  58:{9:227.77,8:183.05,7:153.22,6:131.90,5:115.90,4:103.44,3:93.46,2:85.28,1:78.45},
-  59:{9:228.25,8:183.57,7:153.78,6:132.48,5:116.50,4:104.06,3:94.09,2:85.93,1:79.12},
-  60:{9:228.78,8:184.15,7:154.39,6:133.13,5:117.17,4:104.74,3:94.80,2:86.65,1:79.85},
-  61:{9:229.38,8:184.80,7:155.08,6:133.84,5:117.91,4:105.51,3:95.58,2:87.44,1:80.65},
-  62:{9:230.03,8:185.51,7:155.83,6:134.62,5:118.71,4:106.33,3:96.42,2:88.30,1:81.53},
-  63:{9:230.74,8:186.28,7:156.64,6:135.47,5:119.59,4:107.24,3:97.35,2:89.25,1:82.48},
-  64:{9:231.51,8:187.12,7:157.53,6:136.40,5:120.55,4:108.22,3:98.35,2:90.27,1:83.53},
-  65:{9:232.35,8:188.03,7:158.49,6:137.41,5:121.59,4:109.30,3:99.45,2:91.39,1:84.67}
-};
-
-/* College Benefit Annual — [pANB][cANB], per 2,500 unit */
-const COL_ANN = {
-  18:{9:382.25,8:303.94,7:251.61,6:214.14,5:185.96,4:163.96,3:146.31,2:131.81,1:119.68},
-  19:{9:382.25,8:303.94,7:251.61,6:214.14,5:185.96,4:163.97,3:146.31,2:131.82,1:119.69},
-  20:{9:382.25,8:303.94,7:251.62,6:214.15,5:185.96,4:163.97,3:146.32,2:131.82,1:119.69},
-  21:{9:382.26,8:303.94,7:251.62,6:214.15,5:185.97,4:163.98,3:146.32,2:131.83,1:119.70},
-  22:{9:382.26,8:303.95,7:251.62,6:214.15,5:185.97,4:163.98,3:146.33,2:131.84,1:119.71},
-  23:{9:382.27,8:303.95,7:251.63,6:214.16,5:185.98,4:163.99,3:146.34,2:131.85,1:119.72},
-  24:{9:382.27,8:303.96,7:251.64,6:214.17,5:185.99,4:164.00,3:146.35,2:131.86,1:119.74},
-  25:{9:382.28,8:303.97,7:251.65,6:214.18,5:186.00,4:164.02,3:146.37,2:131.88,1:119.75},
-  26:{9:382.29,8:303.98,7:251.66,6:214.20,5:186.02,4:164.04,3:146.39,2:131.90,1:119.78},
-  27:{9:382.30,8:304.00,7:251.68,6:214.22,5:186.04,4:164.06,3:146.42,2:131.93,1:119.81},
-  28:{9:382.32,8:304.02,7:251.70,6:214.25,5:186.07,4:164.09,3:146.45,2:131.96,1:119.85},
-  29:{9:382.35,8:304.05,7:251.74,6:214.28,5:186.11,4:164.13,3:146.49,2:132.01,1:119.89},
-  30:{9:382.38,8:304.08,7:251.77,6:214.32,5:186.15,4:164.18,3:146.54,2:132.06,1:119.94},
-  31:{9:382.42,8:304.12,7:251.82,6:214.37,5:186.20,4:164.23,3:146.59,2:132.11,1:120.00},
-  32:{9:382.46,8:304.17,7:251.87,6:214.42,5:186.26,4:164.29,3:146.66,2:132.18,1:120.07},
-  33:{9:382.51,8:304.23,7:251.93,6:214.49,5:186.33,4:164.37,3:146.74,2:132.26,1:120.16},
-  34:{9:382.57,8:304.30,7:252.01,6:214.57,5:186.41,4:164.45,3:146.82,2:132.35,1:120.25},
-  35:{9:382.65,8:304.38,7:252.10,6:214.66,5:186.51,4:164.55,3:146.93,2:132.46,1:120.36},
-  36:{9:382.73,8:304.47,7:252.19,6:214.76,5:186.62,4:164.66,3:147.04,2:132.57,1:120.48},
-  37:{9:382.83,8:304.58,7:252.30,6:214.88,5:186.74,4:164.78,3:147.17,2:132.71,1:120.61},
-  38:{9:382.94,8:304.69,7:252.43,6:215.01,5:186.87,4:164.92,3:147.31,2:132.85,1:120.76},
-  39:{9:383.06,8:304.82,7:252.57,6:215.15,5:187.02,4:165.08,3:147.47,2:133.02,1:120.93},
-  40:{9:383.19,8:304.97,7:252.72,6:215.32,5:187.19,4:165.25,3:147.65,2:133.20,1:121.12},
-  41:{9:383.34,8:305.13,7:252.89,6:215.50,5:187.38,4:165.45,3:147.85,2:133.41,1:121.33},
-  42:{9:383.51,8:305.31,7:253.09,6:215.70,5:187.59,4:165.67,3:148.08,2:133.64,1:121.56},
-  43:{9:383.69,8:305.52,7:253.30,6:215.93,5:187.83,4:165.91,3:148.33,2:133.89,1:121.82},
-  44:{9:383.91,8:305.75,7:253.55,6:216.18,5:188.09,4:166.18,3:148.60,2:134.18,1:122.11},
-  45:{9:384.14,8:306.00,7:253.82,6:216.47,5:188.38,4:166.48,3:148.91,2:134.49,1:122.44},
-  46:{9:384.40,8:306.29,7:254.12,6:216.78,5:188.71,4:166.82,3:149.26,2:134.84,1:122.79},
-  47:{9:384.70,8:306.61,7:254.46,6:217.13,5:189.07,4:167.19,3:149.64,2:135.23,1:123.18},
-  48:{9:385.02,8:306.96,7:254.83,6:217.52,5:189.47,4:167.60,3:150.05,2:135.65,1:123.61},
-  49:{9:385.38,8:307.34,7:255.23,6:217.94,5:189.91,4:168.05,3:150.51,2:136.11,1:124.08},
-  50:{9:385.77,8:307.77,7:255.68,6:218.40,5:190.38,4:168.53,3:151.01,2:136.62,1:124.59},
-  51:{9:386.20,8:308.23,7:256.17,6:218.91,5:190.90,4:169.07,3:151.55,2:137.17,1:125.15},
-  52:{9:386.67,8:308.74,7:256.70,6:219.46,5:191.47,4:169.64,3:152.14,2:137.77,1:125.75},
-  53:{9:387.18,8:309.29,7:257.28,6:220.06,5:192.08,4:170.27,3:152.77,2:138.42,1:126.41},
-  54:{9:387.73,8:309.88,7:257.90,6:220.71,5:192.75,4:170.95,3:153.47,2:139.12,1:127.13},
-  55:{9:388.33,8:310.53,7:258.58,6:221.41,5:193.47,4:171.69,3:154.22,2:139.89,1:127.91},
-  56:{9:388.98,8:311.22,7:259.31,6:222.17,5:194.25,4:172.50,3:155.05,2:140.73,1:128.76},
-  57:{9:389.68,8:311.97,7:260.10,6:222.99,5:195.11,4:173.38,3:155.95,2:141.65,1:129.70},
-  58:{9:390.42,8:312.78,7:260.96,6:223.89,5:196.05,4:174.34,3:156.94,2:142.66,1:130.72},
-  59:{9:391.24,8:313.68,7:261.91,6:224.89,5:197.07,4:175.40,3:158.02,2:143.76,1:131.84},
-  60:{9:392.15,8:314.67,7:262.97,6:225.99,5:198.21,4:176.57,3:159.21,2:144.98,1:133.08},
-  61:{9:393.19,8:315.79,7:264.15,6:227.22,5:199.48,4:177.87,3:160.54,2:146.32,1:134.44},
-  62:{9:394.31,8:317.01,7:265.43,6:228.55,5:200.86,4:179.28,3:161.98,2:147.79,1:135.93},
-  63:{9:395.53,8:318.33,7:266.83,6:230.00,5:202.36,4:180.82,3:163.55,2:149.39,1:137.55},
-  64:{9:396.86,8:319.77,7:268.35,6:231.59,5:203.99,4:182.50,3:165.27,2:151.13,1:139.31},
-  65:{9:398.31,8:321.34,7:270.01,6:233.32,5:205.78,4:184.33,3:167.14,2:153.04,1:141.24}
-};
-
-/* College Benefit Monthly — [pANB][cANB], per 2,500 unit */
-const COL_MON = {
-  18:{9:33.61,8:26.72,7:22.12,6:18.83,5:16.35,4:14.42,3:12.86,2:11.59,1:10.52},
-  19:{9:33.61,8:26.72,7:22.12,6:18.83,5:16.35,4:14.42,3:12.86,2:11.59,1:10.52},
-  20:{9:33.61,8:26.72,7:22.12,6:18.83,5:16.35,4:14.42,3:12.86,2:11.59,1:10.52},
-  21:{9:33.61,8:26.72,7:22.12,6:18.83,5:16.35,4:14.42,3:12.86,2:11.59,1:10.52},
-  22:{9:33.61,8:26.72,7:22.12,6:18.83,5:16.35,4:14.42,3:12.86,2:11.59,1:10.52},
-  23:{9:33.61,8:26.72,7:22.12,6:18.83,5:16.35,4:14.42,3:12.87,2:11.59,1:10.53},
-  24:{9:33.61,8:26.72,7:22.12,6:18.83,5:16.35,4:14.42,3:12.87,2:11.59,1:10.53},
-  25:{9:33.61,8:26.72,7:22.12,6:18.83,5:16.35,4:14.42,3:12.87,2:11.59,1:10.53},
-  26:{9:33.61,8:26.72,7:22.13,6:18.83,5:16.35,4:14.42,3:12.87,2:11.60,1:10.53},
-  27:{9:33.61,8:26.73,7:22.13,6:18.83,5:16.36,4:14.42,3:12.87,2:11.60,1:10.53},
-  28:{9:33.61,8:26.73,7:22.13,6:18.84,5:16.36,4:14.43,3:12.88,2:11.60,1:10.54},
-  29:{9:33.61,8:26.73,7:22.13,6:18.84,5:16.36,4:14.43,3:12.88,2:11.61,1:10.54},
-  30:{9:33.62,8:26.73,7:22.14,6:18.84,5:16.37,4:14.43,3:12.88,2:11.61,1:10.54},
-  31:{9:33.62,8:26.74,7:22.14,6:18.85,5:16.37,4:14.44,3:12.89,2:11.62,1:10.55},
-  32:{9:33.62,8:26.74,7:22.14,6:18.85,5:16.38,4:14.44,3:12.89,2:11.62,1:10.56},
-  33:{9:33.63,8:26.75,7:22.15,6:18.86,5:16.38,4:14.45,3:12.90,2:11.63,1:10.56},
-  34:{9:33.63,8:26.75,7:22.16,6:18.86,5:16.39,4:14.46,3:12.91,2:11.64,1:10.57},
-  35:{9:33.64,8:26.76,7:22.16,6:18.87,5:16.40,4:14.47,3:12.92,2:11.65,1:10.58},
-  36:{9:33.65,8:26.77,7:22.17,6:18.88,5:16.41,4:14.48,3:12.93,2:11.66,1:10.59},
-  37:{9:33.66,8:26.78,7:22.18,6:18.89,5:16.42,4:14.49,3:12.94,2:11.67,1:10.60},
-  38:{9:33.67,8:26.79,7:22.19,6:18.90,5:16.43,4:14.50,3:12.95,2:11.68,1:10.62},
-  39:{9:33.68,8:26.80,7:22.20,6:18.92,5:16.44,4:14.51,3:12.97,2:11.69,1:10.63},
-  40:{9:33.69,8:26.81,7:22.22,6:18.93,5:16.46,4:14.53,3:12.98,2:11.71,1:10.65},
-  41:{9:33.70,8:26.83,7:22.23,6:18.95,5:16.47,4:14.55,3:13.00,2:11.73,1:10.67},
-  42:{9:33.72,8:26.84,7:22.25,6:18.96,5:16.49,4:14.56,3:13.02,2:11.75,1:10.69},
-  43:{9:33.73,8:26.86,7:22.27,6:18.98,5:16.51,4:14.59,3:13.04,2:11.77,1:10.71},
-  44:{9:33.75,8:26.88,7:22.29,6:19.01,5:16.54,4:14.61,3:13.06,2:11.80,1:10.74},
-  45:{9:33.77,8:26.90,7:22.31,6:19.03,5:16.56,4:14.64,3:13.09,2:11.82,1:10.76},
-  46:{9:33.80,8:26.93,7:22.34,6:19.06,5:16.59,4:14.67,3:13.12,2:11.86,1:10.80},
-  47:{9:33.82,8:26.96,7:22.37,6:19.09,5:16.62,4:14.70,3:13.16,2:11.89,1:10.83},
-  48:{9:33.85,8:26.99,7:22.40,6:19.12,5:16.66,4:14.73,3:13.19,2:11.93,1:10.87},
-  49:{9:33.88,8:27.02,7:22.44,6:19.16,5:16.70,4:14.77,3:13.23,2:11.97,1:10.91},
-  50:{9:33.92,8:27.06,7:22.48,6:19.20,5:16.74,4:14.82,3:13.28,2:12.01,1:10.95},
-  51:{9:33.95,8:27.10,7:22.52,6:19.25,5:16.78,4:14.86,3:13.32,2:12.06,1:11.00},
-  52:{9:33.99,8:27.14,7:22.57,6:19.29,5:16.83,4:14.91,3:13.38,2:12.11,1:11.06},
-  53:{9:34.04,8:27.19,7:22.62,6:19.35,5:16.89,4:14.97,3:13.43,2:12.17,1:11.11},
-  54:{9:34.09,8:27.24,7:22.67,6:19.40,5:16.95,4:15.03,3:13.49,2:12.23,1:11.18},
-  55:{9:34.14,8:27.30,7:22.73,6:19.47,5:17.01,4:15.09,3:13.56,2:12.30,1:11.25},
-  56:{9:34.20,8:27.36,7:22.80,6:19.53,5:17.08,4:15.17,3:13.63,2:12.37,1:11.32},
-  57:{9:34.26,8:27.43,7:22.87,6:19.60,5:17.15,4:15.24,3:13.71,2:12.45,1:11.40},
-  58:{9:34.32,8:27.50,7:22.94,6:19.68,5:17.24,4:15.33,3:13.80,2:12.54,1:11.49},
-  59:{9:34.40,8:27.58,7:23.03,6:19.77,5:17.33,4:15.42,3:13.89,2:12.64,1:11.59},
-  60:{9:34.48,8:27.66,7:23.12,6:19.87,5:17.43,4:15.52,3:14.00,2:12.75,1:11.70},
-  61:{9:34.57,8:27.76,7:23.22,6:19.98,5:17.54,4:15.64,3:14.11,2:12.86,1:11.82},
-  62:{9:34.67,8:27.87,7:23.34,6:20.09,5:17.66,4:15.76,3:14.24,2:12.99,1:11.95},
-  63:{9:34.77,8:27.99,7:23.46,6:20.22,5:17.79,4:15.90,3:14.38,2:13.13,1:12.09},
-  64:{9:34.89,8:28.11,7:23.59,6:20.36,5:17.93,4:16.04,3:14.53,2:13.29,1:12.25},
-  65:{9:35.02,8:28.25,7:23.74,6:20.51,5:18.09,4:16.21,3:14.69,2:13.45,1:12.42}
-};
-
-/* TEP Annual — [pANB][cANB], per 10,000 unit */
-const TEP_ANN = {
-  30:{18:36492.48,17:18212.35,16:12114.49,15:9062.30,14:7228.43,13:6003.79},
-  31:{18:36492.48,17:18212.89,16:12115.24,15:9063.17,14:7229.39,13:6004.85},
-  32:{18:36492.48,17:18213.52,16:12116.11,15:9064.19,14:7230.54,13:6006.10},
-  33:{18:36492.48,17:18214.24,16:12117.14,15:9065.41,14:7231.90,13:6007.58},
-  34:{18:36492.48,17:18215.15,16:12118.40,15:9066.89,14:7233.54,13:6009.34},
-  35:{18:36492.48,17:18216.23,16:12119.90,15:9068.63,14:7235.46,13:6011.39},
-  36:{18:36492.48,17:18217.49,16:12121.64,15:9070.64,14:7237.65,13:6013.72},
-  37:{18:36492.48,17:18218.94,16:12123.61,15:9072.91,14:7240.11,13:6016.34},
-  38:{18:36492.48,17:18220.57,16:12125.82,15:9075.44,14:7242.87,13:6019.27},
-  39:{18:36492.48,17:18222.38,16:12128.27,15:9078.25,14:7245.94,13:6022.53},
-  40:{18:36492.48,17:18224.36,16:12131.00,15:9081.40,14:7249.37,13:6026.18},
-  41:{18:36492.48,17:18226.63,16:12134.08,15:9084.94,14:7253.22,13:6030.28},
-  42:{18:36492.48,17:18229.16,16:12137.52,15:9088.89,14:7257.53,13:6034.87},
-  43:{18:36492.48,17:18231.96,16:12141.36,15:9093.31,14:7262.35,13:6040.00},
-  44:{18:36492.48,17:18235.13,16:12145.67,15:9098.28,14:7267.77,13:6045.76},
-  45:{18:36492.48,17:18238.66,16:12150.50,15:9103.84,14:7273.82,13:6052.18},
-  46:{18:36492.48,17:18242.65,16:12155.93,15:9110.06,14:7280.58,13:6059.35},
-  47:{18:36492.48,17:18247.09,16:12161.96,15:9116.97,14:7288.08,13:6067.29},
-  48:{18:36492.48,17:18251.99,16:12168.62,15:9124.60,14:7296.36,13:6076.05},
-  49:{18:36492.48,17:18257.43,16:12176.01,15:9133.04,14:7305.50,13:6085.69},
-  50:{18:36492.48,17:18263.42,16:12184.12,15:9142.30,14:7315.52,13:6096.26},
-  51:{18:36492.48,17:18269.96,16:12192.99,15:9152.43,14:7326.47,13:6107.81},
-  52:{18:36492.48,17:18277.15,16:12202.71,15:9163.51,14:7338.42,13:6120.40},
-  53:{18:36492.48,17:18284.97,16:12213.27,15:9175.54,14:7351.41,13:6134.07},
-  54:{18:36492.48,17:18293.44,16:12224.73,15:9188.59,14:7365.48,13:6148.87},
-  55:{18:36492.48,17:18302.65,16:12237.16,15:9202.73,14:7380.71,13:6164.88},
-  56:{18:36492.48,17:18312.59,16:12250.57,15:9217.98,14:7397.14,13:6182.14},
-  57:{18:36492.48,17:18323.28,16:12265.00,15:9234.39,14:7414.81,13:6200.85},
-  58:{18:36492.48,17:18334.81,16:12280.54,15:9252.04,14:7434.03,13:6221.29},
-  59:{18:36492.48,17:18347.17,16:12297.19,15:9271.34,14:7455.16,13:6243.78},
-  60:{18:36492.48,17:18360.38,16:12315.70,15:9292.83,14:7478.63,13:6268.72},
-  61:{18:36492.48,17:18376.18,16:12337.11,15:9317.27,14:7505.07,13:6296.64},
-  62:{18:36492.48,17:18393.30,16:12360.30,15:9343.78,14:7533.80,13:6327.01},
-  63:{18:36492.48,17:18411.83,16:12385.46,15:9372.59,14:7565.04,13:6360.05},
-  64:{18:36492.48,17:18431.98,16:12412.84,15:9403.96,14:7599.07,13:6396.07},
-  65:{18:36492.48,17:18453.93,16:12442.68,15:9438.14,14:7636.16,13:6435.34},
-  66:{18:36492.48,17:18477.79,16:12475.12,15:9475.33,14:7676.55,13:6478.12},
-  67:{18:36492.48,17:18503.67,16:12510.38,15:9515.80,14:7720.54,13:6524.75},
-  68:{18:36492.48,17:18531.86,16:12548.79,15:9559.91,14:7768.49,13:6575.59},
-  69:{18:36492.48,17:18562.49,16:12590.55,15:9607.90,14:7820.72,13:6631.02},
-  70:{18:36492.48,17:18595.76,16:12635.96,15:9660.14,14:7877.62,13:6691.45},
-  71:{18:36492.48,17:18631.90,16:12685.36,15:9717.03,14:7939.64,13:6757.38},
-  72:{18:36492.48,17:18671.21,16:12739.14,15:9779.03,14:8007.30,13:6829.32},
-  73:{18:36492.48,17:18713.93,16:12797.68,15:9846.58,14:8081.05,13:6907.82},
-  74:{18:36492.48,17:18760.39,16:12861.39,15:9920.15,14:8161.47,13:6993.45},
-  75:{18:36492.48,17:18810.84,16:12930.64,15:10000.24,14:8249.09,13:7086.83}
-};
-
-/* TEP Monthly — [pANB][cANB], per 10,000 unit */
-const TEP_MON = {
-  30:{18:3208.30,17:1601.17,16:1065.07,15:796.73,14:635.50,13:527.83},
-  31:{18:3208.30,17:1601.22,16:1065.13,15:796.80,14:635.58,13:527.93},
-  32:{18:3208.30,17:1601.27,16:1065.21,15:796.89,14:635.69,13:528.04},
-  33:{18:3208.30,17:1601.34,16:1065.30,15:797.00,14:635.81,13:528.17},
-  34:{18:3208.30,17:1601.42,16:1065.41,15:797.13,14:635.95,13:528.32},
-  35:{18:3208.30,17:1601.51,16:1065.54,15:797.28,14:636.12,13:528.50},
-  36:{18:3208.30,17:1601.62,16:1065.69,15:797.46,14:636.31,13:528.71},
-  37:{18:3208.30,17:1601.75,16:1065.87,15:797.66,14:636.53,13:528.94},
-  38:{18:3208.30,17:1601.89,16:1066.06,15:797.88,14:636.77,13:529.19},
-  39:{18:3208.30,17:1602.05,16:1066.28,15:798.13,14:637.04,13:529.48},
-  40:{18:3208.30,17:1602.23,16:1066.52,15:798.41,14:637.34,13:529.80},
-  41:{18:3208.30,17:1602.43,16:1066.79,15:798.72,14:637.68,13:530.16},
-  42:{18:3208.30,17:1602.65,16:1067.09,15:799.07,14:638.06,13:530.57},
-  43:{18:3208.30,17:1602.89,16:1067.43,15:799.45,14:638.48,13:531.02},
-  44:{18:3208.30,17:1603.17,16:1067.81,15:799.89,14:638.96,13:531.52},
-  45:{18:3208.30,17:1603.48,16:1068.23,15:800.38,14:639.49,13:532.09},
-  46:{18:3208.30,17:1603.83,16:1068.71,15:800.93,14:640.08,13:532.72},
-  47:{18:3208.30,17:1604.22,16:1069.24,15:801.53,14:640.74,13:533.42},
-  48:{18:3208.30,17:1604.65,16:1069.83,15:802.21,14:641.47,13:534.19},
-  49:{18:3208.30,17:1605.13,16:1070.47,15:802.95,14:642.28,13:535.03},
-  50:{18:3208.30,17:1605.66,16:1071.19,15:803.76,14:643.16,13:535.96},
-  51:{18:3208.30,17:1606.24,16:1071.97,15:804.65,14:644.12,13:536.98},
-  52:{18:3208.30,17:1606.87,16:1072.82,15:805.63,14:645.17,13:538.09},
-  53:{18:3208.30,17:1607.55,16:1073.75,15:806.68,14:646.31,13:539.29},
-  54:{18:3208.30,17:1608.30,16:1074.76,15:807.83,14:647.55,13:540.59},
-  55:{18:3208.30,17:1609.11,16:1075.85,15:809.07,14:648.89,13:542.00},
-  56:{18:3208.30,17:1609.98,16:1077.03,15:810.41,14:650.33,13:543.51},
-  57:{18:3208.30,17:1610.92,16:1078.30,15:811.86,14:651.89,13:545.16},
-  58:{18:3208.30,17:1611.94,16:1079.66,15:813.41,14:653.58,13:546.96},
-  59:{18:3208.30,17:1613.02,16:1081.13,15:815.11,14:655.43,13:548.93},
-  60:{18:3208.30,17:1614.18,16:1082.76,15:817.00,14:657.50,13:551.12},
-  61:{18:3208.30,17:1615.57,16:1084.64,15:819.14,14:659.82,13:553.58},
-  62:{18:3208.30,17:1617.08,16:1086.68,15:821.47,14:662.35,13:556.25},
-  63:{18:3208.30,17:1618.71,16:1088.89,15:824.01,14:665.09,13:559.15},
-  64:{18:3208.30,17:1620.48,16:1091.30,15:826.77,14:668.09,13:562.32},
-  65:{18:3208.30,17:1622.41,16:1093.92,15:829.77,14:671.35,13:565.77},
-  66:{18:3208.30,17:1624.51,16:1096.77,15:833.04,14:674.90,13:569.54},
-  67:{18:3208.30,17:1626.78,16:1099.87,15:836.60,14:678.76,13:573.63},
-  68:{18:3208.30,17:1629.26,16:1103.25,15:840.48,14:682.98,13:578.10},
-  69:{18:3208.30,17:1631.95,16:1106.92,15:844.69,14:687.57,13:582.98},
-  70:{18:3208.30,17:1634.88,16:1110.91,15:849.29,14:692.57,13:588.29},
-  71:{18:3208.30,17:1638.06,16:1115.26,15:854.29,14:698.03,13:594.09},
-  72:{18:3208.30,17:1641.51,16:1119.98,15:859.74,14:703.98,13:600.41},
-  73:{18:3208.30,17:1645.27,16:1125.13,15:865.68,14:710.46,13:607.31},
-  74:{18:3208.30,17:1649.35,16:1130.73,15:872.15,14:717.53,13:614.84},
-  75:{18:3208.30,17:1653.79,16:1136.82,15:879.19,14:725.23,13:623.05}
-};
-
+// LGE_ANN, LGE_MON, COL_ANN, COL_MON, TEP_ANN, TEP_MON removed v4.0 (now in GAS)
 
 /* ── 2. STATE ── */
 let eduCurrentQuote = null;
@@ -9010,7 +8682,8 @@ function eduOccChanged(){
 }
 
 /* ── 8. GENERATE QUOTE ── */
-function eduGenerate(){
+/* ── 8. GENERATE QUOTE (v4.0 — server-side calc) ── */
+async function eduGenerate(){
   const plan = document.getElementById('edu-plan').value;
   if(!plan){ showToast('Please select a plan'); return; }
 
@@ -9036,101 +8709,45 @@ function eduGenerate(){
   if(!cdob){ showToast('Child date of birth required'); return; }
   if(!phone){ showToast('Phone number required'); return; }
 
-  /* Build full names including optional middle names */
   const parentFullName = [pfname, pmname, plname].filter(Boolean).join(' ');
   const childFullName  = [cfname, cmname, clname].filter(Boolean).join(' ');
 
   const pANB = eduCalcANB(pdob);
   const cANB = eduCalcANB(cdob);
 
+  // Client-side age range guard (fast fail before GAS call)
   if(plan==='tep'&&(pANB<30||pANB>75)){ showToast('Parent ANB must be 30–75 for TEP'); return; }
   if((plan==='lgp-lc'||plan==='lgp-nl'||plan==='lge-wp')&&(pANB<18||pANB>65)){ showToast('Parent ANB must be 18–65'); return; }
   if((plan==='lgp-lc'||plan==='lgp-nl')&&cANB!==1){ showToast('Child ANB must be 1 for Little Genius Primary'); return; }
   if(plan==='lge-wp'&&(cANB<1||cANB>9)){ showToast('Child ANB must be 1–9'); return; }
   if(plan==='tep'&&(cANB<13||cANB>18)){ showToast('Child ANB must be 13–18 for TEP'); return; }
 
-  const saAmountRaw = parseInt(document.getElementById('edu-sa-amount').value)||0;
-
   const occCls = document.getElementById('edu-occ').value;
   const freq = document.getElementById('edu-freq').value;
   const isMo = freq==='monthly';
   const doq = document.getElementById('edu-doq').value;
 
-  const occLoads = plan==='tep' ? {A:0.70,B:1.40,C:2.80,D:5.60} : {A:0.35,B:0.70,C:1.40,D:2.80};
-  const occLoad = occCls==='0' ? 0 : (occLoads[occCls]||0);
+  let saInput = 0, premInput = 0;
+  const hasCollege = plan==='lge-wp' && document.getElementById('edu-college-tog')?.checked;
+  const colSAInput = hasCollege ? (parseInt(document.getElementById('edu-college-sa').value)||2500000) : 0;
 
-  let basicRate, premTerm, unitSA;
-
-  if(plan==='lgp-lc'){
-    const annRate=LGP_LC[pANB]; premTerm=4; unitSA=2000;
-    if(!annRate){ showToast('Rate not found for Parent ANB '+pANB); return; }
-    basicRate = isMo ? annRate / 11.3744 : annRate;
-  } else if(plan==='lgp-nl'){
-    const annRate=LGP_NL[pANB]; premTerm=4; unitSA=2000;
-    if(!annRate){ showToast('Rate not found for Parent ANB '+pANB); return; }
-    basicRate = isMo ? annRate / 11.3744 : annRate;
-  } else if(plan==='lge-wp'){
-    const tbl=isMo?LGE_MON:LGE_ANN;
-    if(!tbl[pANB]||!tbl[pANB][cANB]){ showToast('Rate not found'); return; }
-    basicRate=tbl[pANB][cANB]; premTerm=13-cANB; unitSA=2000;
-  } else if(plan==='tep'){
-    const tbl=isMo?TEP_MON:TEP_ANN;
-    if(!tbl[pANB]||!tbl[pANB][cANB]){ showToast('Rate not found'); return; }
-    basicRate=tbl[pANB][cANB]; premTerm=19-cANB; unitSA=10000;
-  }
-
-  /* ── Derive SA: either from input (SA mode) or back-calculated from premium ── */
-  let saInput = saAmountRaw;
   if(eduMode === 'prem'){
-    const premInput = parseFloat(document.getElementById('edu-prem-amount').value)||0;
+    premInput = parseFloat(document.getElementById('edu-prem-amount').value)||0;
     if(!premInput){ showToast('Please enter a premium amount'); return; }
-    const rawUnits = Math.floor(premInput / basicRate);
-    if(rawUnits < 1){ showToast('Premium too low for this plan at this age'); return; }
-    saInput = rawUnits * unitSA;
-  }
-  const minSA = 1000000;
-  if(saInput < minSA){
-    if(eduMode === 'prem'){
-      // Tell agent the minimum premium needed to reach 1,000,000 SA
-      const minUnits = Math.ceil(minSA / unitSA);
-      const minPrem  = Math.ceil(basicRate * minUnits);
-      showToast('Minimum SA is MK 1,000,000 — enter at least MK '+minPrem.toLocaleString()+' premium');
-    } else {
-      showToast('Minimum Sum Assured is MK 1,000,000');
-      document.getElementById('edu-sa-amount').value = minSA;
-    }
-    return;
+  } else {
+    saInput = parseInt(document.getElementById('edu-sa-amount').value)||0;
   }
 
-  /* Derive units from requested SA — round up to nearest unit */
-  const units = Math.ceil(saInput / unitSA);
-  const totalSA = units * unitSA;
-
-  const basicPrem = basicRate * units;
-  const occPrem = isMo ? (occLoad*units/12) : (occLoad*units);
-
-  let colPrem=0, colUnits=0, hasCollege=false, colSA=0;
-  if(plan==='lge-wp'){
-    const tog=document.getElementById('edu-college-tog');
-    hasCollege = tog && tog.checked;
-    if(hasCollege){
-      const colSAInput = parseInt(document.getElementById('edu-college-sa').value)||2500000;
-      const minColSA = 2500000;
-      const colSAFinal = Math.max(colSAInput, minColSA);
-      colUnits = Math.ceil(colSAFinal / 2500);
-      colSA = colUnits * 2500;
-      const colTbl=isMo?COL_MON:COL_ANN;
-      if(colTbl[pANB]&&colTbl[pANB][cANB]) colPrem=colTbl[pANB][cANB]*colUnits;
-    }
-  }
-
-  const totalPrem = basicPrem + occPrem + colPrem;
-
-  /* Plan-specific ref prefix */
-  const refPfx = {
-    'lgp-lc':'LGP-LC','lgp-nl':'LGP-NL','lge-wp':'LGE','tep':'TEP'
-  }[plan]||'EDU';
-  const ref = refPfx+'-'+new Date().toISOString().slice(0,10).replace(/-/g,'')+'-'+Math.floor(1000+Math.random()*9000);
+  // ── Call GAS ──
+  const params = {
+    product:'edu', plan, panb:pANB, canb:cANB,
+    freq, occcls:occCls, mode:eduMode,
+    hascollege: hasCollege ? 'true' : 'false',
+    colsa: colSAInput,
+    ...(eduMode==='prem' ? {prem:premInput} : {sa:saInput})
+  };
+  const result = await gasGetQuote(params);
+  if(!result) return;
 
   const planNames = {
     'lgp-lc':'Little Genius Primary (With Life Cover)',
@@ -9138,6 +8755,8 @@ function eduGenerate(){
     'lge-wp':'Little Genius Education Plan (With Profits)',
     'tep':'Tertiary Education Plan (With Profits)'
   };
+  const refPfx = {'lgp-lc':'LGP-LC','lgp-nl':'LGP-NL','lge-wp':'LGE','tep':'TEP'}[plan]||'EDU';
+  const ref = refPfx+'-'+new Date().toISOString().slice(0,10).replace(/-/g,'')+'-'+Math.floor(1000+Math.random()*9000);
 
   eduCurrentQuote = {
     ref, plan, planName:planNames[plan],
@@ -9145,20 +8764,20 @@ function eduGenerate(){
     childName:childFullName,  cFirstName:cfname, cMiddleName:cmname, cLastName:clname,  cGender:cgender,
     pdob, cdob, pANB, cANB,
     phone, town, district,
-    units, unitSA, totalSA, colUnits, colSA, hasCollege,
-    premTerm, freq, isMo,
+    units:result.units, unitSA:result.unitSA, totalSA:result.totalSA,
+    colUnits:result.colUnits, colSA:result.colSA, hasCollege:result.hasCollege,
+    premTerm:result.premTerm, freq, isMo,
     occCls:occCls==='0'?'Standard':occCls,
-    basicPrem, occPrem, colPrem, totalPrem, totalP:totalPrem, basicRate, occLoad,
+    basicPrem:result.basicPrem, occPrem:result.occPrem, colPrem:result.colPrem,
+    totalPrem:result.totalPrem, totalP:result.totalPrem,
+    basicRate:result.basicRate, occLoad:result.occLoad,
     doq, agent:currentAgent
   };
 
   saveQuoteLocally({...eduCurrentQuote, product:'Educational Plans', clientName:parentFullName});
   try{renderRecentQuotes();}catch(e){}
   document.title = 'VLA-Quote-'+ref;
-
-  /* Auto-sync to Google Sheets */
   eduSyncToSheets(eduCurrentQuote);
-
   eduRenderDoc(eduCurrentQuote);
   document.getElementById('edu-quote-output').style.display = 'block';
   document.getElementById('edu-quote-output').scrollIntoView({behavior:'smooth',block:'start'});
