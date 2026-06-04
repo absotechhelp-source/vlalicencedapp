@@ -4455,7 +4455,7 @@ async function generateQuote(){
     policyFee:fee,totalP,projM,dabIncluded:dab,dabR1k,
     mode,matAge,mult,isMo,fl:isMo?'monthly':'annual'
   };
-  renderQuoteDoc(quoteData, 'q-doc', false);
+  renderQuoteDoc(quoteData, false);
   // Show quote view, hide form view (Annuity-style separation)
   const formView = document.getElementById('psp-form-view');
   const quoteView = document.getElementById('psp-quote-view');
@@ -4474,193 +4474,206 @@ async function generateQuote(){
 /* ═══════════════════════════════════════════
    RENDER QUOTE DOCUMENT (reusable for live + history modal)
 ═══════════════════════════════════════════ */
-function renderQuoteDoc(q, docId, isModal){
-  /* ── Annuity-quote style — clean white, section heads, data rows, no colour boxes ── */
-  const ref        = q.ref       || '';
-  const doq        = q.doq       || q.savedAt || '';
-  const clientName = q.clientName|| '';
+function renderQuoteDoc(q, isModal){
+  /* Renders a complete PSP quotation document — on-screen and modal.
+     Layout matches VLA Annuity quote / official letterhead exactly.
+     Fields removed per spec: Occupation, Occ.Class, Age at Maturity.  */
+
+  const ref        = q.ref        || '';
+  const doq        = q.doq        || q.savedAt || '';
+  const clientName = q.clientName || '';
   const clientPhone= q.clientPhone|| '';
-  const clientEmail= q.clientEmail|| '';
-  const gender     = q.gender    || '';
-  const occupation = q.occupation|| '';
-  const occClass   = q.occClass  || q.occCls || '1';
-  const anb        = Number(q.anb)      || 0;
-  const term       = Number(q.term)     || 0;
-  const SA         = Number(q.SA)       || 0;
+  const gender     = q.gender     || '';
+  const anb        = Number(q.anb)    || 0;
+  const term       = Number(q.term)   || 0;
+  const SA         = Number(q.SA)     || 0;
   const isMo       = !!q.isMo;
-  const basicP     = Number(q.basicP)   || 0;
-  const dabP       = Number(q.dabP)     || 0;
+  const basicP     = Number(q.basicP) || 0;
+  const dabP       = Number(q.dabP)   || 0;
   const feeAmt     = isMo ? FEE_M : FEE_A;
-  const totalP     = Number(q.totalP)   || (basicP + feeAmt);
-  const projM      = Number(q.projM)    || (SA > 0 && term > 0 ? Math.round(SA * (BONUS[term] || Math.pow(1.10, term))) : 0);
-  const dabIncluded = !!q.dabIncluded;
-  const matAge     = Number(q.matAge)   || (anb && term ? anb + term - 1 : 0);
+  const totalP     = Number(q.totalP) || (basicP + feeAmt);
+  const projM      = Number(q.projM)  || 0;
+  const dabIncluded= !!q.dabIncluded;
+  const matAge     = Number(q.matAge) || (anb && term ? anb + term - 1 : 0);
   const aTotalP    = basicP + feeAmt;
+  const occClass   = q.occClass || q.occCls || '1';
   const bOccCls    = occClass && occClass !== 'N/A' ? occClass : '1';
   const bDabAmt    = dabP > 0 ? dabP : 0;
   const bTotalP    = dabIncluded ? totalP : (basicP + bDabAmt + feeAmt);
   const freq       = isMo ? 'Monthly' : 'Annual';
-  const addrLine   = [q.clientCity||'', q.clientDistrict||''].filter(Boolean).join(', ') || (q.clientAddress||'').trim();
-  const {mobile:agMobile} = loadProfileData();
+  const addrLine   = [q.clientCity||'', q.clientDistrict||''].filter(Boolean).join(', ')
+                     || (q.clientAddress||'').trim();
+  const { mobile: agMobile } = loadProfileData();
 
-  // ── Helper: one data row (matches Annuity quote row style) ──────────
+  // Logo src — try live page logo
+  const logoSrc = (document.querySelector('.login-logo') || {}).src
+               || (document.querySelector('img[alt*="Vanguard"]') || {}).src || '';
+
+  // ── Row helpers ──────────────────────────────────────────────────────
+  // Standard data row: label grey-left, bold value right, optional shade
   const qRow = (lbl, val, shade) =>
-    `<div style="display:flex;justify-content:space-between;align-items:baseline;padding:6px 16px;${shade?'background:#fafafa;':''};border-bottom:1px solid #f0e8e0">
-      <span style="font-size:12px;color:#888">${lbl}</span>
-      <span style="font-size:12px;font-weight:700;color:#1a0505;text-align:right;max-width:60%">${val}</span>
-    </div>`;
+    `<div style="display:flex;justify-content:space-between;align-items:baseline;` +
+    `padding:6px 16px;${shade ? 'background:#fafafa;' : ''}border-bottom:1px solid #ede4da">` +
+    `<span style="font-size:12px;color:#888;white-space:nowrap;margin-right:8px">${lbl}</span>` +
+    `<span style="font-size:12px;font-weight:700;color:#1a0505;text-align:right">${val}</span></div>`;
 
-  // ── Helper: section header (full-width dark maroon, white text) ─────
+  // Full-width section header — dark maroon, white text (matches Annuity quote)
   const qHead = (lbl) =>
-    `<div style="background:#641414;padding:7px 16px;margin-top:12px">
-      <span style="font-size:12px;font-weight:700;color:#fff;letter-spacing:.04em">${lbl}</span>
-    </div>`;
+    `<div style="background:#641414;padding:7px 16px;margin-top:0">` +
+    `<span style="font-size:11.5px;font-weight:700;color:#fff;letter-spacing:.03em">${lbl}</span></div>`;
 
-  // ── Build the full quote HTML ────────────────────────────────────────
-  const logoSrc = (document.querySelector('.login-logo')||{src:''}).src || '';
+  // ── Build HTML ───────────────────────────────────────────────────────
+  const html = `<div style="background:#fff;font-family:'DM Sans',Arial,sans-serif;color:#1a0505;font-size:12px;border-radius:6px;overflow:hidden">
 
-  const html = `
-  <div style="background:#fff;font-family:'DM Sans',Arial,sans-serif;color:#1a0505;font-size:12px">
+  <!-- ══ LETTERHEAD (matches Annuity quote + VLA letterhead exactly) ══ -->
+  <div style="display:flex;align-items:flex-start;justify-content:space-between;padding:14px 16px 10px;gap:12px">
 
-    <!-- ══ LETTERHEAD ══ -->
-    <div style="padding:12px 16px 0;display:flex;align-items:flex-start;justify-content:space-between;gap:8px">
-      <img src="${logoSrc}" style="width:100px;height:auto;flex-shrink:0" alt="Vanguard Life">
-      <div style="display:flex;gap:24px;flex:1;justify-content:flex-end;font-size:10px;color:#641414;line-height:1.7">
-        <div>
-          <div style="color:#555">Robins Road, P.O. Box 1625, Blantyre, Malawi</div>
-          <div style="color:#555">+265 887 094 872</div>
-        </div>
-        <div style="text-align:right">
-          <div>vanguard@vanguardlifemw.com</div>
-          <div>vanguardlifemw.com</div>
-          <div style="color:#555">@vanguardlifemw</div>
-        </div>
-      </div>
-    </div>
-    <div style="height:1px;background:#e0d5c8;margin:8px 16px 0"></div>
-    <div style="height:2px;background:#641414;margin:2px 0 0"></div>
+    <!-- Logo left -->
+    <img src="${logoSrc}" style="width:96px;height:auto;flex-shrink:0;margin-top:2px" alt="Vanguard Life Assurance">
 
-    <!-- ══ QUOTATION TITLE BAND ══ -->
-    <div style="background:#641414;padding:10px 16px;margin-top:0;display:flex;justify-content:space-between;align-items:flex-start">
-      <div>
-        <div style="font-size:16px;font-weight:800;color:#D8C9B4;letter-spacing:.08em;text-transform:uppercase">Quotation</div>
-        <div style="font-size:9px;color:rgba(255,255,255,.6);text-transform:uppercase;letter-spacing:.06em;margin-top:2px">Pure Savings Plan · Basic Pure Endowment (With Profits)</div>
-      </div>
-      <div style="text-align:right">
-        <div style="font-size:10px;color:rgba(255,255,255,.9);font-weight:700">Ref: ${ref}</div>
-        <div style="font-size:10px;color:rgba(255,255,255,.6);margin-top:2px">${fmtDate(doq)}</div>
-      </div>
+    <!-- Centre: address block with icons -->
+    <div style="font-size:10px;color:#555;line-height:1.75;flex:1;padding-left:8px">
+      <div>&#127968; &nbsp;Robins Road, P.O. Box 1625,</div>
+      <div style="padding-left:16px">Blantyre, Malawi</div>
+      <div>&#128241; &nbsp;+265 887 094 872</div>
     </div>
 
-    <!-- ══ CLIENT DETAILS ══ -->
-    ${qHead('Client Details')}
-    ${qRow('Name',         clientName,              false)}
-    ${qRow('Date of birth',q.dob?fmtDate(q.dob):'—', true)}
-    ${qRow('ANB',          String(anb||'—'),         false)}
-    ${qRow('Gender',       gender,                   true)}
-    ${qRow('Occupation',   occupation+(occClass&&occClass!=='N/A'?' · Class '+occClass:''), false)}
-    ${qRow('Phone',        clientPhone,              true)}
-    ${addrLine?qRow('Location', addrLine, false):''}
+    <!-- Right: contact -->
+    <div style="font-size:10px;color:#641414;line-height:1.75;text-align:right">
+      <div>&#9993; &nbsp;vanguard@vanguardlifemw.com</div>
+      <div>&#127760; &nbsp;vanguardlifemw.com</div>
+      <div style="color:#888">&#9679;&#9679;&#9679; &nbsp;@vanguardlifemw</div>
+    </div>
+  </div>
 
-    <!-- ══ POLICY DETAILS ══ -->
-    ${qHead('Policy Details — Pure Savings Plan')}
-    ${qRow('Sum Assured',           mk(SA),           false)}
-    ${qRow('Projected Maturity @ 10%*', mk(projM),    true)}
-    ${qRow('Policy Term',           term+' years',    false)}
-    ${qRow('Age at Maturity',       String(matAge),   true)}
-    ${qRow('Payment Frequency',     freq,             false)}
-    ${qRow('Occ. Class',            occClass&&occClass!=='N/A'?occClass:'Standard', true)}
+  <!-- Thin grey rule + maroon rule — exact letterhead separator -->
+  <div style="height:1px;background:#ccc;margin:0 16px"></div>
+  <div style="height:2px;background:#641414;margin:0"></div>
 
-    <!-- ══ PREMIUM BAND ══ -->
-    <div style="background:#641414;padding:9px 16px;margin-top:12px;display:flex;justify-content:space-between;align-items:center">
-      <span style="font-size:12px;font-weight:600;color:rgba(255,255,255,.9)">${freq} Premium</span>
-      <span style="font-size:15px;font-weight:800;color:#D8C9B4">${mk(aTotalP)}</span>
+  <!-- ══ QUOTATION TITLE BAND ══ -->
+  <div style="background:#641414;padding:10px 16px;display:flex;justify-content:space-between;align-items:flex-start">
+    <div>
+      <div style="font-size:16px;font-weight:800;color:#D8C9B4;letter-spacing:.08em;text-transform:uppercase">Quotation</div>
+      <div style="font-size:9px;color:rgba(255,255,255,.6);text-transform:uppercase;letter-spacing:.05em;margin-top:3px">Pure Savings Plan · Basic Pure Endowment (With Profits)</div>
     </div>
+    <div style="text-align:right">
+      <div style="font-size:10px;color:rgba(255,255,255,.9);font-weight:700">Ref: ${ref}</div>
+      <div style="font-size:10px;color:rgba(255,255,255,.6);margin-top:2px">${fmtDate(doq)}</div>
+    </div>
+  </div>
 
-    <!-- ══ PREMIUM BREAKDOWN ══ -->
-    ${qHead('Premium Breakdown')}
-    <!-- Option headers -->
-    <div style="display:grid;grid-template-columns:1fr 1fr;border-bottom:1px solid #f0e8e0">
-      <div style="padding:6px 16px;font-size:11px;font-weight:700;color:#641414;border-right:1px solid #f0e8e0">Option A — Savings Only</div>
-      <div style="padding:6px 16px;font-size:11px;font-weight:700;color:#641414">Option B — Savings + DAB</div>
-    </div>
-    <!-- PSP premium row -->
-    <div style="display:grid;grid-template-columns:1fr 1fr;background:#fafafa">
-      <div style="display:flex;justify-content:space-between;padding:6px 16px;border-right:1px solid #f0e8e0;border-bottom:1px solid #f0e8e0">
-        <span style="color:#888">PSP premium</span><span style="font-weight:700">${mk(basicP)}</span>
-      </div>
-      <div style="display:flex;justify-content:space-between;padding:6px 16px;border-bottom:1px solid #f0e8e0">
-        <span style="color:#888">PSP premium</span><span style="font-weight:700">${mk(basicP)}</span>
-      </div>
-    </div>
-    <!-- DAB row -->
-    <div style="display:grid;grid-template-columns:1fr 1fr">
-      <div style="display:flex;justify-content:space-between;padding:6px 16px;border-right:1px solid #f0e8e0;border-bottom:1px solid #f0e8e0">
-        <span style="color:#888">DAB</span><span style="color:#bbb">—</span>
-      </div>
-      <div style="display:flex;justify-content:space-between;padding:6px 16px;border-bottom:1px solid #f0e8e0">
-        <span style="color:#888">DAB (Cl.${bOccCls})</span><span style="font-weight:700">${mk(bDabAmt)}</span>
-      </div>
-    </div>
-    <!-- Policy fee row -->
-    <div style="display:grid;grid-template-columns:1fr 1fr;background:#fafafa">
-      <div style="display:flex;justify-content:space-between;padding:6px 16px;border-right:1px solid #f0e8e0;border-bottom:1px solid #f0e8e0">
-        <span style="color:#888">Policy fee</span><span style="font-weight:700">${mk(feeAmt)}</span>
-      </div>
-      <div style="display:flex;justify-content:space-between;padding:6px 16px;border-bottom:1px solid #f0e8e0">
-        <span style="color:#888">Policy fee</span><span style="font-weight:700">${mk(feeAmt)}</span>
-      </div>
-    </div>
-    <!-- Total row -->
-    <div style="display:grid;grid-template-columns:1fr 1fr">
-      <div style="display:flex;justify-content:space-between;padding:6px 16px;border-right:1px solid #f0e8e0;border-top:2px solid #641414">
-        <span style="font-weight:700;color:#641414">Total /${isMo?'mo':'yr'}</span><span style="font-weight:800;font-size:13px;color:#641414">${mk(aTotalP)}</span>
-      </div>
-      <div style="display:flex;justify-content:space-between;padding:6px 16px;border-top:2px solid #641414">
-        <span style="font-weight:700;color:#641414">Total /${isMo?'mo':'yr'}</span><span style="font-weight:800;font-size:13px;color:#641414">${mk(bTotalP)}</span>
-      </div>
-    </div>
+  <!-- ══ CLIENT DETAILS ══ -->
+  ${qHead('Client Details')}
+  ${qRow('Name',          clientName,               false)}
+  ${qRow('Date of birth', q.dob ? fmtDate(q.dob) : '—', true)}
+  ${qRow('ANB',           String(anb || '—'),        false)}
+  ${qRow('Gender',        gender,                    true)}
+  ${qRow('Phone',         clientPhone,               false)}
+  ${addrLine ? qRow('Location', addrLine, true) : ''}
 
-    <!-- ══ KEY FEATURES ══ -->
-    ${qHead('Key Features')}
-    <div style="padding:8px 16px 4px;line-height:1.65">
-      <div style="margin-bottom:4px"><span style="color:#641414;margin-right:6px">✓</span><strong>Maturity benefit:</strong> Sum assured plus all declared bonuses payable at maturity (age ${matAge}).</div>
-      <div style="margin-bottom:4px"><span style="color:#641414;margin-right:6px">✓</span><strong>Death benefit:</strong> Years 1–2: 90% of premiums paid. After year 2: all premiums plus 4% compound p.a.</div>
-      <div style="margin-bottom:4px"><span style="color:#641414;margin-right:6px">✓</span><strong>With-profits:</strong> Annual reversionary bonus — once declared, permanently added to SA.</div>
-      <div style="margin-bottom:4px"><span style="color:#641414;margin-right:6px">✓</span><strong>Surrender &amp; paid-up:</strong> Available after 3 years (2 years for terms ≤ 19 years).</div>
-      ${dabIncluded?`<div style="margin-bottom:4px"><span style="color:#641414;margin-right:6px">✓</span><strong>Double Accident Benefit:</strong> Additional ${mk(SA)} on accidental death/disability (Class ${bOccCls}).</div>`:''}
-      <div style="margin-bottom:4px"><span style="color:#641414;margin-right:6px">✓</span><strong>Loan facility:</strong> Up to 95% of surrender value once acquired.</div>
+  <!-- ══ POLICY DETAILS ══ -->
+  ${qHead('Policy Details \u2014 Pure Savings Plan')}
+  ${qRow('Sum Assured',               mk(SA),         false)}
+  ${qRow('Projected Maturity @ 10%*', mk(projM),      true)}
+  ${qRow('Policy Term',               term + ' years',false)}
+  ${qRow('Payment Frequency',         freq,           true)}
+
+  <!-- ══ PREMIUM BAND ══ -->
+  <div style="background:#641414;padding:9px 16px;display:flex;justify-content:space-between;align-items:center;margin-top:0">
+    <span style="font-size:12px;font-weight:600;color:rgba(255,255,255,.9)">${freq} Premium</span>
+    <span style="font-size:15px;font-weight:800;color:#D8C9B4">${mk(aTotalP)}</span>
+  </div>
+
+  <!-- ══ PREMIUM BREAKDOWN ══ -->
+  ${qHead('Premium Breakdown')}
+  <div style="display:grid;grid-template-columns:1fr 1fr;border-bottom:1px solid #ede4da">
+    <div style="padding:6px 16px;font-size:11px;font-weight:700;color:#641414;border-right:1px solid #ede4da">Option A — Savings Only</div>
+    <div style="padding:6px 16px;font-size:11px;font-weight:700;color:#641414">Option B — Savings + DAB</div>
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;background:#fafafa">
+    <div style="display:flex;justify-content:space-between;padding:6px 16px;border-right:1px solid #ede4da;border-bottom:1px solid #ede4da">
+      <span style="color:#888">PSP premium</span><span style="font-weight:700">${mk(basicP)}</span>
     </div>
-
-    <!-- ══ DISCLAIMER ══ -->
-    <div style="margin:8px 16px;padding:8px 10px;background:#fafafa;border:1px solid #f0e8e0;border-radius:4px;font-size:10px;color:#666;line-height:1.6">
-      Indicative quotation only. Subject to underwriting and actual bonus declarations — <strong>not guaranteed</strong>. Policy is with-profits; bonuses are declared annually. Projections at <strong>10% p.a.</strong> are illustrative only and are not guaranteed. Regulated by the Reserve Bank of Malawi. <strong>Full Terms &amp; Conditions apply.</strong> Call <strong>3043</strong> for full policy terms.
+    <div style="display:flex;justify-content:space-between;padding:6px 16px;border-bottom:1px solid #ede4da">
+      <span style="color:#888">PSP premium</span><span style="font-weight:700">${mk(basicP)}</span>
     </div>
-
-    <!-- ══ FOOTER ══ -->
-    <div style="background:#641414;padding:10px 16px;margin-top:8px;display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:6px">
-      <div>
-        <div style="font-size:10px;color:rgba(255,255,255,.7)">Robins Road, P.O. Box 1625, Blantyre, Malawi</div>
-        <div style="font-size:9px;color:rgba(255,255,255,.55);margin-top:2px">+265 887 094 872 · vanguard@vanguardlifemw.com · vanguardlifemw.com</div>
-      </div>
-      <div style="text-align:right">
-        <div style="font-size:10px;color:#D8C9B4;font-weight:700;letter-spacing:.05em;text-transform:uppercase">Life Assurance · Pension Services</div>
-        <div id="${isModal?'hm-q-agent-foot':'q-agent-foot'}" style="font-size:9px;color:rgba(255,255,255,.65);margin-top:2px"></div>
-      </div>
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 1fr">
+    <div style="display:flex;justify-content:space-between;padding:6px 16px;border-right:1px solid #ede4da;border-bottom:1px solid #ede4da">
+      <span style="color:#888">DAB</span><span style="color:#bbb">\u2014</span>
     </div>
+    <div style="display:flex;justify-content:space-between;padding:6px 16px;border-bottom:1px solid #ede4da">
+      <span style="color:#888">DAB (Cl.${bOccCls})</span><span style="font-weight:700">${mk(bDabAmt)}</span>
+    </div>
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;background:#fafafa">
+    <div style="display:flex;justify-content:space-between;padding:6px 16px;border-right:1px solid #ede4da;border-bottom:1px solid #ede4da">
+      <span style="color:#888">Policy fee</span><span style="font-weight:700">${mk(feeAmt)}</span>
+    </div>
+    <div style="display:flex;justify-content:space-between;padding:6px 16px;border-bottom:1px solid #ede4da">
+      <span style="color:#888">Policy fee</span><span style="font-weight:700">${mk(feeAmt)}</span>
+    </div>
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 1fr">
+    <div style="display:flex;justify-content:space-between;padding:7px 16px;border-right:1px solid #ede4da;border-top:2px solid #641414">
+      <span style="font-weight:700;color:#641414">Total /${isMo ? 'mo' : 'yr'}</span>
+      <span style="font-weight:800;font-size:13px;color:#641414">${mk(aTotalP)}</span>
+    </div>
+    <div style="display:flex;justify-content:space-between;padding:7px 16px;border-top:2px solid #641414">
+      <span style="font-weight:700;color:#641414">Total /${isMo ? 'mo' : 'yr'}</span>
+      <span style="font-weight:800;font-size:13px;color:#641414">${mk(bTotalP)}</span>
+    </div>
+  </div>
 
-  </div>`;
+  <!-- ══ KEY FEATURES ══ -->
+  ${qHead('Key Features')}
+  <div style="padding:9px 16px 6px;font-size:12px;line-height:1.65;color:#1a0505">
+    <div style="margin-bottom:5px"><span style="color:#641414;font-weight:700;margin-right:6px">&#10003;</span><strong>Maturity benefit:</strong> Sum assured plus all declared bonuses payable at maturity (age ${matAge}).</div>
+    <div style="margin-bottom:5px"><span style="color:#641414;font-weight:700;margin-right:6px">&#10003;</span><strong>Death benefit:</strong> Years 1&ndash;2: 90% of premiums paid. After year 2: all premiums plus 4% compound p.a.</div>
+    <div style="margin-bottom:5px"><span style="color:#641414;font-weight:700;margin-right:6px">&#10003;</span><strong>With-profits:</strong> Annual reversionary bonus &mdash; once declared, permanently added to SA.</div>
+    <div style="margin-bottom:5px"><span style="color:#641414;font-weight:700;margin-right:6px">&#10003;</span><strong>Surrender &amp; paid-up:</strong> Available after 3 years (2 years for terms &le; 19 years).</div>
+    ${dabIncluded ? `<div style="margin-bottom:5px"><span style="color:#641414;font-weight:700;margin-right:6px">&#10003;</span><strong>Double Accident Benefit:</strong> Additional ${mk(SA)} on accidental death/disability (Class ${bOccCls}).</div>` : ''}
+    <div style="margin-bottom:5px"><span style="color:#641414;font-weight:700;margin-right:6px">&#10003;</span><strong>Loan facility:</strong> Up to 95% of surrender value once acquired.</div>
+  </div>
 
-  // ── Inject into target element ──────────────────────────────────────
+  <!-- ══ DISCLAIMER ══ -->
+  <div style="margin:6px 16px 10px;padding:8px 10px;background:#fafafa;border:1px solid #ede4da;border-radius:4px;font-size:10px;color:#666;line-height:1.6">
+    Indicative quotation only. Subject to underwriting and actual bonus declarations &mdash; <strong>not guaranteed</strong>. Policy is with-profits; bonuses are declared annually. Projections at <strong>10% p.a.</strong> are illustrative only. Regulated by the Reserve Bank of Malawi. <strong>Full Terms &amp; Conditions apply.</strong> Call <strong>3043</strong> for full policy terms.
+  </div>
+
+  <!-- ══ FOOTER (matches letterhead / Annuity quote footer exactly) ══ -->
+  <div style="background:#D8C9B4;display:flex;align-items:stretch;min-height:44px">
+    <!-- Dark maroon Pension Services box — left -->
+    <div style="background:#3c0a0a;padding:8px 14px;display:flex;flex-direction:column;justify-content:center;min-width:130px">
+      <div style="font-size:9px;font-weight:700;color:#fff;line-height:1.5">Vanguard</div>
+      <div style="font-size:8px;color:rgba(255,255,255,.8);line-height:1.5">Pension</div>
+      <div style="font-size:8px;color:rgba(255,255,255,.8);line-height:1.5">Services</div>
+    </div>
+    <!-- Contact info centre + tagline right -->
+    <div style="flex:1;padding:8px 14px;display:flex;flex-direction:column;justify-content:center">
+      <div style="font-size:9.5px;color:#641414;font-weight:700;letter-spacing:.04em;text-transform:uppercase;margin-bottom:2px">Life Assurance &nbsp;&middot;&nbsp; Pension Services</div>
+      <div style="font-size:8.5px;color:#555">Robins Road, P.O. Box 1625, Blantyre, Malawi</div>
+      <div style="font-size:8px;color:#888">+265 887 094 872 &nbsp;&middot;&nbsp; vanguard@vanguardlifemw.com &nbsp;&middot;&nbsp; vanguardlifemw.com</div>
+    </div>
+    <!-- Agent + date right -->
+    <div style="padding:8px 14px;text-align:right;display:flex;flex-direction:column;justify-content:center">
+      <div id="${isModal ? 'hm-q-agent-foot' : 'q-agent-foot'}" style="font-size:8.5px;color:#641414;line-height:1.6"></div>
+    </div>
+  </div>
+
+</div>`;
+
+  // ── Inject ────────────────────────────────────────────────────────────
   const targetId = isModal ? 'hm-doc' : 'q-doc';
   const docEl = document.getElementById(targetId);
   if(docEl) docEl.innerHTML = html;
 
-  // ── Populate agent footer ───────────────────────────────────────────
-  const agentFootId = isModal ? 'hm-q-agent-foot' : 'q-agent-foot';
-  const agFoot = document.getElementById(agentFootId);
+  // ── Agent footer ──────────────────────────────────────────────────────
+  const agFoot = document.getElementById(isModal ? 'hm-q-agent-foot' : 'q-agent-foot');
   if(agFoot) agFoot.innerHTML =
-    'Agent: '+(q.agent||'')+(agMobile?'  ·  Alt: 3043 (VLA)':'  ·  Alt: 3043 (VLA)')+'<br>'+fmtDate(doq);
+    'Agent: ' + (q.agent || '') + '<br>Alt: 3043 (VLA)' +
+    (agMobile ? '<br>' + agMobile : '') +
+    '<br>' + fmtDate(doq);
 }
 
 // ── Legacy helpers (kept for backward compat, no longer used in renderQuoteDoc) ─
@@ -5653,7 +5666,7 @@ function openHistModal(refOrIdx){
   docEl.innerHTML = '';
 
   if(product==='PSP'){
-    renderQuoteDoc(q, 'hm-doc', true);  // injects full document HTML into #hm-doc
+    renderQuoteDoc(q, true);  // injects full document HTML into #hm-doc
     _hmFilename = 'VLA-PSPQuote-'+q.ref+'.pdf';
   } else if(product==='EDU'){
     // Temporarily reassign edu-q-doc to hm-doc so eduRenderDoc writes there
@@ -6343,145 +6356,193 @@ function histSavePDF(){
   }, 80);
 }
 
-// ── PSP PDF — pixel-perfect match to Annuity quote ───────────────────
+// ── PSP PDF — matches on-screen quote exactly, one A4 page ─────────
 function _buildPSPPdf(q){
   const {jsPDF} = window.jspdf;
   const doc = new jsPDF({orientation:'portrait', unit:'mm', format:'a4'});
   const W=210, H=297, M=14, CW=W-M*2;
 
-  const logo   = _pdfGetLogoDataUrl();
-  const isMo   = !!q.isMo;
-  const freq   = isMo ? 'Monthly' : 'Annual';
-  const fee    = isMo ? FEE_M : FEE_A;
-  const basicP = Number(q.basicP)||0;
-  const dabP   = Number(q.dabP)||0;
-  const totalP = Number(q.totalP)||(basicP+fee);
-  const aTotalP= basicP+fee;
-  const bTotalP= q.dabIncluded ? totalP : (basicP+dabP+fee);
-  const projM  = Number(q.projM)||0;
-  const matAge = Number(q.matAge)||((q.anb||0)+(q.term||0)-1);
-  const bOccCls= q.occClass&&q.occClass!=='N/A'?q.occClass:'1';
-  const addrParts = [q.clientCity||'',q.clientDistrict||''].filter(Boolean);
-  const {mobile:agMob} = loadProfileData();
+  const logo    = _pdfGetLogoDataUrl();
+  const isMo    = !!q.isMo;
+  const freq    = isMo ? 'Monthly' : 'Annual';
+  const fee     = isMo ? FEE_M : FEE_A;
+  const basicP  = Number(q.basicP) || 0;
+  const dabP    = Number(q.dabP)   || 0;
+  const totalP  = Number(q.totalP) || (basicP + fee);
+  const aTotalP = basicP + fee;
+  const bTotalP = q.dabIncluded ? totalP : (basicP + dabP + fee);
+  const projM   = Number(q.projM)  || 0;
+  const matAge  = Number(q.matAge) || ((q.anb||0) + (q.term||0) - 1);
+  const occClass= q.occClass && q.occClass !== 'N/A' ? q.occClass : '1';
+  const addrParts = [q.clientCity||'', q.clientDistrict||''].filter(Boolean);
+  const { mobile: agMob } = loadProfileData();
 
-  // ── Header ──
-  let y = _pdfHeader(doc, W, logo);
-  y += 3;
+  // ── HEADER — matches letterhead / Annuity quote ─────────────────────
+  // Logo left
+  if(logo){ try{ doc.addImage(logo,'PNG',M,5,38,13); }catch(e){} }
 
-  // ── Ref / Date line ──
-  _pdfSetFont(doc, 8.5, 'bold', PDF_BLACK);
-  doc.text('Quotation reference:  '+(q.ref||''), M, y+4);
-  _pdfSetFont(doc, 8.5, 'normal', PDF_GREY);
-  doc.text('Quotation date:  '+fmtDate(q.doq||q.savedAt||''), W-M, y+4, {align:'right'});
-  y += 10;
+  // Centre: address (plain text, no emoji — jsPDF safe)
+  const cx = 105;
+  _pdfSetFont(doc, 7.5, 'normal', PDF_GREY);
+  doc.text('Robins Road, P.O. Box 1625,', cx, 9,  {align:'center'});
+  doc.text('Blantyre, Malawi',            cx, 13, {align:'center'});
+  doc.text('+265 887 094 872',            cx, 17, {align:'center'});
 
-  // ── Client Details ──
+  // Right: contact
+  _pdfSetFont(doc, 7.5, 'normal', PDF_GREY);
+  doc.text('vanguard@vanguardlifemw.com', W-M, 9,  {align:'right'});
+  doc.text('vanguardlifemw.com',          W-M, 13, {align:'right'});
+  doc.text('@vanguardlifemw',             W-M, 17, {align:'right'});
+
+  // Separator rules
+  _pdfRule(doc, M,  21,   CW,  [204,196,186], 0.3);  // thin grey
+  _pdfRule(doc, 0,  22,   W,   PDF_MAROON,    1.0);   // maroon
+
+  let y = 26;
+
+  // ── TITLE BAND ───────────────────────────────────────────────────────
+  doc.setFillColor(...PDF_MAROON);
+  doc.rect(0, y, W, 12, 'F');
+  _pdfSetFont(doc, 14, 'bold', PDF_CREAM);
+  doc.text('QUOTATION', M+2, y+7);
+  _pdfSetFont(doc, 7, 'normal', [200,185,165]);
+  doc.text('PURE SAVINGS PLAN  \u00b7  BASIC PURE ENDOWMENT (WITH PROFITS)', M+2, y+10.5);
+  _pdfSetFont(doc, 8, 'bold', [220,200,180]);
+  doc.text('Ref: '+(q.ref||''), W-M, y+6,   {align:'right'});
+  _pdfSetFont(doc, 7.5, 'normal', [200,185,165]);
+  doc.text(fmtDate(q.doq||q.savedAt||''),    W-M, y+10.5,{align:'right'});
+  y += 16;
+
+  // ── CLIENT DETAILS ───────────────────────────────────────────────────
   y = _pdfSectionHead(doc, M, y, CW, 'Client Details');
   const clientRows = [
-    ['Name',       q.clientName||'—'],
-    ['Date of birth', q.dob?fmtDate(q.dob):'—'],
-    ['ANB',        String(q.anb||'—')],
-    ['Gender',     q.gender||'—'],
-    ['Occupation', (q.occupation||'—')+(q.occClass&&q.occClass!=='N/A'?' · Class '+q.occClass:'')],
-    ['Phone',      q.clientPhone||'—'],
+    ['Name',          q.clientName || '\u2014'],
+    ['Date of birth', q.dob ? fmtDate(q.dob) : '\u2014'],
+    ['ANB',           String(q.anb || '\u2014')],
+    ['Gender',        q.gender || '\u2014'],
+    ['Phone',         q.clientPhone || '\u2014'],
   ];
   if(addrParts.length) clientRows.push(['Location', addrParts.join(', ')]);
-  clientRows.forEach((r,i)=>{ y=_pdfDataRow(doc,M,y,CW,r[0],r[1],i%2===0); });
-  y += 4;
+  clientRows.forEach((r,i) => { y = _pdfDataRow(doc,M,y,CW,r[0],r[1],i%2===0); });
+  y += 3;
 
-  // ── Policy Details ──
-  y = _pdfSectionHead(doc, M, y, CW, 'Policy Details — Pure Savings Plan');
+  // ── POLICY DETAILS ───────────────────────────────────────────────────
+  y = _pdfSectionHead(doc, M, y, CW, 'Policy Details \u2014 Pure Savings Plan');
   [
-    ['Sum Assured',               'MK '+Math.round(q.SA||0).toLocaleString()],
-    ['Projected Maturity @ 10%*', 'MK '+Math.round(projM).toLocaleString()],
-    ['Policy Term',               String(q.term||'?')+' years'],
-    ['Age at Maturity',           String(matAge)],
+    ['Sum Assured',               'MK ' + Math.round(q.SA||0).toLocaleString()],
+    ['Projected Maturity @ 10%*', 'MK ' + Math.round(projM).toLocaleString()],
+    ['Policy Term',               String(q.term||'?') + ' years'],
     ['Payment Frequency',         freq],
-    ['Occ. Class',                q.occClass&&q.occClass!=='N/A'?q.occClass:'Standard'],
-  ].forEach((r,i)=>{ y=_pdfDataRow(doc,M,y,CW,r[0],r[1],i%2===0); });
-  y += 5;
+  ].forEach((r,i) => { y = _pdfDataRow(doc,M,y,CW,r[0],r[1],i%2===0); });
+  y += 3;
 
-  // ── Premium band (full width maroon) ──
+  // ── PREMIUM BAND ─────────────────────────────────────────────────────
   doc.setFillColor(...PDF_MAROON);
   doc.rect(M, y, CW, 9, 'F');
   _pdfSetFont(doc, 10, 'bold', PDF_WHITE);
-  doc.text(freq+' Premium', M+5, y+6.2);
+  doc.text(freq + ' Premium', M+4, y+6.2);
   _pdfSetFont(doc, 11, 'bold', PDF_CREAM);
-  doc.text('MK '+Math.round(aTotalP).toLocaleString(), M+CW-5, y+6.2, {align:'right'});
-  y += 13;
+  doc.text('MK ' + Math.round(aTotalP).toLocaleString(), M+CW-4, y+6.2, {align:'right'});
+  y += 12;
 
-  // ── Premium Breakdown ──
+  // ── PREMIUM BREAKDOWN ────────────────────────────────────────────────
   y = _pdfSectionHead(doc, M, y, CW, 'Premium Breakdown');
   const half = (CW-2)/2;
-  // Option headers
+
+  // Option header row
   doc.setFillColor(245,240,235);
-  doc.rect(M,        y, half, 6, 'F');
-  doc.rect(M+half+2, y, half, 6, 'F');
+  doc.rect(M,        y, half,   6, 'F');
+  doc.rect(M+half+2, y, half,   6, 'F');
   _pdfSetFont(doc, 8, 'bold', PDF_MAROON);
-  doc.text('Option A — Savings Only',   M+half/2,        y+4, {align:'center'});
-  doc.text('Option B — Savings + DAB',  M+half+2+half/2, y+4, {align:'center'});
+  doc.text('Option A \u2014 Savings Only',  M+half/2,        y+4.2, {align:'center'});
+  doc.text('Option B \u2014 Savings + DAB', M+half+2+half/2, y+4.2, {align:'center'});
   doc.setDrawColor(...PDF_LGREY); doc.setLineWidth(0.2);
   doc.line(M, y+6, M+CW, y+6);
   y += 6;
 
+  // Data rows
   const bdRows = [
     ['PSP premium', 'MK '+Math.round(basicP).toLocaleString(), 'PSP premium', 'MK '+Math.round(basicP).toLocaleString()],
-    ['DAB',         '—',                                   'DAB (Cl.'+bOccCls+')', 'MK '+Math.round(dabP).toLocaleString()],
+    ['DAB',         '\u2014',                                   'DAB (Cl.'+occClass+')', 'MK '+Math.round(dabP).toLocaleString()],
     ['Policy fee',  'MK '+Math.round(fee).toLocaleString(),     'Policy fee',  'MK '+Math.round(fee).toLocaleString()],
-    ['Total /'+( isMo?'mo':'yr'),'MK '+Math.round(aTotalP).toLocaleString(),'Total /'+(isMo?'mo':'yr'),'MK '+Math.round(bTotalP).toLocaleString()],
+    ['Total /'+(isMo?'mo':'yr'), 'MK '+Math.round(aTotalP).toLocaleString(),
+     'Total /'+(isMo?'mo':'yr'), 'MK '+Math.round(bTotalP).toLocaleString()],
   ];
   bdRows.forEach((r,i)=>{
-    const shade=i%2===0; const isTotal=i===3;
-    [0,1].forEach(col=>{
-      const x=M+(col*(half+2));
-      if(shade){ doc.setFillColor(...PDF_SHADE); doc.rect(x,y,half,6.5,'F'); }
-      _pdfSetFont(doc,8,'normal',isTotal?PDF_MAROON:PDF_GREY); doc.text(r[col*2],   x+3,     y+4.5);
-      _pdfSetFont(doc,8,'bold',  isTotal?PDF_MAROON:PDF_BLACK); doc.text(r[col*2+1],x+half-3,y+4.5,{align:'right'});
-      doc.setDrawColor(...PDF_LGREY); doc.setLineWidth(isTotal?0.5:0.2);
-      doc.line(x,y+6.5,x+half,y+6.5);
-    });
+    const shade = i%2===0; const isTotal = i===3;
     if(isTotal){
       _pdfRule(doc, M,        y, half, PDF_MAROON, 0.5);
       _pdfRule(doc, M+half+2, y, half, PDF_MAROON, 0.5);
     }
+    [0,1].forEach(col=>{
+      const x = M + (col*(half+2));
+      if(shade && !isTotal){ doc.setFillColor(...PDF_SHADE); doc.rect(x,y,half,6.5,'F'); }
+      _pdfSetFont(doc,8,'normal',isTotal?PDF_MAROON:PDF_GREY); doc.text(r[col*2],    x+3,      y+4.5);
+      _pdfSetFont(doc,8,'bold',  isTotal?PDF_MAROON:PDF_BLACK); doc.text(r[col*2+1], x+half-3, y+4.5, {align:'right'});
+      doc.setDrawColor(...PDF_LGREY); doc.setLineWidth(0.2);
+      doc.line(x, y+6.5, x+half, y+6.5);
+    });
     y += 6.5;
   });
-  y += 6;
+  y += 4;
 
-  // ── Key Features ──
+  // ── KEY FEATURES ─────────────────────────────────────────────────────
   y = _pdfSectionHead(doc, M, y, CW, 'Key Features');
   _pdfSetFont(doc, 8.5, 'normal', PDF_BLACK);
+  y += 2;
   const feats = [
     'Maturity benefit: Sum assured plus all declared bonuses payable at maturity (age '+matAge+').',
     'Death benefit: Years 1-2: 90% of premiums paid. After year 2: all premiums plus 4% compound p.a.',
     'With-profits: Annual reversionary bonus - once declared, permanently added to SA.',
     'Surrender & paid-up: Available after 3 years (2 years for terms up to 19 years).',
     'Loan facility: Up to 95% of surrender value once acquired.',
-    ...(q.dabIncluded?['Double Accident Benefit: Additional MK '+Math.round(q.SA||0).toLocaleString()+' on accidental death/disability (Class '+bOccCls+').']:[]),
+    ...(q.dabIncluded ? ['Double Accident Benefit: Additional MK '+Math.round(q.SA||0).toLocaleString()+' on accidental death/disability (Class '+occClass+').'] : []),
   ];
-  y += 2;
   feats.forEach(f=>{
-    const lines = doc.splitTextToSize('•  '+f, CW-8);
+    const lines = doc.splitTextToSize('\u2022  '+f, CW-6);
     doc.text(lines, M+4, y);
-    y += lines.length * 5.5;
+    y += lines.length * 5;
   });
-  y += 4;
+  y += 3;
 
-  // ── Disclaimer ──
-  doc.setFillColor(250,248,245);
-  const disclaimerText = '* Projected maturity assumes 10% p.a. compound annual bonus - not guaranteed. Indicative quotation only. Subject to underwriting. Regulated by Reserve Bank of Malawi. Full Terms & Conditions apply. Call 3043 for full terms.';
-  const dLines = doc.splitTextToSize(disclaimerText, CW-6);
-  const dH = dLines.length*4.5+6;
+  // ── DISCLAIMER ───────────────────────────────────────────────────────
+  const disclaimerTxt = '* Projected maturity assumes 10% p.a. compound annual bonus - not guaranteed. Indicative quotation only. Subject to underwriting. Regulated by Reserve Bank of Malawi. Full Terms & Conditions apply. Call 3043 for full terms.';
+  const dLines = doc.splitTextToSize(disclaimerTxt, CW-6);
+  const dH = dLines.length * 4.2 + 5;
+  doc.setFillColor(250, 248, 245);
   doc.rect(M, y, CW, dH, 'F');
-  doc.setDrawColor(...PDF_LGREY); doc.setLineWidth(0.3); doc.rect(M,y,CW,dH);
+  doc.setDrawColor(...PDF_LGREY); doc.setLineWidth(0.3); doc.rect(M, y, CW, dH);
   _pdfSetFont(doc, 7, 'italic', PDF_GREY);
-  doc.text(dLines, M+3, y+4.5);
-  y += dH;
+  doc.text(dLines, M+3, y+4);
+  y += dH + 2;
 
-  // ── Footer ──
-  _pdfFooter(doc, W, H, q.agent||'', fmtDate(q.doq||q.savedAt||''));
+  // ── FOOTER — matches letterhead / Annuity quote ─────────────────────
+  // Cream band full width
+  doc.setFillColor(...PDF_CREAM);
+  doc.rect(0, H-18, W, 18, 'F');
+
+  // Dark maroon left box — Vanguard Pension Services
+  doc.setFillColor(60, 10, 10);
+  doc.rect(0, H-18, 56, 18, 'F');
+  _pdfSetFont(doc, 8, 'bold',   PDF_WHITE); doc.text('Vanguard',         7, H-13);
+  _pdfSetFont(doc, 7, 'normal', PDF_WHITE); doc.text('Pension Services', 7, H-8);
+
+  // Centre: address
+  _pdfSetFont(doc, 7.5, 'normal', PDF_GREY);
+  doc.text('Robins Road, P.O. Box 1625, Blantyre, Malawi', 62, H-14);
+  doc.text('+265 887 094 872  \u00b7  vanguard@vanguardlifemw.com  \u00b7  vanguardlifemw.com', 62, H-9.5);
+
+  // Right: tagline + agent
+  _pdfSetFont(doc, 9, 'bold', PDF_MAROON);
+  doc.text('Life Assurance  \u2022  Pension Services', W-M, H-13, {align:'right'});
+  _pdfSetFont(doc, 7.5, 'normal', PDF_MAROON);
+  doc.text('Agent: '+(q.agent||''), W-M, H-8.5, {align:'right'});
+  _pdfSetFont(doc, 7, 'normal', PDF_GREY);
+  doc.text(fmtDate(q.doq||q.savedAt||''), W-M, H-4.5, {align:'right'});
+
   return doc;
 }
+
 
 // ── Phindu PDF ────────────────────────────────────────────────────
 function _buildPhinduPdf(q){
