@@ -2140,6 +2140,16 @@ input:checked+.tog-trk:before{transform:translateX(17px)}
         </div>
 
         <button class="btn-primary btn-secondary" style="margin-top:4px;width:100%" onclick="doLogout()">Sign Out</button>
+
+        <!-- Clear Local Quotes — available to all users -->
+        <div style="margin-top:12px;padding:10px 12px;border:1px solid #fed7aa;border-radius:8px;background:#fffbf5">
+          <div style="font-size:12px;font-weight:700;color:#c2410c;margin-bottom:3px">Clear Local Quote Cache</div>
+          <div style="font-size:11px;color:#888;margin-bottom:8px">Removes quotes stored on this device only. Google Sheets data is not affected.</div>
+          <div style="display:flex;gap:8px">
+            <button class="btn-sm" style="flex:1;background:#fff3cd;color:#c2410c;border:1.5px solid #fed7aa;font-weight:600;padding:8px" onclick="clearLocalQuotes(false)">Clear Local</button>
+            <button class="btn-sm" style="flex:1;background:#fee2e2;color:#991b1b;border:1.5px solid #fca5a5;font-weight:600;padding:8px" onclick="clearLocalQuotes(true)">Clear + Re-sync</button>
+          </div>
+        </div>
       </div>
     </div><!-- /tab-profile -->
 
@@ -3364,14 +3374,19 @@ async function fetchAgentsFromSheets(){
 }
 
 // Push a single agent change to Sheets
-async function pushAgentToSheets(name, pin, role, active){
+async function pushAgentToSheets(name, pin, role, active, jobTitle, mobile, email){
   const url = localStorage.getItem(SHEETS_URL_KEY) || APPS_SCRIPT_URL;
   if(!url) return;
   try {
     await fetch(url, {
       method:'POST',
       mode:'no-cors',
-      body: JSON.stringify({action:'saveAgent', name, pin, role, active})
+      body: JSON.stringify({
+        action:'saveAgent', name, pin, role, active,
+        jobTitle: jobTitle || '',
+        mobile:   mobile   || '',
+        email:    email    || ''
+      })
     });
   } catch(e){}
 }
@@ -6090,10 +6105,112 @@ function _buildAdminPanel(body){
       statsHTML +
     '</div>';
 
+  // DANGER ZONE card — admin only
+  html +=
+    '<div class="card" style="margin-bottom:14px;border:2px solid #991b1b;background:#fff5f5">' +
+      '<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">' +
+        '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#991b1b" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>' +
+        '<div class="sec-lbl" style="margin:0;color:#991b1b">Danger Zone</div>' +
+      '</div>' +
+      '<p style="font-size:11px;color:#888;margin:0 0 12px">These actions are permanent and cannot be undone. Audit log is kept in Sheets.</p>' +
+
+      // Clear All Sheets
+      '<div style="border:1px solid #fca5a5;border-radius:6px;padding:10px 12px;margin-bottom:10px;background:#fff">' +
+        '<div style="font-size:12px;font-weight:700;color:#991b1b;margin-bottom:2px">Clear All Quote Sheets</div>' +
+        '<div style="font-size:11px;color:#888;margin-bottom:8px">Deletes all data rows from Quotes, Phindu and Manga Yako sheets in Google Sheets. Agent list is preserved.</div>' +
+        '<button class="btn-danger" style="width:100%;padding:9px;font-size:13px" onclick="adminClearSheets()">' +
+          '🗑 Clear All Quote Sheets' +
+        '</button>' +
+        '<div id="clear-sheets-status" style="font-size:11px;text-align:center;margin-top:5px;color:#991b1b"></div>' +
+      '</div>' +
+
+      // Clear Local Quotes (all users)
+      '<div style="border:1px solid #fed7aa;border-radius:6px;padding:10px 12px;background:#fff">' +
+        '<div style="font-size:12px;font-weight:700;color:#c2410c;margin-bottom:2px">Clear This Device\'s Quotes</div>' +
+        '<div style="font-size:11px;color:#888;margin-bottom:8px">Removes all locally stored quotes from this device. You can re-sync from Sheets afterwards.</div>' +
+        '<div style="display:flex;gap:8px">' +
+          '<button class="btn-danger" style="flex:1;padding:9px;font-size:13px;background:#fff3cd;color:#c2410c;border-color:#fed7aa" onclick="clearLocalQuotes(false)">' +
+            'Clear Local Only' +
+          '</button>' +
+          '<button class="btn-danger" style="flex:1;padding:9px;font-size:13px" onclick="clearLocalQuotes(true)">' +
+            'Clear + Re-sync from Sheets' +
+          '</button>' +
+        '</div>' +
+      '</div>' +
+    '</div>';
+
   // Sign out
   html += '<button class="btn-primary btn-secondary" style="margin-top:4px;width:100%;margin-bottom:20px" onclick="doLogout()">Sign Out</button>';
 
   body.innerHTML = html;
+}
+
+// ── Admin: Clear All Quote Sheets ──────────────────────────────────────
+async function adminClearSheets(){
+  if(!isAdmin){ showToast('Admin access required'); return; }
+  const ok = await appConfirm(
+    'Clear All Quote Sheets',
+    '<strong style="color:#991b1b">This will permanently delete all quote rows from Google Sheets.</strong><br><br>' +
+    'The Agents sheet is preserved. An audit entry will be logged.<br><br>' +
+    'This cannot be undone. Are you sure?',
+    'Yes, Clear All', '#991b1b'
+  );
+  if(!ok) return;
+
+  const statusEl = document.getElementById('clear-sheets-status');
+  if(statusEl) statusEl.textContent = '⏳ Clearing Sheets…';
+
+  const url = localStorage.getItem(SHEETS_URL_KEY) || APPS_SCRIPT_URL;
+  const qs  = 'action=clearsheets&token='+encodeURIComponent(GAS_APP_TOKEN)
+             +'&agent='+encodeURIComponent(currentAgent);
+  try {
+    const res = await Promise.race([
+      fetch(url+'?'+qs, {mode:'cors', redirect:'follow'})
+        .catch(()=> fetch(url+'?'+qs, {mode:'no-cors', redirect:'follow'})),
+      new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')),20000))
+    ]);
+    let msg = 'Sheets cleared.';
+    try {
+      const data = JSON.parse(await res.text());
+      msg = data.message || msg;
+    } catch(e){}
+    if(statusEl) statusEl.textContent = '✓ '+msg;
+    showToast('✓ '+msg, 4000);
+  } catch(err){
+    if(statusEl) statusEl.textContent = '⚠ '+err.message;
+    showToast('Error: '+err.message, 5000);
+  }
+}
+
+// ── Clear local device quotes ──────────────────────────────────────────
+async function clearLocalQuotes(resyncAfter){
+  const ok = await appConfirm(
+    'Clear Local Quotes',
+    'Remove all quotes stored on <strong>this device</strong>?' +
+    (resyncAfter ? '<br><br>After clearing, the app will re-sync your quotes from Google Sheets.' : '') +
+    '<br><br>Google Sheets data is not affected by this action.',
+    resyncAfter ? 'Clear & Re-sync' : 'Clear Local', '#c2410c'
+  );
+  if(!ok) return;
+
+  // Clear all local quote stores
+  ['vla_quotes', 'vla_my_quotes', PHINDU_QUOTES_KEY].forEach(k => localStorage.removeItem(k));
+  // Also clear edu quotes if stored separately
+  localStorage.removeItem('vla_edu_quotes');
+
+  showToast('✓ Local quotes cleared', 3000);
+
+  if(resyncAfter && navigator.onLine){
+    showToast('Re-syncing from Sheets…', 3000);
+    try {
+      await restoreHistoryFromSheets(currentAgent, true);
+      showToast('✓ Sync complete', 3000);
+    } catch(e){
+      showToast('Sync failed: '+e.message, 4000);
+    }
+  }
+  // Refresh the admin panel stats
+  renderAdminPanel();
 }
 
 async function syncAllAgentsToSheets(){
@@ -6144,7 +6261,7 @@ async function addAgent(){
   if(email)  prof[name+'_email']=email;
   localStorage.setItem(PROFILE_KEY,JSON.stringify(prof));
   // Sync to Sheets (fire-and-forget — don't block UI)
-  pushAgentToSheets(name, pin, role, true).catch(()=>{});
+  pushAgentToSheets(name, pin, role, true, jobTitle, mobile, email).catch(()=>{});
   document.getElementById('new-agent-name').value='';
   document.getElementById('new-agent-pin').value='';
   if(titleEl)titleEl.value='';
@@ -6970,11 +7087,19 @@ function saveProfile(agentName){
   var mEl=document.getElementById('admin-bc-mob-'+idKey);
   var eEl=document.getElementById('admin-bc-email-'+idKey);
   if(!rtEl||!mEl||!eEl){showToast('Form not found');return;}
-  saved[who+'_role_title']=rtEl.value.trim()||'Sales Agent';
-  saved[who+'_mobile']=mEl.value.trim();
-  saved[who+'_email']=eEl.value.trim();
-  localStorage.setItem(PROFILE_KEY,JSON.stringify(saved));
-  showToast('\u2713 Card details saved for '+who);
+  const newTitle  = rtEl.value.trim() || 'Sales Agent';
+  const newMobile = mEl.value.trim();
+  const newEmail  = eEl.value.trim();
+  saved[who+'_role_title'] = newTitle;
+  saved[who+'_mobile']     = newMobile;
+  saved[who+'_email']      = newEmail;
+  localStorage.setItem(PROFILE_KEY, JSON.stringify(saved));
+  // Push updated contact details to Sheets (agent must already exist there)
+  const agents = getAgents();
+  const agent  = agents[who] || {};
+  pushAgentToSheets(who, agent.pin||'', agent.role||'agent', agent.active!==false,
+                    newTitle, newMobile, newEmail).catch(()=>{});
+  showToast('\u2713 Details saved for '+who+' — syncing to Sheets');
   renderBusinessCard();
 }
 function renderProfileTab(){
