@@ -207,6 +207,18 @@ input:checked+.tog-trk:before{transform:translateX(17px)}
 .agent-role{font-size:11px;color:var(--T2);margin-top:2px}
 .agent-actions{display:flex;gap:6px}
 .btn-danger{background:#fee2e2;color:#991b1b;border:none;border-radius:var(--RA);padding:6px 10px;font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif}
+.res-tab-btn{flex-shrink:0;padding:8px 14px;font-size:12px;font-weight:600;border:none;cursor:pointer;border-radius:8px 8px 0 0;font-family:'DM Sans',sans-serif}
+.res-tab-active{background:rgba(255,255,255,.18);color:var(--CR)}
+.res-tab-inactive{background:rgba(255,255,255,.07);color:rgba(255,255,255,.6)}
+.fs-toggle-btn{width:100%;background:none;border:1px solid #ede4da;border-radius:6px;padding:7px 12px;text-align:left;cursor:pointer;font-size:12px;color:var(--M);font-weight:600;font-family:'DM Sans',sans-serif;display:flex;justify-content:space-between;align-items:center}
+.fs-head{font-weight:700;color:var(--M);margin:10px 0 5px;font-size:12px}
+.fs-tbl{width:100%;border-collapse:collapse;font-size:11.5px;margin-bottom:6px}
+.fs-tbl td,.fs-tbl th{padding:5px 8px;border-bottom:1px solid #ede4da}
+.fs-tbl tr:nth-child(even) td,.fs-tbl tr:nth-child(even) th{background:#f7f4f0}
+.fs-ul{margin:0 0 6px;padding-left:16px;color:#555;font-size:11.5px;line-height:1.65}
+.faq-item{border-bottom:1px solid #ede4da}
+.faq-q{width:100%;background:none;border:none;text-align:left;padding:10px 4px;font-size:12px;font-weight:600;color:#1a0505;cursor:pointer;display:flex;justify-content:space-between;align-items:center;font-family:'DM Sans',sans-serif}
+.faq-a{font-size:12px;line-height:1.65;color:#555;padding:0 4px 10px;display:none}
 .btn-success{background:var(--ML);color:var(--M);border:none;border-radius:var(--RA);padding:6px 10px;font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif}
 .add-agent-form{background:var(--CRL);border:1px solid var(--CR);border-radius:var(--RB);padding:14px;margin-top:12px}
 
@@ -1115,377 +1127,330 @@ input:checked+.tog-trk:before{transform:translateX(17px)}
 
     <!-- ── TAB: LIFE PRODUCTS ── -->
     <div class="tab-panel" id="tab-products">
-
-      <!-- ══ TOP BAR ══ -->
       <div style="background:var(--M);padding:14px 18px 0">
         <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
-          <button onclick="switchTab('share')" style="background:none;border:none;color:var(--CR);font-size:20px;cursor:pointer;padding:0;line-height:1">&#8249;</button>
+          <button onclick="switchTab('share')" style="background:none;border:none;color:var(--CR);font-size:20px;cursor:pointer;padding:0">&#8249;</button>
           <div style="font-family:'Playfair Display',serif;font-size:16px;color:var(--CR);font-weight:700">Resources</div>
         </div>
-        <!-- Section tabs -->
-        <div style="display:flex;gap:0;overflow-x:auto;scrollbar-width:none">
-          <button id="res-tab-btn-products" onclick="switchResTab('products')"
-            style="flex-shrink:0;padding:8px 14px;font-size:12px;font-weight:600;border:none;cursor:pointer;border-radius:8px 8px 0 0;background:rgba(255,255,255,.18);color:var(--CR);font-family:'DM Sans',sans-serif">
-            Products
-          </button>
-          <button id="res-tab-btn-general" onclick="switchResTab('general')"
-            style="flex-shrink:0;padding:8px 14px;font-size:12px;font-weight:600;border:none;cursor:pointer;border-radius:8px 8px 0 0;background:rgba(255,255,255,.08);color:rgba(255,255,255,.65);font-family:'DM Sans',sans-serif">
-            General Info
-          </button>
-          <button id="res-tab-btn-uw" onclick="switchResTab('uw')"
-            style="flex-shrink:0;padding:8px 14px;font-size:12px;font-weight:600;border:none;cursor:pointer;border-radius:8px 8px 0 0;background:rgba(255,255,255,.08);color:rgba(255,255,255,.65);font-family:'DM Sans',sans-serif">
-            Underwriting
-          </button>
+        <div style="display:flex;gap:0;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch">
+          <button id="res-tab-btn-products" onclick="switchResTab('products')" class="res-tab-btn res-tab-active">Products</button>
+          <button id="res-tab-btn-faqs"     onclick="switchResTab('faqs')"     class="res-tab-btn res-tab-inactive">FAQs</button>
+          <button id="res-tab-btn-general"  onclick="switchResTab('general')"  class="res-tab-btn res-tab-inactive">General Info</button>
+          <button id="res-tab-btn-uw"       onclick="switchResTab('uw')"       class="res-tab-btn res-tab-inactive">Underwriting</button>
         </div>
       </div>
 
-      <!-- ══ PRODUCTS PANEL ══ -->
-      <div id="res-panel-products" style="padding:14px;overflow-y:auto">
+      <!-- ══ PRODUCTS ══ -->
+      <div id="res-panel-products" style="padding:12px;overflow-y:auto">
 
-        <!-- PSP -->
+        <!-- PSP card -->
         <div class="product-card">
           <div class="product-header">
-            <div class="product-icon" style="background:var(--ML)">
-              <svg viewBox="0 0 24 24" fill="none" stroke="var(--M)" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-            </div>
-            <div>
-              <div class="product-name">Pure Savings Plan (PSP)</div>
-              <div class="product-type">Basic Pure Endowment &middot; With Profits &middot; MWK</div>
-            </div>
+            <div class="product-icon" style="background:var(--ML)"><svg viewBox="0 0 24 24" fill="none" stroke="var(--M)" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div>
+            <div><div class="product-name">Pure Savings Plan</div><div class="product-type">Basic Pure Endowment &middot; With Profits &middot; MWK</div></div>
           </div>
-          <div style="padding:0 4px">
-            <button onclick="toggleFactSheet('psp')" style="width:100%;background:none;border:1px solid #ede4da;border-radius:6px;padding:8px 12px;text-align:left;cursor:pointer;font-size:12px;color:var(--M);font-weight:600;font-family:'DM Sans',sans-serif;display:flex;justify-content:space-between;align-items:center">
-              <span>View Fact Sheet</span><span id="psp-fs-arrow">&#9660;</span>
-            </button>
-            <div id="psp-factsheet" style="display:none;font-size:12px;line-height:1.7;color:#333;padding:10px 4px 4px">
-              <div style="font-weight:700;color:var(--M);margin-bottom:6px">Overview</div>
-              <p style="margin:0 0 8px">A whole-life savings product written as a basic pure endowment on a with-profits basis. Premiums are invested and grow through annual reversionary bonuses declared by VLA. On maturity the policyholder receives the sum assured plus all accumulated bonuses.</p>
-
-              <div style="font-weight:700;color:var(--M);margin:10px 0 6px">Key Parameters</div>
-              <table style="width:100%;border-collapse:collapse;font-size:11.5px">
-                <tr style="background:#f7f4f0"><td style="padding:5px 8px;color:#666;width:50%">Policy term</td><td style="padding:5px 8px;font-weight:600">5 &ndash; 35 years</td></tr>
-                <tr><td style="padding:5px 8px;color:#666">Entry age</td><td style="padding:5px 8px;font-weight:600">18 &ndash; 65 ANB</td></tr>
-                <tr style="background:#f7f4f0"><td style="padding:5px 8px;color:#666">Minimum SA</td><td style="padding:5px 8px;font-weight:600">MK 12,000,000</td></tr>
-                <tr><td style="padding:5px 8px;color:#666">Premium frequency</td><td style="padding:5px 8px;font-weight:600">Monthly or Annual</td></tr>
-                <tr style="background:#f7f4f0"><td style="padding:5px 8px;color:#666">Monthly policy fee</td><td style="padding:5px 8px;font-weight:600">MK 600</td></tr>
-                <tr><td style="padding:5px 8px;color:#666">Annual policy fee</td><td style="padding:5px 8px;font-weight:600">MK 7,128.74</td></tr>
-                <tr style="background:#f7f4f0"><td style="padding:5px 8px;color:#666">Bonus projection</td><td style="padding:5px 8px;font-weight:600">10% p.a. compound (illustrative)</td></tr>
-                <tr><td style="padding:5px 8px;color:#666">Surrender available</td><td style="padding:5px 8px;font-weight:600">After 3 years (2 yrs if term &le;19)</td></tr>
-                <tr style="background:#f7f4f0"><td style="padding:5px 8px;color:#666">Loan facility</td><td style="padding:5px 8px;font-weight:600">Up to 95% of surrender value</td></tr>
-              </table>
-
-              <div style="font-weight:700;color:var(--M);margin:10px 0 6px">Benefits</div>
-              <div style="display:flex;flex-direction:column;gap:5px">
-                <div style="padding:6px 8px;background:#f7f4f0;border-radius:4px"><strong>Maturity:</strong> Sum assured plus all declared reversionary bonuses.</div>
-                <div style="padding:6px 8px;border-radius:4px"><strong>Death (Yrs 1&ndash;2):</strong> 90% of premiums paid to date.</div>
-                <div style="padding:6px 8px;background:#f7f4f0;border-radius:4px"><strong>Death (after Yr 2):</strong> All premiums paid plus 4% compound p.a.</div>
-                <div style="padding:6px 8px;border-radius:4px"><strong>DAB (optional):</strong> Additional SA paid on accidental death or permanent total disability. Rate depends on occupation class (MK 1.50&ndash;12.00 per MK 1,000 SA). Not available for Class 6.</div>
-              </div>
-
-              <div style="font-weight:700;color:var(--M);margin:10px 0 6px">Underwriting</div>
-              <p style="margin:0 0 6px">No medical exam required up to standard entry limits. Non-smoker/smoker rated by occupation class. DAB availability and rate set by occupation class (see Underwriting tab).</p>
-
-              <div style="font-weight:700;color:var(--M);margin:10px 0 6px">Exclusions</div>
-              <ul style="margin:0;padding-left:18px;color:#555">
-                <li>Suicide within first 2 policy years</li>
-                <li>War &amp; civil commotion (death benefit)</li>
-                <li>DAB excluded: self-inflicted injury, war, aviation (non-passenger), criminal acts</li>
-              </ul>
+          <!-- Client summary — short, shareable -->
+          <div style="font-size:12px;line-height:1.6;color:#444;padding:2px 0 8px">
+            Save with <strong>guaranteed annual bonuses</strong> over 5&ndash;35 years. Your money grows tax-free and pays out in full at maturity. Optional accident cover (DAB) available.
+          </div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px">
+            <span style="font-size:10.5px;background:#f0fdf4;color:#166534;border-radius:12px;padding:2px 8px;font-weight:600">Min SA: MK 12M</span>
+            <span style="font-size:10.5px;background:#f0fdf4;color:#166534;border-radius:12px;padding:2px 8px;font-weight:600">Term: 5&ndash;35 yrs</span>
+            <span style="font-size:10.5px;background:#f0fdf4;color:#166534;border-radius:12px;padding:2px 8px;font-weight:600">Entry: 18&ndash;65 ANB</span>
+          </div>
+          <!-- Expandable fact sheet -->
+          <button onclick="toggleFactSheet('psp')" class="fs-toggle-btn"><span>Fact Sheet (agent)</span><span id="psp-fs-arrow">&#9660;</span></button>
+          <div id="psp-factsheet" style="display:none;font-size:11.5px;line-height:1.65;color:#333;padding:8px 0 2px">
+            <div class="fs-head">Key Benefits</div>
+            <table class="fs-tbl">
+              <tr><td>Maturity</td><td>Basic SA + all declared reversionary bonuses</td></tr>
+              <tr><td>Death (Yrs 1&ndash;2)</td><td>90% of premiums paid</td></tr>
+              <tr><td>Death (after Yr 2)</td><td>All premiums + 4% compound p.a.</td></tr>
+              <tr><td>DAB (optional)</td><td>Additional SA on accidental death/disability. Rate by occupation class.</td></tr>
+              <tr><td>Surrender / Loan</td><td>After 3 yrs (2 yrs if term &le;19). Loan up to 95% of surrender value @ 30% p.a.</td></tr>
+              <tr><td>Paid-up</td><td>Available after qualifying years. Reduced SA continues to earn bonuses.</td></tr>
+              <tr><td>Policy fee</td><td>MK 600/mo &nbsp;|&nbsp; MK 7,128.74/yr</td></tr>
+            </table>
+            <div class="fs-head">Premium Calculation</div>
+            <div style="background:#f7f4f0;border-radius:6px;padding:7px 9px;font-size:11px;margin-bottom:6px">
+              <strong>Annual:</strong> (SA &times; Annual Rate / 10,000) + Annual Policy Fee<br>
+              <strong>Monthly:</strong> (SA &times; Monthly Rate / 10,000) + MK 600<br>
+              <em>Monthly rate = Annual rate &divide; 11.3744 &divide; 10,000 &times; 10,000</em>
             </div>
+            <div class="fs-head">Exclusions</div>
+            <ul class="fs-ul"><li>Suicide within first 2 policy years</li><li>War &amp; civil commotion</li><li>DAB: self-inflicted injury, aviation (non-passenger), criminal acts</li></ul>
           </div>
           <div class="product-footer" style="justify-content:space-between;align-items:center;margin-top:8px">
-            <span class="product-live-badge">&#9679; LIVE &mdash; Quoting enabled</span>
-            <button class="btn-sm btn-pdf" onclick="switchTab('quote')">Quote now</button>
+            <span class="product-live-badge">&#9679; LIVE</span>
+            <div style="display:flex;gap:6px">
+              <button class="btn-sm" onclick="shareProductSheet('psp')" style="border-color:#25d366;color:#128c7e;font-size:11px">&#128172; Share</button>
+              <button class="btn-sm btn-pdf" onclick="switchTab('quote')" style="font-size:11px">Quote now</button>
+            </div>
           </div>
         </div>
 
-        <!-- Phindu -->
+        <!-- Phindu card -->
         <div class="product-card">
           <div class="product-header">
-            <div class="product-icon" style="background:var(--ML)">
-              <svg viewBox="0 0 24 24" fill="none" stroke="var(--M)" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/><line x1="2" y1="20" x2="22" y2="20"/></svg>
-            </div>
-            <div>
-              <div class="product-name">Phindu Savings Plan</div>
-              <div class="product-type">10-Year Endowment &middot; With Profits &middot; MWK</div>
-            </div>
+            <div class="product-icon" style="background:var(--ML)"><svg viewBox="0 0 24 24" fill="none" stroke="var(--M)" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/><line x1="2" y1="20" x2="22" y2="20"/></svg></div>
+            <div><div class="product-name">Phindu Savings Plan</div><div class="product-type">10-Year Endowment &middot; With Profits &middot; MWK</div></div>
           </div>
-          <div style="padding:0 4px">
-            <button onclick="toggleFactSheet('phindu')" style="width:100%;background:none;border:1px solid #ede4da;border-radius:6px;padding:8px 12px;text-align:left;cursor:pointer;font-size:12px;color:var(--M);font-weight:600;font-family:'DM Sans',sans-serif;display:flex;justify-content:space-between;align-items:center">
-              <span>View Fact Sheet</span><span id="phindu-fs-arrow">&#9660;</span>
-            </button>
-            <div id="phindu-factsheet" style="display:none;font-size:12px;line-height:1.7;color:#333;padding:10px 4px 4px">
-              <div style="font-weight:700;color:var(--M);margin-bottom:6px">Overview</div>
-              <p style="margin:0 0 8px">A 10-year fixed-term endowment on a with-profits basis. Designed for clients who want regular savings with a mid-term cashflow: the Money Tree benefit pays out at Year 5 and again at Year 10, with a final maturity lump sum. No medical tests required.</p>
-
-              <div style="font-weight:700;color:var(--M);margin:10px 0 6px">Key Parameters</div>
-              <table style="width:100%;border-collapse:collapse;font-size:11.5px">
-                <tr style="background:#f7f4f0"><td style="padding:5px 8px;color:#666;width:50%">Policy term</td><td style="padding:5px 8px;font-weight:600">10 years (fixed)</td></tr>
-                <tr><td style="padding:5px 8px;color:#666">Entry age</td><td style="padding:5px 8px;font-weight:600">18 &ndash; 65 ANB</td></tr>
-                <tr style="background:#f7f4f0"><td style="padding:5px 8px;color:#666">Money Tree options</td><td style="padding:5px 8px;font-weight:600">5%, 10%, 15%, 20% of Basic SA</td></tr>
-                <tr><td style="padding:5px 8px;color:#666">Money Tree payable</td><td style="padding:5px 8px;font-weight:600">Year 5 &amp; Year 10</td></tr>
-                <tr style="background:#f7f4f0"><td style="padding:5px 8px;color:#666">Bonus projection</td><td style="padding:5px 8px;font-weight:600">10% p.a. compound (illustrative)</td></tr>
-                <tr><td style="padding:5px 8px;color:#666">Medical tests</td><td style="padding:5px 8px;font-weight:600">Not required</td></tr>
-                <tr style="background:#f7f4f0"><td style="padding:5px 8px;color:#666">Surrender / paid-up</td><td style="padding:5px 8px;font-weight:600">After 2 full years</td></tr>
-              </table>
-
-              <div style="font-weight:700;color:var(--M);margin:10px 0 6px">Benefits</div>
-              <div style="display:flex;flex-direction:column;gap:5px">
-                <div style="padding:6px 8px;background:#f7f4f0;border-radius:4px"><strong>Maturity (Yr 10):</strong> SA plus all declared bonuses.</div>
-                <div style="padding:6px 8px;border-radius:4px"><strong>Money Tree (Yr 5 &amp; 10):</strong> Selected percentage of Basic SA paid as a cash lump sum at each milestone.</div>
-                <div style="padding:6px 8px;background:#f7f4f0;border-radius:4px"><strong>Death (Yrs 1&ndash;3):</strong> Premiums refunded with 4% p.a. compound interest.</div>
-                <div style="padding:6px 8px;border-radius:4px"><strong>Death (after Yr 3):</strong> SA plus all declared bonuses to date.</div>
-              </div>
-
-              <div style="font-weight:700;color:var(--M);margin:10px 0 6px">Exclusions</div>
-              <ul style="margin:0;padding-left:18px;color:#555">
-                <li>Suicide within first 2 policy years</li>
-                <li>Death arising from pre-existing conditions not disclosed at entry</li>
-              </ul>
+          <div style="font-size:12px;line-height:1.6;color:#444;padding:2px 0 8px">
+            Save for 10 years and earn <strong>cash payouts every 5 years</strong> (Money Tree). Grows with annual bonuses. No medical tests required.
+          </div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px">
+            <span style="font-size:10.5px;background:#f0fdf4;color:#166534;border-radius:12px;padding:2px 8px;font-weight:600">Term: 10 yrs</span>
+            <span style="font-size:10.5px;background:#f0fdf4;color:#166534;border-radius:12px;padding:2px 8px;font-weight:600">Entry: 18&ndash;65</span>
+            <span style="font-size:10.5px;background:#f0fdf4;color:#166534;border-radius:12px;padding:2px 8px;font-weight:600">No medical tests</span>
+          </div>
+          <button onclick="toggleFactSheet('phindu')" class="fs-toggle-btn"><span>Fact Sheet (agent)</span><span id="phindu-fs-arrow">&#9660;</span></button>
+          <div id="phindu-factsheet" style="display:none;font-size:11.5px;line-height:1.65;color:#333;padding:8px 0 2px">
+            <div class="fs-head">Key Benefits</div>
+            <table class="fs-tbl">
+              <tr><td>Maturity (Yr 10)</td><td>Basic SA + all declared bonuses</td></tr>
+              <tr><td>Money Tree</td><td>10%, 15%, 20% or 25% of Basic SA paid at Yr 5 and Yr 10</td></tr>
+              <tr><td>Death (Yrs 1&ndash;3)</td><td>Premiums refunded + 4% compound p.a.</td></tr>
+              <tr><td>Death (after Yr 3)</td><td>SA + all declared bonuses</td></tr>
+              <tr><td>Surrender / Paid-up</td><td>After 2 full years. Paid-up values continue to earn bonuses.</td></tr>
+              <tr><td>No SA maximum</td><td>No maximum limit on sum assured</td></tr>
+            </table>
+            <div class="fs-head">Commission</div>
+            <div style="background:#f7f4f0;border-radius:6px;padding:7px 9px;font-size:11px;margin-bottom:6px">
+              <strong>1st Year:</strong> 4% &times; Policy Term (max 50%)<br>
+              <strong>2nd Year:</strong> No commission payable<br>
+              <strong>Single Premium Injection:</strong> 2% once-off
             </div>
+            <div class="fs-head">Exclusions</div>
+            <ul class="fs-ul"><li>Suicide within first 2 policy years</li><li>Pre-existing conditions not disclosed at entry</li></ul>
           </div>
           <div class="product-footer" style="justify-content:space-between;align-items:center;margin-top:8px">
-            <span class="product-live-badge">&#9679; LIVE &mdash; Quoting enabled</span>
-            <button class="btn-sm btn-pdf" onclick="switchTab('phindu')">Quote now</button>
+            <span class="product-live-badge">&#9679; LIVE</span>
+            <div style="display:flex;gap:6px">
+              <button class="btn-sm" onclick="shareProductSheet('phindu')" style="border-color:#25d366;color:#128c7e;font-size:11px">&#128172; Share</button>
+              <button class="btn-sm btn-pdf" onclick="switchTab('phindu')" style="font-size:11px">Quote now</button>
+            </div>
           </div>
         </div>
 
-        <!-- Manga Yako -->
+        <!-- Manga Yako card -->
         <div class="product-card">
           <div class="product-header">
-            <div class="product-icon" style="background:#fff8e6;border-radius:8px;padding:8px">
-              <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="#b45309" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-            </div>
-            <div>
-              <div class="product-name">Manga Yako Savings Plan</div>
-              <div class="product-type">15-Year Unit-Linked Savings &middot; USD</div>
-            </div>
+            <div class="product-icon" style="background:#fff8e6"><svg viewBox="0 0 24 24" fill="none" stroke="#b45309" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg></div>
+            <div><div class="product-name">Manga Yako Savings Plan</div><div class="product-type">15-Year Unit-Linked &middot; USD Currency</div></div>
           </div>
-          <div style="padding:0 4px">
-            <button onclick="toggleFactSheet('my')" style="width:100%;background:none;border:1px solid #ede4da;border-radius:6px;padding:8px 12px;text-align:left;cursor:pointer;font-size:12px;color:var(--M);font-weight:600;font-family:'DM Sans',sans-serif;display:flex;justify-content:space-between;align-items:center">
-              <span>View Fact Sheet</span><span id="my-fs-arrow">&#9660;</span>
-            </button>
-            <div id="my-factsheet" style="display:none;font-size:12px;line-height:1.7;color:#333;padding:10px 4px 4px">
-              <div style="font-weight:700;color:var(--M);margin-bottom:6px">Overview</div>
-              <p style="margin:0 0 8px">A 15-year USD-denominated savings and investment plan. Premiums are invested in a segregated fund (money market, Malawi Stock Exchange equities, and property). The target maturity value represents the projected fund value. Currency: USD only. Particularly suited for diaspora clients and those seeking USD-hedged savings.</p>
-
-              <div style="font-weight:700;color:var(--M);margin:10px 0 6px">Key Parameters</div>
-              <table style="width:100%;border-collapse:collapse;font-size:11.5px">
-                <tr style="background:#f7f4f0"><td style="padding:5px 8px;color:#666;width:50%">Policy term</td><td style="padding:5px 8px;font-weight:600">15 years (fixed)</td></tr>
-                <tr><td style="padding:5px 8px;color:#666">Currency</td><td style="padding:5px 8px;font-weight:600">USD</td></tr>
-                <tr style="background:#f7f4f0"><td style="padding:5px 8px;color:#666">Minimum premium</td><td style="padding:5px 8px;font-weight:600">USD 45 / month</td></tr>
-                <tr><td style="padding:5px 8px;color:#666">Entry age</td><td style="padding:5px 8px;font-weight:600">18 &ndash; 60 ANB</td></tr>
-                <tr style="background:#f7f4f0"><td style="padding:5px 8px;color:#666">Death benefit</td><td style="padding:5px 8px;font-weight:600">Higher of USD 1,000 or fund value</td></tr>
-                <tr><td style="padding:5px 8px;color:#666">Surrender / paid-up</td><td style="padding:5px 8px;font-weight:600">After 2 full years of contributions</td></tr>
-                <tr style="background:#f7f4f0"><td style="padding:5px 8px;color:#666">Top-ups</td><td style="padding:5px 8px;font-weight:600">Permitted at any time</td></tr>
-                <tr><td style="padding:5px 8px;color:#666">Cooling-off period</td><td style="padding:5px 8px;font-weight:600">30 days from inception</td></tr>
-              </table>
-
-              <div style="font-weight:700;color:var(--M);margin:10px 0 6px">Maturity Options</div>
-              <div style="display:flex;flex-direction:column;gap:5px">
-                <div style="padding:6px 8px;background:#f7f4f0;border-radius:4px"><strong>Cash payout:</strong> Fund value paid in MWK at the official exchange rate on maturity date.</div>
-                <div style="padding:6px 8px;border-radius:4px"><strong>Land option:</strong> Exchange maturity value for VLA-developed residential land (subject to availability).</div>
-              </div>
-
-              <div style="font-weight:700;color:var(--M);margin:10px 0 6px">Cost Deductions</div>
-              <p style="margin:0 0 6px;color:#555">Administration charges and investment management fees are deducted from premiums before investment. Total contributions figure in the quote shows gross premiums paid; actual fund value at maturity depends on net investment returns.</p>
-
-              <div style="font-weight:700;color:var(--M);margin:10px 0 6px">Exclusions</div>
-              <ul style="margin:0;padding-left:18px;color:#555">
-                <li>Returns not guaranteed &mdash; depend on investment performance</li>
-                <li>Death benefit limited to USD 1,000 minimum (not SA-based)</li>
-                <li>Not renewable after 15-year term</li>
-              </ul>
+          <div style="font-size:12px;line-height:1.6;color:#444;padding:2px 0 8px">
+            Invest in <strong>USD for 15 years</strong> &mdash; protected from currency risk. Your money is invested in funds and grows to a target maturity value.
+          </div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px">
+            <span style="font-size:10.5px;background:#fef9c3;color:#854d0e;border-radius:12px;padding:2px 8px;font-weight:600">USD</span>
+            <span style="font-size:10.5px;background:#fef9c3;color:#854d0e;border-radius:12px;padding:2px 8px;font-weight:600">Min: USD 45/mo</span>
+            <span style="font-size:10.5px;background:#fef9c3;color:#854d0e;border-radius:12px;padding:2px 8px;font-weight:600">Entry: 18&ndash;60</span>
+          </div>
+          <button onclick="toggleFactSheet('my')" class="fs-toggle-btn"><span>Fact Sheet (agent)</span><span id="my-fs-arrow">&#9660;</span></button>
+          <div id="my-factsheet" style="display:none;font-size:11.5px;line-height:1.65;color:#333;padding:8px 0 2px">
+            <div class="fs-head">Key Benefits</div>
+            <table class="fs-tbl">
+              <tr><td>Maturity</td><td>Fund value paid in MWK at official exchange rate, or swap for VLA land</td></tr>
+              <tr><td>Death benefit</td><td>Higher of USD 1,000 or fund value</td></tr>
+              <tr><td>Surrender</td><td>Available after 2 full years of contributions</td></tr>
+              <tr><td>Top-ups</td><td>Additional contributions permitted any time</td></tr>
+              <tr><td>Cooling-off</td><td>30 days from policy inception</td></tr>
+            </table>
+            <div class="fs-head">Fund Allocation</div>
+            <div style="background:#f7f4f0;border-radius:6px;padding:7px 9px;font-size:11px;margin-bottom:6px">
+              Premiums invested in a segregated USD fund across:<br>
+              &bull; Money market instruments &bull; MSE equities &bull; Property
             </div>
+            <div class="fs-head">Exclusions</div>
+            <ul class="fs-ul"><li>Returns not guaranteed &mdash; depend on fund performance</li><li>Not renewable after 15-year term</li></ul>
           </div>
           <div class="product-footer" style="justify-content:space-between;align-items:center;margin-top:8px">
-            <span class="product-live-badge">&#9679; LIVE &mdash; Quoting enabled</span>
-            <button class="btn-sm btn-pdf" onclick="switchTab('manga-yako')">Quote now</button>
+            <span class="product-live-badge">&#9679; LIVE</span>
+            <div style="display:flex;gap:6px">
+              <button class="btn-sm" onclick="shareProductSheet('my')" style="border-color:#25d366;color:#128c7e;font-size:11px">&#128172; Share</button>
+              <button class="btn-sm btn-pdf" onclick="switchTab('manga-yako')" style="font-size:11px">Quote now</button>
+            </div>
           </div>
         </div>
 
-        <!-- Education Plans -->
+        <!-- Education Plans card -->
         <div class="product-card">
           <div class="product-header">
-            <div class="product-icon" style="background:#eff6ff">
-              <svg viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
-            </div>
-            <div>
-              <div class="product-name">Education Plans (Little Genius &amp; TEP)</div>
-              <div class="product-type">Children&apos;s Endowment &middot; With Profits &middot; MWK</div>
-            </div>
+            <div class="product-icon" style="background:#eff6ff"><svg viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg></div>
+            <div><div class="product-name">Education Plans</div><div class="product-type">Little Genius &amp; TEP &middot; Children&apos;s Endowment &middot; MWK</div></div>
           </div>
-          <div style="padding:0 4px">
-            <button onclick="toggleFactSheet('edu')" style="width:100%;background:none;border:1px solid #ede4da;border-radius:6px;padding:8px 12px;text-align:left;cursor:pointer;font-size:12px;color:var(--M);font-weight:600;font-family:'DM Sans',sans-serif;display:flex;justify-content:space-between;align-items:center">
-              <span>View Fact Sheet</span><span id="edu-fs-arrow">&#9660;</span>
-            </button>
-            <div id="edu-factsheet" style="display:none;font-size:12px;line-height:1.7;color:#333;padding:10px 4px 4px">
-              <div style="font-weight:700;color:var(--M);margin-bottom:6px">Plan Variants</div>
-              <table style="width:100%;border-collapse:collapse;font-size:11.5px;margin-bottom:10px">
-                <tr style="background:var(--M)"><th style="padding:6px 8px;color:#fff;text-align:left;font-weight:600">Plan</th><th style="padding:6px 8px;color:#fff;text-align:left;font-weight:600">Life Cover</th><th style="padding:6px 8px;color:#fff;text-align:left;font-weight:600">With Profits</th></tr>
-                <tr style="background:#f7f4f0"><td style="padding:5px 8px">LGP-LC</td><td style="padding:5px 8px">&#10003; Yes</td><td style="padding:5px 8px">&#10003; Yes</td></tr>
-                <tr><td style="padding:5px 8px">LGP-NL</td><td style="padding:5px 8px">&#10005; No</td><td style="padding:5px 8px">&#10003; Yes</td></tr>
-                <tr style="background:#f7f4f0"><td style="padding:5px 8px">LGE-WP</td><td style="padding:5px 8px">&#10003; Yes</td><td style="padding:5px 8px">&#10003; Yes + College</td></tr>
-                <tr><td style="padding:5px 8px">TEP</td><td style="padding:5px 8px">&#10003; Yes</td><td style="padding:5px 8px">&#10003; Yes (Tertiary)</td></tr>
-              </table>
-
-              <div style="font-weight:700;color:var(--M);margin:10px 0 6px">Key Parameters</div>
-              <table style="width:100%;border-collapse:collapse;font-size:11.5px">
-                <tr style="background:#f7f4f0"><td style="padding:5px 8px;color:#666;width:50%">Life assured</td><td style="padding:5px 8px;font-weight:600">Child (age 0&ndash;17)</td></tr>
-                <tr><td style="padding:5px 8px;color:#666">Proposer / payer</td><td style="padding:5px 8px;font-weight:600">Parent / guardian (age 18&ndash;60)</td></tr>
-                <tr style="background:#f7f4f0"><td style="padding:5px 8px;color:#666">Premium term</td><td style="padding:5px 8px;font-weight:600">Until child&apos;s 13th birthday</td></tr>
-                <tr><td style="padding:5px 8px;color:#666">Benefit term</td><td style="padding:5px 8px;font-weight:600">6 annual payments from age 13</td></tr>
-                <tr style="background:#f7f4f0"><td style="padding:5px 8px;color:#666">Bonus projection</td><td style="padding:5px 8px;font-weight:600">10% p.a. compound (illustrative)</td></tr>
-                <tr><td style="padding:5px 8px;color:#666">College benefit</td><td style="padding:5px 8px;font-weight:600">LGE-WP only &mdash; additional SA</td></tr>
-              </table>
-
-              <div style="font-weight:700;color:var(--M);margin:10px 0 6px">Benefits on Death of Parent (proposer)</div>
-              <div style="display:flex;flex-direction:column;gap:5px">
-                <div style="padding:6px 8px;background:#f7f4f0;border-radius:4px"><strong>LGP-LC &amp; LGE-WP &amp; TEP:</strong> Policy continues with-profits; no further premiums required. Child receives full maturity benefit.</div>
-                <div style="padding:6px 8px;border-radius:4px"><strong>LGP-NL:</strong> Return of premiums paid plus 4% p.a. (90% if death in first 2 years).</div>
-              </div>
-
-              <div style="font-weight:700;color:var(--M);margin:10px 0 6px">Benefits on Death of Child</div>
-              <p style="margin:0 0 6px;color:#555">Parent may: (a) nominate another child; (b) continue the policy for their own benefit; or (c) cancel and receive premiums refunded plus 5% p.a.</p>
-
-              <div style="font-weight:700;color:var(--M);margin:10px 0 6px">Exclusions</div>
-              <ul style="margin:0;padding-left:18px;color:#555">
-                <li>Pre-existing conditions not disclosed at entry</li>
-                <li>Suicide (parent or child) within first 2 policy years</li>
-              </ul>
-            </div>
+          <div style="font-size:12px;line-height:1.6;color:#444;padding:2px 0 8px">
+            Secure your child&apos;s education from birth. Policy pays <strong>6 annual instalments</strong> from the child&apos;s 13th birthday. If parent dies, policy continues &mdash; no more premiums needed.
+          </div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px">
+            <span style="font-size:10.5px;background:#eff6ff;color:#1e40af;border-radius:12px;padding:2px 8px;font-weight:600">Child age 0&ndash;17</span>
+            <span style="font-size:10.5px;background:#eff6ff;color:#1e40af;border-radius:12px;padding:2px 8px;font-weight:600">Parent 18&ndash;60</span>
+            <span style="font-size:10.5px;background:#eff6ff;color:#1e40af;border-radius:12px;padding:2px 8px;font-weight:600">With Profits</span>
+          </div>
+          <button onclick="toggleFactSheet('edu')" class="fs-toggle-btn"><span>Fact Sheet (agent)</span><span id="edu-fs-arrow">&#9660;</span></button>
+          <div id="edu-factsheet" style="display:none;font-size:11.5px;line-height:1.65;color:#333;padding:8px 0 2px">
+            <div class="fs-head">Plan Variants</div>
+            <table class="fs-tbl">
+              <tr style="background:var(--ML)"><th style="color:var(--M)">Plan</th><th style="color:var(--M)">Life Cover</th><th style="color:var(--M)">Notes</th></tr>
+              <tr><td>LGP-LC</td><td>&#10003;</td><td>Standard with life cover</td></tr>
+              <tr><td>LGP-NL</td><td>&#10005;</td><td>Lower premium, no life cover</td></tr>
+              <tr><td>LGE-WP</td><td>&#10003;</td><td>With profits + college benefit</td></tr>
+              <tr><td>TEP</td><td>&#10003;</td><td>Tertiary education focus</td></tr>
+            </table>
+            <div class="fs-head">Key Benefits</div>
+            <table class="fs-tbl">
+              <tr><td>Maturity</td><td>SA + bonuses paid in 6 annual instalments from child&apos;s 13th birthday</td></tr>
+              <tr><td>On parent&apos;s death (LGP-LC / LGE-WP / TEP)</td><td>Policy continues with-profits, no further premiums due</td></tr>
+              <tr><td>On parent&apos;s death (LGP-NL)</td><td>Return of premiums + 4% p.a. (90% if death in Yrs 1&ndash;2)</td></tr>
+              <tr><td>On child&apos;s death</td><td>Nominate another child, continue, or cancel with premiums + 5% p.a.</td></tr>
+              <tr><td>College benefit</td><td>LGE-WP only &mdash; additional SA at college entry</td></tr>
+            </table>
+            <div class="fs-head">Exclusions</div>
+            <ul class="fs-ul"><li>Suicide within first 2 years</li><li>Undisclosed pre-existing conditions</li></ul>
           </div>
           <div class="product-footer" style="justify-content:space-between;align-items:center;margin-top:8px">
-            <span class="product-live-badge">&#9679; LIVE &mdash; Quoting enabled</span>
-            <button class="btn-sm btn-pdf" onclick="switchTab('edu-plans')">Quote now</button>
+            <span class="product-live-badge">&#9679; LIVE</span>
+            <div style="display:flex;gap:6px">
+              <button class="btn-sm" onclick="shareProductSheet('edu')" style="border-color:#25d366;color:#128c7e;font-size:11px">&#128172; Share</button>
+              <button class="btn-sm btn-pdf" onclick="switchTab('edu-plans')" style="font-size:11px">Quote now</button>
+            </div>
           </div>
         </div>
 
-        <!-- Coming Soon -->
-        <div class="product-card" style="opacity:.7">
-          <div class="product-header">
-            <div class="product-icon" style="background:#fdf4ff"><svg viewBox="0 0 24 24" fill="none" stroke="#a21caf" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></div>
-            <div><div class="product-name">Pension Annuity</div><div class="product-type">Retirement &middot; Income for life</div></div>
+        <!-- Bonus table card -->
+        <div class="card" style="margin-bottom:10px">
+          <button onclick="toggleFactSheet('bonus')" class="fs-toggle-btn" style="width:100%"><span style="font-size:12px;font-weight:700;color:var(--M)">&#128200; Bonus Growth Table (per MK 1M SA @ 7% p.a.)</span><span id="bonus-fs-arrow">&#9660;</span></button>
+          <div id="bonus-factsheet" style="display:none;margin-top:8px">
+            <p style="font-size:11px;color:#888;margin:0 0 8px">Illustrative only &mdash; assumes 7% p.a. reversionary bonus. Actual bonuses declared annually by VLA board. Not guaranteed.</p>
+            <div style="overflow-x:auto">
+            <table class="fs-tbl" style="font-size:11px">
+              <tr style="background:var(--M)"><th style="color:#fff;padding:5px 8px">Years</th><th style="color:#fff;padding:5px 8px;text-align:right">Bonus Added</th><th style="color:#fff;padding:5px 8px;text-align:right">Total Claim Value</th></tr>
+              <tr><td>5</td><td style="text-align:right">MK 402,552</td><td style="text-align:right"><strong>MK 1,402,552</strong></td></tr>
+              <tr><td>10</td><td style="text-align:right">MK 967,151</td><td style="text-align:right"><strong>MK 1,967,151</strong></td></tr>
+              <tr><td>15</td><td style="text-align:right">MK 1,759,032</td><td style="text-align:right"><strong>MK 2,759,032</strong></td></tr>
+              <tr><td>20</td><td style="text-align:right">MK 2,869,684</td><td style="text-align:right"><strong>MK 3,869,684</strong></td></tr>
+              <tr><td>25</td><td style="text-align:right">MK 4,427,433</td><td style="text-align:right"><strong>MK 5,427,433</strong></td></tr>
+              <tr><td>30</td><td style="text-align:right">MK 6,612,255</td><td style="text-align:right"><strong>MK 7,612,255</strong></td></tr>
+              <tr><td>35</td><td style="text-align:right">MK 9,676,581</td><td style="text-align:right"><strong>MK 10,676,581</strong></td></tr>
+            </table>
+            </div>
           </div>
-          <div style="font-size:11.5px;color:#888;padding:4px 4px 8px">Guaranteed monthly income for retirees. Single life, joint life, and period-certain options. Managed by Vanguard Pension Services.</div>
-          <div class="product-footer"><span class="product-coming-badge">Coming soon</span></div>
-        </div>
-        <div class="product-card" style="opacity:.7">
-          <div class="product-header">
-            <div class="product-icon" style="background:#f0fdf4"><svg viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
-            <div><div class="product-name">Flexi Life Plan</div><div class="product-type">Whole Life &middot; Flexible premiums</div></div>
-          </div>
-          <div style="font-size:11.5px;color:#888;padding:4px 4px 8px">Whole life cover with flexible premiums. Critical illness, disability benefit, and funeral cover add-ons available.</div>
-          <div class="product-footer"><span class="product-coming-badge">Coming soon</span></div>
         </div>
 
       </div><!-- /res-panel-products -->
 
-      <!-- ══ GENERAL INFO PANEL ══ -->
-      <div id="res-panel-general" style="display:none;padding:14px;overflow-y:auto">
-
-        <div class="card" style="margin-bottom:12px">
-          <div class="sec-lbl" style="margin:0 0 10px">About Vanguard Life Assurance</div>
-          <p style="font-size:12px;line-height:1.7;color:#444;margin:0 0 8px">Vanguard Life Assurance Company Limited is a registered life insurer in Malawi, regulated by the Reserve Bank of Malawi. It offers a full range of life, savings, and pension products to individuals and groups through its agency force and Vanguard Pension Services.</p>
-          <table style="width:100%;border-collapse:collapse;font-size:11.5px">
-            <tr style="background:#f7f4f0"><td style="padding:5px 8px;color:#666;width:42%">Regulator</td><td style="padding:5px 8px;font-weight:600">Reserve Bank of Malawi</td></tr>
-            <tr><td style="padding:5px 8px;color:#666">Head office</td><td style="padding:5px 8px;font-weight:600">Robins Road, P.O. Box 1625, Blantyre</td></tr>
-            <tr style="background:#f7f4f0"><td style="padding:5px 8px;color:#666">Telephone</td><td style="padding:5px 8px;font-weight:600">+265 887 094 872</td></tr>
-            <tr><td style="padding:5px 8px;color:#666">Email</td><td style="padding:5px 8px;font-weight:600">vanguard@vanguardlifemw.com</td></tr>
-            <tr style="background:#f7f4f0"><td style="padding:5px 8px;color:#666">Website</td><td style="padding:5px 8px;font-weight:600">vanguardlifemw.com</td></tr>
-            <tr><td style="padding:5px 8px;color:#666">Client helpline</td><td style="padding:5px 8px;font-weight:600">3043 (VLA)</td></tr>
-          </table>
+      <!-- ══ FAQs ══ -->
+      <div id="res-panel-faqs" style="display:none;padding:12px;overflow-y:auto">
+        <div class="card" style="margin-bottom:10px">
+          <div class="sec-lbl" style="margin:0 0 10px">Frequently Asked Questions</div>
+          <div id="faq-list"></div>
         </div>
+      </div><!-- /res-panel-faqs -->
 
-        <div class="card" style="margin-bottom:12px">
-          <div class="sec-lbl" style="margin:0 0 10px">Life Insurance &mdash; Key Concepts</div>
-          <div style="font-size:12px;line-height:1.7;color:#444;display:flex;flex-direction:column;gap:8px">
-            <div><strong style="color:var(--M)">Sum Assured (SA)</strong><br>The guaranteed amount payable on a specified event (death or maturity). In with-profits policies the SA grows as bonuses are added.</div>
-            <div style="background:#f7f4f0;padding:8px 10px;border-radius:6px"><strong style="color:var(--M)">Reversionary Bonus</strong><br>An annual addition to the sum assured declared by the insurer. Once declared, it cannot be taken away. It compounds year on year and is payable on maturity or death.</div>
-            <div><strong style="color:var(--M)">Age Next Birthday (ANB)</strong><br>The age used for underwriting and premium calculation purposes. It is the age the policyholder will turn on their next birthday &mdash; which may be 0 or 1 year older than their current age depending on timing.</div>
-            <div style="background:#f7f4f0;padding:8px 10px;border-radius:6px"><strong style="color:var(--M)">Policy Fee</strong><br>A fixed charge per policy period (monthly or annual) to cover administration costs. It is separate from the risk/savings premium and does not attract bonuses.</div>
-            <div><strong style="color:var(--M)">Surrender Value</strong><br>The cash amount payable if a policyholder cancels the policy early. It is calculated on a formula basis and is always less than the maturity value. Typically available after 2&ndash;3 years of premiums paid.</div>
-            <div style="background:#f7f4f0;padding:8px 10px;border-radius:6px"><strong style="color:var(--M)">Paid-Up Policy</strong><br>If a policyholder stops paying premiums after the minimum period, the policy can be converted to paid-up status. The sum assured is reduced in proportion to premiums paid, and the policy continues to maturity without further contributions.</div>
-            <div><strong style="color:var(--M)">Double Accident Benefit (DAB)</strong><br>An optional rider that pays an additional sum equal to the SA if the policyholder dies or is permanently disabled due to an accident. The cost depends on the policyholder&apos;s occupation class.</div>
-            <div style="background:#f7f4f0;padding:8px 10px;border-radius:6px"><strong style="color:var(--M)">With-Profits vs Unit-Linked</strong><br><em>With-profits:</em> premiums pooled; insurer invests and declares a bonus each year. Low risk, smoothed returns, guaranteed SA. Used by PSP, Phindu, Edu plans.<br><em>Unit-linked:</em> premiums buy units in an investment fund; value fluctuates with markets. Used by Manga Yako (USD fund).</div>
-            <div><strong style="color:var(--M)">Free-look / Cooling-off Period</strong><br>A period (typically 30 days from policy issue) during which the policyholder may cancel and receive a full premium refund. Manga Yako: 30 days. Other products: check policy schedule.</div>
-            <div style="background:#f7f4f0;padding:8px 10px;border-radius:6px"><strong style="color:var(--M)">Non-Disclosure</strong><br>Policyholders are legally obliged to disclose all material facts at the time of application. Failure to disclose (e.g. a pre-existing condition) may result in the policy being voided or a claim being declined.</div>
+      <!-- ══ GENERAL INFO ══ -->
+      <div id="res-panel-general" style="display:none;padding:12px;overflow-y:auto">
+        <div class="card" style="margin-bottom:10px">
+          <div class="sec-lbl" style="margin:0 0 8px">What is Life Assurance?</div>
+          <p style="font-size:12px;line-height:1.7;color:#444;margin:0 0 8px">A contract where VLA pays a sum of money on a specified event (death or maturity). The policy provides financial protection for your family and builds savings at the same time. Life assurance is written on a <em>utmost good faith</em> basis &mdash; all material facts must be disclosed.</p>
+          <div class="sec-lbl" style="margin:10px 0 8px">Who Can Apply?</div>
+          <ul style="font-size:12px;line-height:1.7;color:#444;margin:0;padding-left:16px">
+            <li>Any person aged 18 or above</li>
+            <li>Can pay premiums regularly</li>
+            <li>Has insurable interest in the life being assured</li>
+            <li>Recommended: premiums should not exceed 10% of gross salary</li>
+          </ul>
+        </div>
+        <div class="card" style="margin-bottom:10px">
+          <div class="sec-lbl" style="margin:0 0 8px">Policy Conditions &amp; Privileges</div>
+          <div style="font-size:12px;line-height:1.7;color:#444;display:flex;flex-direction:column;gap:7px">
+            <div><strong style="color:var(--M)">Grace Period</strong><br>Monthly: 15 days. Quarterly/Half-yearly/Annual: 1 calendar month. Policy lapses if premium unpaid after grace period (unless Non-Forfeiture Scheme applies).</div>
+            <div style="background:#f7f4f0;padding:8px;border-radius:6px"><strong style="color:var(--M)">Non-Forfeiture Scheme</strong><br>Once a surrender value is acquired, unpaid premiums are deducted from the surrender value to keep the policy in force until exhausted.</div>
+            <div><strong style="color:var(--M)">Policy Loan</strong><br>Up to 95% of surrender value. Minimum MK 15,000. Interest rate: 30% p.a. Repayable by cash or monthly stop order.</div>
+            <div style="background:#f7f4f0;padding:8px;border-radius:6px"><strong style="color:var(--M)">Dating of Policies</strong><br>All policies dated the 1st of the month. May be backdated up to 6 months (not into previous calendar year) to obtain lower age benefit.</div>
+            <div><strong style="color:var(--M)">Policy Fees (Conventional)</strong><br>Monthly: MK 600 &nbsp;|&nbsp; Quarterly: MK 1,800 &nbsp;|&nbsp; Half-yearly: MK 3,565 &nbsp;|&nbsp; Annual: MK 7,129</div>
+            <div style="background:#f7f4f0;padding:8px;border-radius:6px"><strong style="color:var(--M)">Minimum Premiums</strong><br>Monthly: MK 2,500 &nbsp;|&nbsp; Quarterly: MK 7,500 &nbsp;|&nbsp; Half-yearly: MK 14,707 &nbsp;|&nbsp; Annual: MK 28,749</div>
+            <div><strong style="color:var(--M)">Proof of Age</strong><br>Required for death claims. Acceptable: birth certificate, baptism certificate (under 18 at baptism), Malawi passport, NRC with photo.</div>
+            <div style="background:#f7f4f0;padding:8px;border-radius:6px"><strong style="color:var(--M)">Foreign Travel / Residence</strong><br>Cover is free from restrictions on occupation, foreign travel or residence unless the policy is otherwise endorsed.</div>
           </div>
         </div>
-
-        <div class="card" style="margin-bottom:12px">
-          <div class="sec-lbl" style="margin:0 0 10px">Regulatory Information</div>
+        <div class="card" style="margin-bottom:10px">
+          <div class="sec-lbl" style="margin:0 0 8px">Key Concepts</div>
           <div style="font-size:12px;line-height:1.7;color:#444;display:flex;flex-direction:column;gap:6px">
-            <p style="margin:0">All VLA policies are regulated under the <strong>Insurance Act of Malawi</strong> and supervised by the <strong>Reserve Bank of Malawi</strong>. VLA is required to maintain minimum statutory reserves and solvency margins at all times.</p>
-            <p style="margin:0;background:#f7f4f0;padding:8px 10px;border-radius:6px">Projections shown in quotations assume a <strong>10% p.a.</strong> compound annual reversionary bonus for with-profits plans, or investment return for Manga Yako. These are <strong>illustrative only and are not guaranteed</strong>. Actual bonuses/returns depend on investment performance and are declared annually by the Board.</p>
-            <p style="margin:0">Complaints should be directed to VLA in the first instance. Unresolved complaints may be escalated to the <strong>Reserve Bank of Malawi, Financial Services Division</strong>.</p>
+            <div><strong style="color:var(--M)">ANB (Age Next Birthday)</strong> &mdash; Age used for premium calculation. May be 0&ndash;1 year older than current age.</div>
+            <div style="background:#f7f4f0;padding:6px 8px;border-radius:6px"><strong style="color:var(--M)">Reversionary Bonus</strong> &mdash; Annual addition to SA, once declared cannot be removed. Compounds yearly.</div>
+            <div><strong style="color:var(--M)">Sum Assured (SA)</strong> &mdash; The guaranteed base amount. Grows as bonuses are added each year.</div>
+            <div style="background:#f7f4f0;padding:6px 8px;border-radius:6px"><strong style="color:var(--M)">With-Profits</strong> &mdash; Premiums pooled; insurer invests and declares an annual bonus. Stable, smoothed returns. Used by PSP, Phindu, Edu.</div>
+            <div><strong style="color:var(--M)">Uberrimae Fides</strong> &mdash; Utmost good faith. All material facts must be disclosed. Non-disclosure can void the policy.</div>
           </div>
         </div>
-
+        <div class="card" style="margin-bottom:10px">
+          <div class="sec-lbl" style="margin:0 0 8px">Regulatory &amp; Compliance</div>
+          <p style="font-size:12px;line-height:1.7;color:#444;margin:0 0 6px">Regulated by the <strong>Reserve Bank of Malawi</strong> under the Insurance Act. VLA maintains minimum statutory reserves and solvency margins at all times.</p>
+          <p style="font-size:12px;line-height:1.7;color:#444;margin:0;background:#f7f4f0;padding:8px;border-radius:6px">Projections at <strong>10% p.a.</strong> are illustrative. The rate book bonus table uses <strong>7% p.a.</strong> for conservative illustration. Actual bonuses declared annually by the VLA Board &mdash; <strong>not guaranteed</strong>.</p>
+        </div>
       </div><!-- /res-panel-general -->
 
-      <!-- ══ UNDERWRITING PANEL ══ -->
-      <div id="res-panel-uw" style="display:none;padding:14px;overflow-y:auto">
+      <!-- ══ UNDERWRITING ══ -->
+      <div id="res-panel-uw" style="display:none;padding:12px;overflow-y:auto">
 
-        <div class="card" style="margin-bottom:12px">
-          <div class="sec-lbl" style="margin:0 0 6px">DAB Occupation Classes</div>
-          <p style="font-size:11.5px;color:#666;margin:0 0 10px">The Double Accident Benefit (DAB) rate is determined by the policyholder&apos;s occupation class. Higher-risk occupations attract higher rates. Class 6 occupations are not eligible for DAB.</p>
-
-          <!-- Class summary table -->
-          <table style="width:100%;border-collapse:collapse;font-size:11.5px;margin-bottom:12px">
-            <tr style="background:var(--M)">
-              <th style="padding:6px 8px;color:#fff;text-align:left">Class</th>
-              <th style="padding:6px 8px;color:#fff;text-align:left">Description</th>
-              <th style="padding:6px 8px;color:#fff;text-align:right">DAB Rate</th>
-            </tr>
-            <tr style="background:#f7f4f0"><td style="padding:5px 8px;font-weight:700">1</td><td style="padding:5px 8px">Professional &amp; Administrative</td><td style="padding:5px 8px;text-align:right;font-weight:600">MK 1.50 / 1,000 SA</td></tr>
-            <tr><td style="padding:5px 8px;font-weight:700">2</td><td style="padding:5px 8px">Clerical / Light Duty</td><td style="padding:5px 8px;text-align:right;font-weight:600">MK 2.50 / 1,000 SA</td></tr>
-            <tr style="background:#f7f4f0"><td style="padding:5px 8px;font-weight:700">2A</td><td style="padding:5px 8px">Clerical with Liquor/Travel Risk</td><td style="padding:5px 8px;text-align:right;font-weight:600">MK 3.50 / 1,000 SA</td></tr>
-            <tr><td style="padding:5px 8px;font-weight:700">3</td><td style="padding:5px 8px">Skilled Manual</td><td style="padding:5px 8px;text-align:right;font-weight:600">MK 3.50 / 1,000 SA</td></tr>
-            <tr style="background:#f7f4f0"><td style="padding:5px 8px;font-weight:700">3A</td><td style="padding:5px 8px">Skilled Manual (Higher Hazard)</td><td style="padding:5px 8px;text-align:right;font-weight:600">MK 4.50 / 1,000 SA</td></tr>
-            <tr><td style="padding:5px 8px;font-weight:700">3B</td><td style="padding:5px 8px">Skilled Manual (Spray/Chemical)</td><td style="padding:5px 8px;text-align:right;font-weight:600">MK 4.50 / 1,000 SA</td></tr>
-            <tr style="background:#f7f4f0"><td style="padding:5px 8px;font-weight:700">4</td><td style="padding:5px 8px">Heavy Manual</td><td style="padding:5px 8px;text-align:right;font-weight:600">MK 5.50 / 1,000 SA</td></tr>
-            <tr><td style="padding:5px 8px;font-weight:700">4A</td><td style="padding:5px 8px">Heavy Manual (High Risk)</td><td style="padding:5px 8px;text-align:right;font-weight:600">MK 6.00 / 1,000 SA</td></tr>
-            <tr style="background:#f7f4f0"><td style="padding:5px 8px;font-weight:700">4C</td><td style="padding:5px 8px">High Voltage / Electrical</td><td style="padding:5px 8px;text-align:right;font-weight:600">MK 8.00 / 1,000 SA</td></tr>
-            <tr><td style="padding:5px 8px;font-weight:700">5A</td><td style="padding:5px 8px">Very High Risk Manual</td><td style="padding:5px 8px;text-align:right;font-weight:600">MK 9.00 / 1,000 SA</td></tr>
-            <tr style="background:#f7f4f0"><td style="padding:5px 8px;font-weight:700">5B</td><td style="padding:5px 8px">Hazardous (Blasting/Demolition)</td><td style="padding:5px 8px;text-align:right;font-weight:600">MK 10.00 / 1,000 SA</td></tr>
-            <tr><td style="padding:5px 8px;font-weight:700">5C</td><td style="padding:5px 8px">Explosives / Extreme Hazard</td><td style="padding:5px 8px;text-align:right;font-weight:600">MK 12.00 / 1,000 SA</td></tr>
-            <tr style="background:#fee2e2"><td style="padding:5px 8px;font-weight:700;color:#991b1b">6</td><td style="padding:5px 8px;color:#991b1b">Excluded (No DAB available)</td><td style="padding:5px 8px;text-align:right;font-weight:700;color:#991b1b">Not available</td></tr>
-          </table>
-
-          <!-- Occupation lookup -->
-          <div style="margin-bottom:8px;font-weight:700;font-size:12px;color:var(--M)">Occupation Lookup</div>
-          <input type="text" id="uw-occ-search" placeholder="Search occupation..." oninput="uwOccSearch(this.value)"
-            style="width:100%;box-sizing:border-box;border:1.5px solid #ede4da;border-radius:6px;padding:9px 12px;font-size:13px;font-family:'DM Sans',sans-serif;outline:none;margin-bottom:8px">
-          <div id="uw-occ-results" style="font-size:12px;min-height:32px;color:#555"></div>
+        <div class="card" style="margin-bottom:10px">
+          <div class="sec-lbl" style="margin:0 0 6px">Underwriting Guidelines</div>
+          <div style="font-size:12px;line-height:1.7;color:#444;display:flex;flex-direction:column;gap:6px">
+            <div><strong style="color:var(--M)">Medical requirements</strong> &mdash; Depends on aggregate SA and risk level. Phindu: no medical tests. PSP: no exam up to standard limits. Higher SAs may require medical report.</div>
+            <div style="background:#f7f4f0;padding:6px 8px;border-radius:6px"><strong style="color:var(--M)">Declined / loaded cases</strong> &mdash; Never arrange medical exam for a life previously declined or deferred by VLA or any other office. Submit full non-medical proposal to underwriters.</div>
+            <div><strong style="color:var(--M)">Pregnant women / ill persons</strong> &mdash; Not accepted until after normal confinement or full recovery and return to work.</div>
+            <div style="background:#f7f4f0;padding:6px 8px;border-radius:6px"><strong style="color:var(--M)">HIV/AIDS</strong> &mdash; Routine HIV/AIDS questionnaire included in all proposals. Testing subject to periodic review by VLA underwriting.</div>
+            <div><strong style="color:var(--M)">Age limits by product</strong> &mdash; PSP: 18&ndash;65. Phindu: 18&ndash;65. Manga Yako: 18&ndash;60. Edu Plans: parent 18&ndash;60, child 0&ndash;17.</div>
+          </div>
         </div>
 
-        <div class="card" style="margin-bottom:12px">
-          <div class="sec-lbl" style="margin:0 0 8px">General Underwriting Guidelines</div>
-          <div style="font-size:12px;line-height:1.7;color:#444;display:flex;flex-direction:column;gap:7px">
-            <div style="background:#f7f4f0;padding:8px 10px;border-radius:6px"><strong>Age limits:</strong> Entry ages differ by product. PSP: 18&ndash;65 ANB. Phindu: 18&ndash;65 ANB. Manga Yako: 18&ndash;60 ANB. Education Plans: parent 18&ndash;60, child 0&ndash;17.</div>
-            <div><strong>Medical requirements:</strong> No medical examination required for PSP and Phindu at standard entry. Phindu explicitly has no medical tests. Higher SAs or substandard lives may require a medical report at VLA&apos;s discretion.</div>
-            <div style="background:#f7f4f0;padding:8px 10px;border-radius:6px"><strong>Non-standard risks:</strong> Applicants with significant health conditions, hazardous pursuits, or high-risk occupations (Class 4+) may be referred for full underwriting assessment. VLA may decline, load the premium, or impose an exclusion.</div>
-            <div><strong>Occupation classes:</strong> Determined at application. Class is used to set the DAB premium rate. The proposer&apos;s main occupation at inception applies. Change of occupation should be reported to VLA.</div>
-            <div style="background:#f7f4f0;padding:8px 10px;border-radius:6px"><strong>Duty of disclosure:</strong> All material facts must be disclosed. This includes medical history, existing policies, occupation hazards, and lifestyle factors (smoking, dangerous sports). VLA may void a policy or decline a claim if material non-disclosure is discovered.</div>
-            <div><strong>Cooling-off:</strong> 30-day cooling-off period from date of policy issue. Policyholder may cancel for full refund of premiums. Applies to all products.</div>
-            <div style="background:#f7f4f0;padding:8px 10px;border-radius:6px"><strong>Standard exclusions (all products):</strong>
-              <ul style="margin:4px 0 0;padding-left:18px;color:#555">
-                <li>Suicide within first 2 policy years</li>
-                <li>War, invasion, act of foreign enemy, civil war</li>
-                <li>Nuclear, biological, chemical contamination</li>
-                <li>Pre-existing undisclosed conditions (at VLA discretion)</li>
-              </ul>
-            </div>
-            <div><strong>DAB-specific exclusions:</strong>
-              <ul style="margin:4px 0 0;padding-left:18px;color:#555">
-                <li>Self-inflicted injury</li>
-                <li>Aviation (other than as a fare-paying passenger)</li>
-                <li>Criminal or illegal acts</li>
-                <li>Hazardous sports not declared at inception</li>
-              </ul>
-            </div>
+        <!-- Occupation Classes — editable by Admin -->
+        <div class="card" style="margin-bottom:10px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+            <div class="sec-lbl" style="margin:0">DAB Occupation Classes</div>
+            <button id="uw-edit-btn" onclick="uwToggleEdit()" style="font-size:11px;padding:4px 10px;border-radius:6px;border:1.5px solid var(--M);background:none;color:var(--M);cursor:pointer;font-weight:600;font-family:'DM Sans',sans-serif;display:none">Edit</button>
           </div>
+          <p style="font-size:11.5px;color:#666;margin:0 0 8px">DAB rate is charged per MK 1,000 of Sum Assured. Class 6 = no DAB available.</p>
+
+          <!-- Class rate summary — editable by admin -->
+          <div id="uw-class-table"></div>
+          <div id="uw-edit-panel" style="display:none;margin-top:10px;border-top:1px solid #ede4da;padding-top:10px">
+            <div style="font-size:11px;color:#888;margin-bottom:8px">Edit class rates &mdash; changes saved locally on this device only. Affects the Quote form occupation class lookup.</div>
+            <div id="uw-edit-rows"></div>
+            <button onclick="uwSaveClasses()" class="btn-sm btn-pdf" style="width:100%;padding:9px;margin-top:8px;font-size:12px">Save Class Rates</button>
+          </div>
+
+          <!-- Occupation lookup -->
+          <div style="margin-top:12px">
+            <div style="font-size:12px;font-weight:700;color:var(--M);margin-bottom:6px">Occupation Lookup</div>
+            <input type="text" id="uw-occ-search" placeholder="Type occupation to search..." oninput="uwOccSearch(this.value)"
+              style="width:100%;box-sizing:border-box;border:1.5px solid #ede4da;border-radius:8px;padding:9px 12px;font-size:13px;font-family:'DM Sans',sans-serif;outline:none;margin-bottom:6px">
+            <div id="uw-occ-results" style="font-size:12px;min-height:28px;color:#555"></div>
+          </div>
+        </div>
+
+        <div class="card" style="margin-bottom:10px">
+          <div class="sec-lbl" style="margin:0 0 8px">Standard Exclusions (All Products)</div>
+          <ul style="font-size:12px;line-height:1.7;color:#444;margin:0;padding-left:16px">
+            <li>Suicide within first 2 policy years</li>
+            <li>War, invasion, civil war, act of foreign enemy</li>
+            <li>Nuclear, biological, chemical contamination</li>
+            <li>Pre-existing undisclosed conditions (at VLA discretion)</li>
+          </ul>
+          <div class="sec-lbl" style="margin:10px 0 8px">DAB-Specific Exclusions</div>
+          <ul style="font-size:12px;line-height:1.7;color:#444;margin:0;padding-left:16px">
+            <li>Self-inflicted injury</li>
+            <li>Aviation (other than as fare-paying passenger)</li>
+            <li>Criminal or illegal acts</li>
+            <li>Hazardous sports not declared at inception</li>
+          </ul>
+          <div class="sec-lbl" style="margin:10px 0 8px">Extra Occupational Loadings (Annual Rate per MK 10,000 SA)</div>
+          <table class="fs-tbl">
+            <tr><td>Loading A</td><td style="text-align:right;font-weight:700">MK 8.00</td></tr>
+            <tr><td>Loading B</td><td style="text-align:right;font-weight:700">MK 16.00</td></tr>
+            <tr><td>Loading C</td><td style="text-align:right;font-weight:700">MK 32.00</td></tr>
+            <tr><td>Loading D</td><td style="text-align:right;font-weight:700">MK 64.00</td></tr>
+          </table>
         </div>
 
       </div><!-- /res-panel-uw -->
@@ -7405,45 +7370,200 @@ function shareBusinessCard(){
 }
 
 // ── RESOURCES TAB ──────────────────────────────────────────────────────
+const RES_TABS = ['products','faqs','general','uw'];
+
 function switchResTab(name){
-  ['products','general','uw'].forEach(t => {
+  RES_TABS.forEach(t => {
     const panel = document.getElementById('res-panel-'+t);
     const btn   = document.getElementById('res-tab-btn-'+t);
-    if(!panel || !btn) return;
-    const active = t === name;
+    if(!panel||!btn) return;
+    const active = t===name;
     panel.style.display = active ? '' : 'none';
-    btn.style.background = active ? 'rgba(255,255,255,.18)' : 'rgba(255,255,255,.08)';
-    btn.style.color      = active ? 'var(--CR)' : 'rgba(255,255,255,.65)';
+    btn.className = 'res-tab-btn ' + (active ? 'res-tab-active' : 'res-tab-inactive');
   });
+  if(name==='faqs')    renderFAQs();
+  if(name==='uw')      uwRenderClasses();
+  if(name==='uw' && isAdmin){ const b=document.getElementById('uw-edit-btn'); if(b) b.style.display=''; }
 }
 
 function toggleFactSheet(id){
-  const el    = document.getElementById(id+'-factsheet');
-  const arrow = document.getElementById(id+'-fs-arrow');
+  const el=document.getElementById(id+'-factsheet');
+  const ar=document.getElementById(id+'-fs-arrow');
   if(!el) return;
-  const open = el.style.display !== 'none';
-  el.style.display = open ? 'none' : 'block';
-  if(arrow) arrow.innerHTML = open ? '&#9660;' : '&#9650;';
+  const open=el.style.display!=='none';
+  el.style.display=open?'none':'block';
+  if(ar) ar.innerHTML=open?'&#9660;':'&#9650;';
+}
+
+// ── FAQs ──────────────────────────────────────────────────────────────
+const FAQ_KEY = 'vla_faqs';
+const DEFAULT_FAQS = [
+  {q:'What is life assurance?', a:'A contract where VLA pays a lump sum on death or at maturity. You pay regular premiums; VLA invests them and adds annual bonuses to grow your money.'},
+  {q:'How much do I need to pay each month?', a:'It depends on the sum assured (how much you want at maturity), your age, and the policy term. Use the Quote tab to get an exact figure instantly.'},
+  {q:'What happens if I miss a premium payment?', a:'You have a 15-day grace period for monthly payments. After that the policy may lapse, but if you have built up a surrender value, the Non-Forfeiture Scheme uses it to keep the policy alive.'},
+  {q:'Can I get my money back before maturity?', a:'Yes, after 2-3 years depending on the product. This is called a surrender value. You can also take a loan of up to 95% of the surrender value instead of cancelling.'},
+  {q:'What is a reversionary bonus?', a:'An annual addition to your sum assured declared by VLA. Once added, it cannot be taken away. It compounds each year, so your policy value grows faster over time.'},
+  {q:'What is the Double Accident Benefit (DAB)?', a:'An optional add-on that pays an extra sum (equal to your SA) if you die or are permanently disabled in an accident. The cost depends on your job type. Some high-risk occupations are not eligible.'},
+  {q:'Is the maturity value guaranteed?', a:'The basic sum assured is guaranteed. The bonus projections shown in quotes (10% p.a.) are illustrative only — actual bonuses are declared by the VLA Board each year and are not guaranteed.'},
+  {q:'What happens to my policy if I die?', a:'Your beneficiary receives the death benefit. In the first 1-2 years this is usually 90% of premiums paid or premiums + 4% p.a. After that it is typically the full SA plus all bonuses accumulated.'},
+  {q:'Can I take out a policy for my child?', a:'Yes — the Education Plans (Little Genius and TEP) are specifically designed for children. If you (the parent) die, the policy continues and VLA waives all future premiums.'},
+  {q:'What currency are policies in?', a:'Most VLA policies are in Malawi Kwacha (MWK). The Manga Yako Savings Plan is denominated in USD, making it ideal for diaspora clients or those who want protection from currency fluctuations.'},
+  {q:'How long does it take to get a policy issued?', a:'Standard cases with no medical requirements can be issued quickly after the proposal form and first premium are received. Cases requiring medical examinations may take longer.'},
+  {q:'What proof of age do I need?', a:'Birth certificate, baptism certificate (if under 18 at baptism), Malawi passport, or National Registration Card (with photo). Age must be proved before death claims are paid.'},
+];
+
+function getFAQs(){ try{ return JSON.parse(localStorage.getItem(FAQ_KEY)) || DEFAULT_FAQS; }catch(e){ return DEFAULT_FAQS; } }
+function saveFAQs(arr){ localStorage.setItem(FAQ_KEY, JSON.stringify(arr)); }
+
+function renderFAQs(){
+  const el = document.getElementById('faq-list');
+  if(!el) return;
+  const faqs = getFAQs();
+  el.innerHTML = faqs.map((f,i)=>
+    `<div class="faq-item">
+      <button class="faq-q" onclick="toggleFAQ(${i})">
+        <span>${f.q}</span><span id="faq-ar-${i}">&#9660;</span>
+      </button>
+      <div class="faq-a" id="faq-a-${i}">${f.a}
+        ${isAdmin?`<div style="display:flex;gap:6px;margin-top:8px">
+          <button class="btn-sm" onclick="editFAQ(${i})" style="font-size:11px">Edit</button>
+          <button class="btn-sm btn-danger" onclick="deleteFAQ(${i})" style="font-size:11px;padding:4px 8px">Delete</button>
+        </div>`:''}
+      </div>
+    </div>`
+  ).join('') + (isAdmin ?
+    `<div style="margin-top:10px">
+      <button class="btn-sm btn-pdf" onclick="addFAQ()" style="width:100%;padding:9px;font-size:12px">+ Add FAQ</button>
+    </div>` : '');
+}
+
+function toggleFAQ(i){
+  const a=document.getElementById('faq-a-'+i);
+  const ar=document.getElementById('faq-ar-'+i);
+  if(!a) return;
+  const open=a.style.display!=='none';
+  a.style.display=open?'none':'block';
+  if(ar) ar.innerHTML=open?'&#9660;':'&#9650;';
+}
+
+async function addFAQ(){
+  const q=prompt('Question:'); if(!q||!q.trim()) return;
+  const a=prompt('Answer:');   if(!a||!a.trim()) return;
+  const faqs=getFAQs(); faqs.push({q:q.trim(),a:a.trim()}); saveFAQs(faqs); renderFAQs();
+  showToast('\u2713 FAQ added');
+}
+
+async function editFAQ(i){
+  const faqs=getFAQs();
+  const q=prompt('Question:',faqs[i].q); if(!q||!q.trim()) return;
+  const a=prompt('Answer:',faqs[i].a);   if(!a||!a.trim()) return;
+  faqs[i]={q:q.trim(),a:a.trim()}; saveFAQs(faqs); renderFAQs();
+}
+
+async function deleteFAQ(i){
+  const ok=await appConfirm('Delete FAQ','Delete this FAQ entry?','Delete','#991b1b');
+  if(!ok) return;
+  const faqs=getFAQs(); faqs.splice(i,1); saveFAQs(faqs); renderFAQs();
+}
+
+// ── Occupation class editor ───────────────────────────────────────────
+const UW_CLASSES_KEY = 'vla_uw_classes';
+const DEFAULT_UW_CLASSES = [
+  {cls:'1',   label:'Professional & Administrative',       rate:1.50},
+  {cls:'2',   label:'Clerical / Light Duty',               rate:2.50},
+  {cls:'2A',  label:'Clerical with Liquor/Travel Risk',    rate:3.50},
+  {cls:'3',   label:'Skilled Manual',                      rate:3.50},
+  {cls:'3A',  label:'Skilled Manual (Higher Hazard)',      rate:4.50},
+  {cls:'3B',  label:'Skilled Manual (Spray/Chemical)',     rate:4.50},
+  {cls:'4',   label:'Heavy Manual',                        rate:5.50},
+  {cls:'4A',  label:'Heavy Manual (High Risk)',            rate:6.00},
+  {cls:'4C',  label:'High Voltage / Electrical',           rate:8.00},
+  {cls:'5A',  label:'Very High Risk Manual',               rate:9.00},
+  {cls:'5B',  label:'Hazardous (Blasting/Demolition)',     rate:10.00},
+  {cls:'5C',  label:'Explosives / Extreme Hazard',         rate:12.00},
+  {cls:'6',   label:'Excluded — No DAB available',         rate:0},
+];
+
+function getUWClasses(){ try{ return JSON.parse(localStorage.getItem(UW_CLASSES_KEY))||DEFAULT_UW_CLASSES; }catch(e){ return DEFAULT_UW_CLASSES; } }
+
+function uwRenderClasses(){
+  const cl=getUWClasses();
+  const tbl=document.getElementById('uw-class-table');
+  if(!tbl) return;
+  tbl.innerHTML=`<table class="fs-tbl">
+    <tr style="background:var(--M)"><th style="color:#fff">Class</th><th style="color:#fff">Description</th><th style="color:#fff;text-align:right">Rate / MK 1,000 SA</th></tr>
+    ${cl.map(c=>`<tr${c.cls==='6'?' style="background:#fee2e2"':''}>
+      <td style="font-weight:700${c.cls==='6'?';color:#991b1b':''}">${c.cls}</td>
+      <td style="${c.cls==='6'?'color:#991b1b':''}">${c.label}</td>
+      <td style="text-align:right;font-weight:700${c.cls==='6'?';color:#991b1b':''}">
+        ${c.rate>0?'MK '+c.rate.toFixed(2):'No DAB'}
+      </td></tr>`).join('')}
+  </table>`;
+  // Edit rows
+  const editRows=document.getElementById('uw-edit-rows');
+  if(editRows) editRows.innerHTML=cl.map((c,i)=>
+    `<div style="display:grid;grid-template-columns:48px 1fr 80px;gap:6px;align-items:center;margin-bottom:6px">
+      <input type="text" value="${c.cls}" id="uwcls-${i}" style="border:1px solid #ede4da;border-radius:5px;padding:5px 7px;font-size:12px;font-family:'DM Sans',sans-serif;text-align:center" ${c.cls==='6'?'readonly':''}>
+      <input type="text" value="${c.label}" id="uwlbl-${i}" style="border:1px solid #ede4da;border-radius:5px;padding:5px 7px;font-size:12px;font-family:'DM Sans',sans-serif">
+      <input type="number" value="${c.rate}" step="0.5" id="uwrate-${i}" style="border:1px solid #ede4da;border-radius:5px;padding:5px 7px;font-size:12px;font-family:'DM Sans',sans-serif;text-align:right">
+    </div>`
+  ).join('');
+}
+
+function uwToggleEdit(){
+  const panel=document.getElementById('uw-edit-panel');
+  const btn=document.getElementById('uw-edit-btn');
+  if(!panel) return;
+  const open=panel.style.display!=='none';
+  panel.style.display=open?'none':'block';
+  btn.textContent=open?'Edit':'Done';
+}
+
+function uwSaveClasses(){
+  const cl=getUWClasses();
+  const updated=cl.map((c,i)=>({
+    cls:  (document.getElementById('uwcls-'+i)||{value:c.cls}).value.trim()||c.cls,
+    label:(document.getElementById('uwlbl-'+i)||{value:c.label}).value.trim()||c.label,
+    rate: parseFloat((document.getElementById('uwrate-'+i)||{value:c.rate}).value)||0,
+  }));
+  localStorage.setItem(UW_CLASSES_KEY, JSON.stringify(updated));
+  showToast('\u2713 Occupation classes saved');
+  uwRenderClasses();
+  uwToggleEdit();
 }
 
 function uwOccSearch(val){
-  const res = document.getElementById('uw-occ-results');
+  const res=document.getElementById('uw-occ-results');
   if(!res) return;
-  const q = val.trim().toLowerCase();
-  if(q.length < 2){ res.innerHTML = '<span style="color:#aaa">Type at least 2 characters&hellip;</span>'; return; }
-  const hits = Object.entries(OCC_MAP)
-    .filter(([name]) => name.toLowerCase().includes(q))
-    .slice(0, 12);
-  if(!hits.length){ res.innerHTML = '<span style="color:#aaa">No matching occupation found.</span>'; return; }
-  res.innerHTML = hits.map(([name, o], i) =>
-    `<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 8px;` +
-    `${i%2===0 ? 'background:#f7f4f0;' : ''}border-radius:4px;margin-bottom:2px">` +
-    `<span style="font-size:12px;color:#333">${name}</span>` +
-    `<span style="font-size:11.5px;font-weight:700;color:var(--M);white-space:nowrap;margin-left:8px">` +
-    `Class ${o.cls} &nbsp;|&nbsp; ` +
-    (o.rate > 0 ? `MK ${o.rate.toFixed(2)}/1,000` : '<span style="color:#991b1b">No DAB</span>') +
-    `</span></div>`
-  ).join('');
+  const q=val.trim().toLowerCase();
+  if(q.length<2){ res.innerHTML='<span style="color:#aaa">Type at least 2 characters\u2026</span>'; return; }
+  const hits=Object.entries(OCC_MAP).filter(([n])=>n.toLowerCase().includes(q)).slice(0,12);
+  if(!hits.length){ res.innerHTML='<span style="color:#aaa">No match found.</span>'; return; }
+  const cl=getUWClasses();
+  res.innerHTML=hits.map(([name,o],i)=>{
+    const classInfo=cl.find(c=>c.cls===o.cls)||{label:''};
+    return `<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 8px;${i%2===0?'background:#f7f4f0;':''}border-radius:4px;margin-bottom:2px">
+      <div><div style="font-size:12px;color:#333">${name}</div><div style="font-size:10.5px;color:#888">${classInfo.label}</div></div>
+      <span style="font-size:11.5px;font-weight:700;color:var(--M);white-space:nowrap;margin-left:8px">
+        Cl.${o.cls} &nbsp;|&nbsp; ${o.rate>0?'MK '+o.rate.toFixed(2)+'/1,000':'<span style=\'color:#991b1b\'>No DAB</span>'}
+      </span></div>`;
+  }).join('');
+}
+
+// ── Share product summary via WhatsApp ────────────────────────────────
+const PRODUCT_SHARES = {
+  psp:   '*Pure Savings Plan — Vanguard Life*\n✅ Save for 5-35 years with guaranteed annual bonuses\n✅ Min Sum Assured: MK 12 million\n✅ Optional accident cover (DAB)\n✅ Surrender & loan available after 3 years\n📞 Call 3043 or reply to get a quote today.',
+  phindu:'*Phindu Savings Plan — Vanguard Life*\n✅ Save for 10 years & earn cash every 5 years (Money Tree)\n✅ No maximum sum assured\n✅ No medical tests required\n✅ Annual bonuses added every year\n📞 Call 3043 or reply to get a quote today.',
+  my:    '*Manga Yako Savings Plan — Vanguard Life*\n✅ Save in USD for 15 years — protected from currency risk\n✅ Min USD 45/month\n✅ Maturity value or exchange for VLA land\n✅ Death benefit: higher of USD 1,000 or fund value\n📞 Call 3043 or reply to get a quote today.',
+  edu:   '*Education Plans — Vanguard Life*\n✅ Secure your child\'s education from birth\n✅ Pays 6 annual instalments from child\'s 13th birthday\n✅ If parent dies, policy continues — no more premiums needed\n✅ With-profits bonus growth\n📞 Call 3043 or reply to get a quote today.',
+};
+
+function shareProductSheet(id){
+  const text=PRODUCT_SHARES[id];
+  if(!text) return;
+  const {mobile:agMob}=loadProfileData();
+  const footer='\n\n_'+( currentAgent||'Agent')+( agMob?' · '+agMob:'')+' | Vanguard Life Assurance_';
+  window.open('https://wa.me/?text='+encodeURIComponent(text+footer),'_blank');
 }
 
 function shareProductWA(productName){
