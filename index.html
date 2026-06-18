@@ -4502,7 +4502,7 @@ select.f-inp:focus ~ label.f-lbl { color: var(--M) }
               <div class="q-lh-address">
                 <div class="q-lh-addr-col"><span class="q-lh-icon">🏠</span><span>Robins Road, P.O. Box 1625, Blantyre, Malawi</span></div>
                 <div class="q-lh-addr-col"><span class="q-lh-icon">📱</span><span>+265 887 094 872</span></div>
-                <div class="q-lh-addr-col"><span class="q-lh-icon">✉</span><span><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="771e1911183701161910021605131b1e11121a005914181a">[email&#160;protected]</a></span></div>
+                <div class="q-lh-addr-col"><span class="q-lh-icon">✉</span><span><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="ee87808881ae988f80899b8f9c8a8287888b8399c08d8183">[email&#160;protected]</a></span></div>
               </div>
               <div class="q-lh-divider"></div>
             </div>
@@ -6463,7 +6463,7 @@ function renderQuoteDoc(q, isModal){
 
   <!-- ══ PREMIUM BAND ══ -->
   <!-- ══ PREMIUM — Option 2: merged single band + 3-col table ══ -->
-  <div style="background:#641414;padding:10px 18px;margin:4px 18px 0;border-radius:4px 4px 0 0;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid rgba(255,255,255,.12)">
+  <div style="background:#641414;padding:10px 18px;margin:4px 18px 0;border-radius:4px 4px 0 0;display:flex;justify-content:space-between;align-items:center">
     <div>
       <div style="font-size:9px;font-weight:600;color:rgba(216,201,180,.7);letter-spacing:.07em;text-transform:uppercase;margin-bottom:2px">Details of Premium</div>
       <div style="font-size:11px;font-weight:600;color:rgba(255,255,255,.9)">${freq}</div>
@@ -6591,13 +6591,10 @@ function buildQuoteDoc(cfg){
 
   // Single premium band — Option 2 style (label above, large cream amount)
   const premiumHTML = (cfg.premiumLabel && cfg.premiumValue!==undefined)
-    ? `<div style="background:#641414;padding:10px 18px;margin:4px 18px 0;border-radius:4px 4px 0 0;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid rgba(255,255,255,.12)">
-         <div>
-           <div style="font-size:9px;font-weight:600;color:rgba(216,201,180,.7);letter-spacing:.07em;text-transform:uppercase;margin-bottom:2px">${esc(cfg.premiumLabel)}</div>
-           <div style="font-size:11px;color:rgba(255,255,255,.75)">${esc(cfg.premiumFreq||'')}</div>
-         </div>
-         <span style="font-size:19px;font-weight:800;color:#D8C9B4;font-family:'Playfair Display',serif">${esc(cfg.premiumValue)}</span>
-       </div>` : '';;
+    ? `<div style="background:#641414;padding:10px 18px;margin:4px 18px 0;border-radius:4px;display:flex;justify-content:space-between;align-items:center;">
+         <span style="font-size:10px;font-weight:700;color:rgba(216,201,180,.75);letter-spacing:.07em;text-transform:uppercase">${esc(cfg.premiumLabel)}${cfg.premiumFreq?(' &middot; '+esc(cfg.premiumFreq)):''}</span>
+         <span style="font-size:18px;font-weight:800;color:#D8C9B4;font-family:'Playfair Display',serif">${esc(cfg.premiumValue)}</span>
+       </div>` : '';
 
   // Optional extra sections (e.g. benefits, profit summary)
   const extraHTML = (cfg.extraSections||[]).map(s =>
@@ -9154,7 +9151,9 @@ function loadProfileData(agentName){
   const _ag=(getAgents()||{})[who]||{};
   const mobile=saved[who+'_mobile']||_ag.mobile||'';
   const email=saved[who+'_email']||_ag.email||'';
-  const roleTitle=saved[who+'_role_title']||_ag.roleTitle||'Sales Agent';
+  // Reject ISO timestamps accidentally stored as role title
+  const _rawRole=saved[who+'_role_title']||_ag.roleTitle||'';
+  const roleTitle=/^\d{4}-\d{2}-\d{2}T/.test(_rawRole)?'Sales Agent':(_rawRole||'Sales Agent');
   const callCentre=saved[who+'_call_centre']||_ag.callCentre||'3043';
   // Update read-only display fields (for current user's profile tab)
   if(!agentName){
