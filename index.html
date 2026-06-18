@@ -4502,7 +4502,7 @@ select.f-inp:focus ~ label.f-lbl { color: var(--M) }
               <div class="q-lh-address">
                 <div class="q-lh-addr-col"><span class="q-lh-icon">🏠</span><span>Robins Road, P.O. Box 1625, Blantyre, Malawi</span></div>
                 <div class="q-lh-addr-col"><span class="q-lh-icon">📱</span><span>+265 887 094 872</span></div>
-                <div class="q-lh-addr-col"><span class="q-lh-icon">✉</span><span><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="dab3b4bcb59aacbbb4bdafbba8beb6b3bcbfb7adf4b9b5b7">[email&#160;protected]</a></span></div>
+                <div class="q-lh-addr-col"><span class="q-lh-icon">✉</span><span><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="4c25222a230c3a2d222b392d3e2820252a29213b622f2321">[email&#160;protected]</a></span></div>
               </div>
               <div class="q-lh-divider"></div>
             </div>
@@ -6612,10 +6612,10 @@ function buildQuoteDoc(cfg){
           <div style="font-size:8px;text-transform:uppercase;letter-spacing:.08em;color:#aaa;margin-bottom:3px">Prepared by</div>
           <div style="font-size:13px;font-weight:700;color:#641414">${esc(agentName)}</div>
           <div style="font-size:10px;color:#666">${esc(agRole || 'Sales Agent')}</div>
-          ${agMobile ? `<div style="font-size:10px;color:#666;margin-top:1px">Tel: ${esc(agMobile)}</div>` : ''}
         </div>
         <div style="font-size:10px;color:#555;text-align:right;line-height:1.7">
           ${agEmail ? `<div>✉ ${esc(agEmail)}</div>` : ''}
+          ${agMobile ? `<div>📱 ${esc(agMobile)}</div>` : ''}
           <div>📞 ${esc(agCC||'3043')} (Call Centre)</div>
         </div>
       </div>
