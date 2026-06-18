@@ -4502,7 +4502,7 @@ select.f-inp:focus ~ label.f-lbl { color: var(--M) }
               <div class="q-lh-address">
                 <div class="q-lh-addr-col"><span class="q-lh-icon">🏠</span><span>Robins Road, P.O. Box 1625, Blantyre, Malawi</span></div>
                 <div class="q-lh-addr-col"><span class="q-lh-icon">📱</span><span>+265 887 094 872</span></div>
-                <div class="q-lh-addr-col"><span class="q-lh-icon">✉</span><span><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="ee87808881ae988f80899b8f9c8a8287888b8399c08d8183">[email&#160;protected]</a></span></div>
+                <div class="q-lh-addr-col"><span class="q-lh-icon">✉</span><span><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="b6dfd8d0d9f6c0d7d8d1c3d7c4d2dadfd0d3dbc198d5d9db">[email&#160;protected]</a></span></div>
               </div>
               <div class="q-lh-divider"></div>
             </div>
@@ -6507,7 +6507,7 @@ function renderQuoteDoc(q, isModal){
 
   <!-- ══ DISCLAIMER ══ -->
   <div style="margin:6px 18px 12px;padding:9px 11px;background:#f7f4f0;border:1px solid #efe7dd;border-radius:4px;font-size:10px;color:#666;line-height:1.6">
-    Indicative quotation only. Subject to underwriting and actual bonus declarations &mdash; <strong>not guaranteed</strong>. Policy is with-profits; bonuses are declared annually. Projections at <strong>5% p.a.</strong> are illustrative only. Regulated by the Reserve Bank of Malawi. <strong>Full Terms &amp; Conditions apply.</strong> Call <strong>3043</strong> for full policy terms.
+    Indicative quotation only. Subject to underwriting and actual bonus declarations &mdash; <strong>not guaranteed</strong>. Policy is with-profits; bonuses are declared annually. Projections at <strong>${getBonusRatePct()}% p.a.</strong> are illustrative only. Regulated by the Reserve Bank of Malawi. <strong>Full Terms &amp; Conditions apply.</strong> Call <strong>3043</strong> for full policy terms.
   </div>
 
   <!-- ══ AGENT CONTACT BLOCK (Annuity "Acceptance of terms" style) ══ -->
@@ -7867,6 +7867,26 @@ document.getElementById('hist-modal').addEventListener('click',e=>{
 /* History share helpers */
 /* shareHistWA and shareHistEmail removed in v4.0 — replaced by histShareWA() and histSavePDF() in unified modal */
 
+
+/* ═══════════════════════════════════════════
+   BONUS RATE SETTING (Admin configurable 1-10%)
+═══════════════════════════════════════════ */
+const BONUS_RATE_KEY = 'vla_bonus_rate';
+
+function getBonusRate(){
+  const stored = parseFloat(localStorage.getItem(BONUS_RATE_KEY));
+  if(!isNaN(stored) && stored >= 0.01 && stored <= 0.10) return stored;
+  return 0.05; // default 5%
+}
+function getBonusRatePct(){ return Math.round(getBonusRate()*100); }
+
+function saveBonusRate(pct){
+  const r = Math.min(10, Math.max(1, parseInt(pct)||5));
+  localStorage.setItem(BONUS_RATE_KEY, String(r/100));
+  showToast('✓ Projection bonus rate set to '+r+'% p.a.');
+  renderAdminPanel();
+}
+
 /* ═══════════════════════════════════════════
    ADMIN PANEL
 ═══════════════════════════════════════════ */
@@ -8050,7 +8070,33 @@ function _buildAdminPanel(body){
       '</div>';
   }
 
-  // SYNC AGENTS card
+
+  // PROJECTION SETTINGS card
+  var currentRate = getBonusRatePct();
+  html +=
+    '<div class="card" style="margin-bottom:14px">' +
+      '<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">' +
+        '<div style="width:28px;height:28px;background:var(--M);border-radius:6px;display:flex;align-items:center;justify-content:center;flex-shrink:0">' +
+          '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="var(--CR)" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>' +
+        '</div>' +
+        '<div class="sec-lbl" style="margin:0">Projection Bonus Rate</div>' +
+      '</div>' +
+      '<p style="font-size:12px;color:#666;margin:0 0 14px;line-height:1.6">Set the illustrative annual bonus rate used in all quote projections (PSP, Edu, Phindu). <strong>Current: ' + currentRate + '% p.a.</strong> — appears in disclaimer on every quote.</p>' +
+      '<div style="display:flex;align-items:center;gap:12px;margin-bottom:10px">' +
+        '<span style="font-size:12px;color:#641414;font-weight:600;min-width:28px">1%</span>' +
+        '<input type="range" id="admin-bonus-rate-slider" min="1" max="10" step="1" value="' + currentRate + '" ' +
+          'oninput="document.getElementById(\'admin-bonus-rate-val\').textContent=this.value+\'%\'" ' +
+          'style="flex:1;accent-color:#641414;height:6px;cursor:pointer">' +
+        '<span style="font-size:12px;color:#641414;font-weight:600;min-width:28px">10%</span>' +
+      '</div>' +
+      '<div style="text-align:center;margin-bottom:12px">' +
+        '<span id="admin-bonus-rate-val" style="font-size:22px;font-weight:800;color:#641414;font-family:\'Playfair Display\',serif">' + currentRate + '%</span>' +
+        '<span style="font-size:12px;color:#888"> p.a. compound annual bonus</span>' +
+      '</div>' +
+      '<button class="btn-primary" style="padding:10px;font-size:13px" onclick="saveBonusRate(document.getElementById(\'admin-bonus-rate-slider\').value)">✓ Save Bonus Rate</button>' +
+    '</div>';
+
+    // SYNC AGENTS card
   html +=
     '<div class="card" style="margin-bottom:14px;background:#f5e0e0;border:1px solid #d4b8b8">' +
       '<div class="sec-lbl" style="color:var(--M)">Sync Agents to Google Sheets</div>' +
@@ -8850,14 +8896,14 @@ function _buildEduPdf(q){
     'tep':'Tertiary Education Plan (With Profits)'
   };
   const freqLabel = q.isMo?'Monthly':'Annual';
-  const BONUS_RATE = 0.05;
+  const BONUS_RATE = getBonusRate();
   const projSA = Math.round((q.totalSA||0)*Math.pow(1+BONUS_RATE, q.premTerm||0));
   const projCol = q.hasCollege&&q.colSA ? Math.round(q.colSA*Math.pow(1+BONUS_RATE,q.premTerm||0)) : 0;
 
   y=_pdfSectionHead(doc,M,y,CW,'Details of Quotation — '+(planNames[q.plan]||q.planName||'Educational Plan'));
   const cr3=[
     ['Sum Assured (Basic)', 'MK '+Math.round(q.totalSA||0).toLocaleString()],
-    ['Projected SA @ 5% p.a.*', 'MK '+projSA.toLocaleString()],
+    ['Projected SA @ '+getBonusRatePct()+'% p.a.*', 'MK '+projSA.toLocaleString()],
     ['Premium term', String(q.premTerm||'—')+' years'],
     ['Payment frequency', freqLabel],
     ['Occupation class', q.occCls||'Standard'],
@@ -8872,7 +8918,7 @@ function _buildEduPdf(q){
   y+=8;
 
   _pdfSetFont(doc,6.5,'italic',PDF_GREY);
-  doc.text('* Projected values assume 5% p.a. compound annual bonus - not guaranteed. Indicative quotation only. Subject to underwriting. Regulated by Reserve Bank of Malawi.',M,y,{maxWidth:CW});
+  doc.text('* Projected values assume '+getBonusRatePct()+'% p.a. compound annual bonus - not guaranteed. Indicative quotation only. Subject to underwriting. Regulated by Reserve Bank of Malawi.',M,y,{maxWidth:CW});
   _pdfFooter(doc,W,H,q.agent||"",fmtDate(q.savedAt||q.doq||""));
   return doc;
 }
@@ -11878,7 +11924,7 @@ async function eduSyncToSheets(q){
   const ss  = document.getElementById('edu-sync-status');
   if(!url || !ss) return;
 
-  const BONUS_RATE = 0.05;
+  const BONUS_RATE = getBonusRate();
   const isWP = (q.plan==='lge-wp'||q.plan==='tep'||q.plan==='lgp-lc'||q.plan==='lgp-nl');
   const projSA    = isWP ? Math.round(q.tmv || 0) : 0;  // Use Target Maturity Value field (already includes investment returns)
   const projColSA = q.hasCollege ? Math.round(q.colSA * Math.pow(1+BONUS_RATE, q.premTerm)) : 0;
@@ -11939,7 +11985,7 @@ async function eduSyncToSheets(q){
 /* ── 9. RENDER DOCUMENT ── */
 function eduRenderDoc(q){
   const freqLabel = q.isMo ? 'Monthly' : 'Annual';
-  const BONUS_RATE = 0.05;
+  const BONUS_RATE = getBonusRate();
   const isWithProfits = (q.plan==='lge-wp'||q.plan==='tep'||q.plan==='lgp-lc'||q.plan==='lgp-nl');
   const projectedSA = isWithProfits
     ? Math.round(q.totalSA * Math.pow(1 + BONUS_RATE, q.premTerm))
@@ -11959,7 +12005,7 @@ function eduRenderDoc(q){
     ['Plan',                planName],
     ['Child / Life Assured', q.childName || '\u2014'],
     ['Basic Sum Assured / yr', 'MK '+eduFmt(q.totalSA)],
-    ['Projected SA @ 5% p.a.', 'MK '+eduFmt(projectedSA)],
+    ['Projected SA @ '+getBonusRatePct()+'% p.a.', 'MK '+eduFmt(projectedSA)],
     ['Premium Term',        q.premTerm+' years'],
   ];
   if(q.occCls && q.occCls!=='Standard') details.push(['Occ. Class', String(q.occCls)]);
@@ -12016,7 +12062,7 @@ function eduRenderDoc(q){
     premiumLabel: freqLabel+' Premium',
     premiumValue: 'MK '+eduFmt2(q.totalPrem),
     features: features,
-    disclaimer: 'Indicative quotation only. Projections at <strong>5% p.a.</strong> compound reversionary bonus are illustrative and <strong>not guaranteed</strong>. Subject to underwriting. Regulated by the Reserve Bank of Malawi. <strong>Full Terms &amp; Conditions apply.</strong> Call <strong>3043</strong> for full policy terms.'
+    disclaimer: 'Indicative quotation only. Projections at <strong>'+getBonusRatePct()+'% p.a.</strong> compound reversionary bonus are illustrative and <strong>not guaranteed</strong>. Subject to underwriting. Regulated by the Reserve Bank of Malawi. <strong>Full Terms &amp; Conditions apply.</strong> Call <strong>3043</strong> for full policy terms.'
   });
   const el = document.getElementById('edu-q-doc');
   if(el) el.innerHTML = html;
