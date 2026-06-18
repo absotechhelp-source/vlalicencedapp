@@ -2386,7 +2386,7 @@ select.f-inp:focus ~ label.f-lbl { color: var(--M) }
 
     <!-- ── TAB: QUOTES HUB ── -->
     <div class="tab-panel" id="tab-quotes-hub">
-      <div style="background:var(--M);padding:14px 18px 12px;display:flex;align-items:center;gap:10px">
+      <div style="background:var(--M);padding:14px 18px 12px;border-radius:0 0 16px 16px;display:flex;align-items:center;gap:10px">
         <button onclick="switchTab('home')" style="background:none;border:none;color:var(--CR);font-size:20px;cursor:pointer;padding:0;line-height:1">‹</button>
         <div>
           <div style="font-family:'Playfair Display',serif;font-size:16px;color:var(--CR);font-weight:700">Quotes</div>
@@ -2723,7 +2723,7 @@ select.f-inp:focus ~ label.f-lbl { color: var(--M) }
     <!-- ── TAB: ADMIN ── -->
     <div class="tab-panel" id="tab-admin">
       <!-- Maroon header -->
-      <div style="background:var(--M);padding:14px 18px 12px;display:flex;align-items:center;gap:10px">
+      <div style="background:var(--M);padding:14px 18px 12px;border-radius:0 0 16px 16px;display:flex;align-items:center;gap:10px">
         <button onclick="switchTab('home')" style="background:none;border:none;color:var(--CR);font-size:20px;cursor:pointer;padding:0;line-height:1">‹</button>
         <div>
           <div style="font-family:'Playfair Display',serif;font-size:16px;color:var(--CR);font-weight:700">Agent Management</div>
@@ -2737,7 +2737,7 @@ select.f-inp:focus ~ label.f-lbl { color: var(--M) }
 
     <!-- ── TAB: SHARE ── -->
     <div class="tab-panel" id="tab-share">
-      <div style="background:var(--M);padding:14px 18px 12px;display:flex;align-items:center;gap:10px">
+      <div style="background:var(--M);padding:14px 18px 12px;border-radius:0 0 16px 16px;display:flex;align-items:center;gap:10px">
         <button onclick="switchTab('home')" style="background:none;border:none;color:var(--CR);font-size:20px;cursor:pointer;padding:0;line-height:1">‹</button>
         <div>
           <div style="font-family:'Playfair Display',serif;font-size:16px;color:var(--CR);font-weight:700">Share</div>
@@ -2776,7 +2776,7 @@ select.f-inp:focus ~ label.f-lbl { color: var(--M) }
 
     <!-- ── TAB: BUSINESS CARD ── -->
     <div class="tab-panel" id="tab-bcard">
-      <div style="background:var(--M);padding:14px 18px 12px;display:flex;align-items:center;gap:10px">
+      <div style="background:var(--M);padding:14px 18px 12px;border-radius:0 0 16px 16px;display:flex;align-items:center;gap:10px">
         <button onclick="switchTab('share')" style="background:none;border:none;color:var(--CR);font-size:20px;cursor:pointer;padding:0;line-height:1">‹</button>
         <div>
           <div style="font-family:'Playfair Display',serif;font-size:16px;color:var(--CR);font-weight:700">Business Card</div>
@@ -3042,21 +3042,9 @@ select.f-inp:focus ~ label.f-lbl { color: var(--M) }
 
         <!-- Bonus table card -->
         <div class="card" style="margin-bottom:10px">
-          <button onclick="toggleFactSheet('bonus')" class="fs-toggle-btn" style="width:100%"><span style="font-size:12px;font-weight:700;color:var(--M)">&#128200; Bonus Growth Table (per MK 1M SA @ 5% p.a.)</span><span id="bonus-fs-arrow">&#9660;</span></button>
+          <button onclick="toggleFactSheet('bonus');renderBonusTable()" class="fs-toggle-btn" style="width:100%"><span style="font-size:12px;font-weight:700;color:var(--M)">&#128200; Bonus Growth Table (per MK 1M SA @ <span id="bonus-rate-lbl">5</span>% p.a.)</span><span id="bonus-fs-arrow">&#9660;</span></button>
           <div id="bonus-factsheet" style="display:none;margin-top:8px">
-            <p style="font-size:11px;color:#888;margin:0 0 8px">Illustrative only &mdash; assumes 7% p.a. reversionary bonus. Actual bonuses declared annually by VLA board. Not guaranteed.</p>
-            <div style="overflow-x:auto">
-            <table class="fs-tbl" style="font-size:11px">
-              <tr style="background:var(--M)"><th style="color:#fff;padding:5px 8px">Years</th><th style="color:#fff;padding:5px 8px;text-align:right">Bonus Added</th><th style="color:#fff;padding:5px 8px;text-align:right">Total Claim Value</th></tr>
-              <tr><td>5</td><td style="text-align:right">MK 276,282</td><td style="text-align:right"><strong>MK 1,276,282</strong></td></tr>
-<tr><td>10</td><td style="text-align:right">MK 628,895</td><td style="text-align:right"><strong>MK 1,628,895</strong></td></tr>
-<tr><td>15</td><td style="text-align:right">MK 1,078,928</td><td style="text-align:right"><strong>MK 2,078,928</strong></td></tr>
-<tr><td>20</td><td style="text-align:right">MK 1,653,298</td><td style="text-align:right"><strong>MK 2,653,298</strong></td></tr>
-<tr><td>25</td><td style="text-align:right">MK 2,386,355</td><td style="text-align:right"><strong>MK 3,386,355</strong></td></tr>
-<tr><td>30</td><td style="text-align:right">MK 3,321,942</td><td style="text-align:right"><strong>MK 4,321,942</strong></td></tr>
-<tr><td>35</td><td style="text-align:right">MK 4,516,015</td><td style="text-align:right"><strong>MK 5,516,015</strong></td></tr>
-            </table>
-            </div>
+            <div id="bonus-table-body"></div>
           </div>
         </div>
 
@@ -3182,7 +3170,7 @@ select.f-inp:focus ~ label.f-lbl { color: var(--M) }
 
     <!-- ── TAB: ALTERATIONS ── -->
     <div class="tab-panel" id="tab-alterations">
-      <div style="background:var(--M);padding:14px 18px 12px;display:flex;align-items:center;gap:10px">
+      <div style="background:var(--M);padding:14px 18px 12px;border-radius:0 0 16px 16px;display:flex;align-items:center;gap:10px">
         <button onclick="switchTab('home')" style="background:none;border:none;color:var(--CR);font-size:20px;cursor:pointer;padding:0;line-height:1">‹</button>
         <div>
           <div style="font-family:'Playfair Display',serif;font-size:16px;color:var(--CR);font-weight:700">Policy alterations</div>
@@ -3268,7 +3256,7 @@ select.f-inp:focus ~ label.f-lbl { color: var(--M) }
 
     <!-- ── TAB: CLAIMS ── -->
     <div class="tab-panel" id="tab-claims">
-      <div style="background:var(--M);padding:14px 18px 12px;display:flex;align-items:center;gap:10px">
+      <div style="background:var(--M);padding:14px 18px 12px;border-radius:0 0 16px 16px;display:flex;align-items:center;gap:10px">
         <button onclick="switchTab('home')" style="background:none;border:none;color:var(--CR);font-size:20px;cursor:pointer;padding:0;line-height:1">‹</button>
         <div>
           <div style="font-family:'Playfair Display',serif;font-size:16px;color:var(--CR);font-weight:700">Claim submission</div>
@@ -3326,7 +3314,7 @@ select.f-inp:focus ~ label.f-lbl { color: var(--M) }
     <!-- ── TAB: MANGA YAKO PROPOSAL FORM ── -->
     <!-- ── TAB: PROPOSALS HUB ── -->
     <div class="tab-panel" id="tab-proposals-hub">
-      <div style="background:var(--M);padding:14px 18px 12px;display:flex;align-items:center;gap:10px">
+      <div style="background:var(--M);padding:14px 18px 12px;border-radius:0 0 16px 16px;display:flex;align-items:center;gap:10px">
         <button onclick="switchTab('home')" style="background:none;border:none;color:var(--CR);font-size:20px;cursor:pointer;padding:0;line-height:1">‹</button>
         <div>
           <div style="font-family:'Playfair Display',serif;font-size:16px;color:var(--CR);font-weight:700">Proposals</div>
@@ -3398,7 +3386,7 @@ select.f-inp:focus ~ label.f-lbl { color: var(--M) }
 
 
     <div class="tab-panel" id="tab-proposal">
-      <div style="background:var(--M);padding:14px 18px 12px;display:flex;align-items:center;gap:10px">
+      <div style="background:var(--M);padding:14px 18px 12px;border-radius:0 0 16px 16px;display:flex;align-items:center;gap:10px">
         <button onclick="switchTab('home')" style="background:none;border:none;color:var(--CR);font-size:20px;cursor:pointer;padding:0;line-height:1">‹</button>
         <div style="display:flex;align-items:center;gap:10px">
           <img src="data:image/png;base64,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" style="height:28px;background:#fff;border-radius:4px;padding:2px" alt="Manga Yako">
@@ -3974,7 +3962,7 @@ select.f-inp:focus ~ label.f-lbl { color: var(--M) }
 
     <!-- ── TAB: PROPOSAL HISTORY ── -->
     <div class="tab-panel" id="tab-prop-history">
-      <div style="background:var(--M);padding:14px 18px 12px;display:flex;align-items:center;gap:10px">
+      <div style="background:var(--M);padding:14px 18px 12px;border-radius:0 0 16px 16px;display:flex;align-items:center;gap:10px">
         <button onclick="switchTab('proposals-hub')" style="background:none;border:none;color:var(--CR);font-size:20px;cursor:pointer;padding:0;line-height:1">‹</button>
         <div>
           <div style="font-family:'Playfair Display',serif;font-size:16px;color:var(--CR);font-weight:700">Proposal History</div>
@@ -3989,7 +3977,7 @@ select.f-inp:focus ~ label.f-lbl { color: var(--M) }
 
     <!-- ── TAB: PROFILE ── -->
     <div class="tab-panel" id="tab-profile">
-      <div style="background:var(--M);padding:14px 18px 12px">
+      <div style="background:var(--M);padding:14px 18px 12px;border-radius:0 0 16px 16px">
         <div style="font-family:'Playfair Display',serif;font-size:16px;color:var(--CR);font-weight:700">My Profile</div>
         <div style="font-size:10px;color:rgba(216,201,180,.7)">Your business card &amp; app settings</div>
       </div>
@@ -4071,8 +4059,11 @@ select.f-inp:focus ~ label.f-lbl { color: var(--M) }
 
         <button class="btn-primary btn-secondary" style="margin-top:4px;width:100%" onclick="doLogout()">Sign Out</button>
 
-        <!-- Clear Local Quotes — available to all users -->
-        <div style="margin-top:12px;padding:10px 12px;border:1px solid #fed7aa;border-radius:8px;background:#fffbf5">
+        <!-- Admin-only: Projection Bonus Rate + Danger Zone -->
+        <div id="profile-admin-section" style="display:none;margin-top:16px"></div>
+
+        <!-- Clear Local Quotes — available to non-admin users only -->
+        <div id="profile-clear-local-section" style="margin-top:12px;padding:10px 12px;border:1px solid #fed7aa;border-radius:8px;background:#fffbf5">
           <div style="font-size:12px;font-weight:700;color:#c2410c;margin-bottom:3px">Clear Local Quote Cache</div>
           <div style="font-size:11px;color:#888;margin-bottom:8px">Removes quotes stored on this device only. Google Sheets data is not affected.</div>
           <div style="display:flex;gap:8px">
@@ -4087,7 +4078,7 @@ select.f-inp:focus ~ label.f-lbl { color: var(--M) }
 
     <!-- ── TAB: MANGA YAKO ── -->
     <div class="tab-panel" id="tab-manga-yako">
-      <div style="background:var(--M);padding:14px 18px 12px;display:flex;align-items:center;gap:10px">
+      <div style="background:var(--M);padding:14px 18px 12px;border-radius:0 0 16px 16px;display:flex;align-items:center;gap:10px">
         <button onclick="switchTab('home')" style="background:none;border:none;color:var(--CR);font-size:20px;cursor:pointer;padding:0;line-height:1">‹</button>
         <div style="display:flex;align-items:center;gap:10px">
           <img src="data:image/png;base64,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" style="height:32px;border-radius:4px;background:#fff;padding:2px" alt="Manga Yako">
@@ -4210,7 +4201,7 @@ select.f-inp:focus ~ label.f-lbl { color: var(--M) }
 
     <!-- ── TAB: PHINDU SAVINGS PLAN ── -->
     <div class="tab-panel" id="tab-phindu">
-      <div style="background:var(--M);padding:14px 18px 12px;display:flex;align-items:center;gap:10px">
+      <div style="background:var(--M);padding:14px 18px 12px;border-radius:0 0 16px 16px;display:flex;align-items:center;gap:10px">
         <button onclick="switchTab('quotes-hub')" style="background:none;border:none;color:var(--CR);font-size:20px;cursor:pointer;padding:0;line-height:1">‹</button>
         <div>
           <div style="font-family:'Playfair Display',serif;font-size:16px;color:var(--CR);font-weight:700">Phindu Savings Plan</div>
@@ -4340,7 +4331,7 @@ select.f-inp:focus ~ label.f-lbl { color: var(--M) }
 
     <!-- ── TAB: PHINDU HISTORY ── -->
     <div class="tab-panel" id="tab-phindu-history">
-      <div style="background:var(--M);padding:14px 18px 12px;display:flex;align-items:center;gap:10px">
+      <div style="background:var(--M);padding:14px 18px 12px;border-radius:0 0 16px 16px;display:flex;align-items:center;gap:10px">
         <button onclick="switchTab('quotes-hub')" style="background:none;border:none;color:var(--CR);font-size:20px;cursor:pointer;padding:0;line-height:1">‹</button>
         <div>
           <div style="font-family:'Playfair Display',serif;font-size:16px;color:var(--CR);font-weight:700">Phindu Quote History</div>
@@ -4354,7 +4345,7 @@ select.f-inp:focus ~ label.f-lbl { color: var(--M) }
 
     <!-- ── TAB: PHINDU PROPOSAL ── -->
     <div class="tab-panel" id="tab-phindu-proposal">
-      <div style="background:var(--M);padding:14px 18px 12px;display:flex;align-items:center;gap:10px">
+      <div style="background:var(--M);padding:14px 18px 12px;border-radius:0 0 16px 16px;display:flex;align-items:center;gap:10px">
         <button onclick="switchTab('phindu')" style="background:none;border:none;color:var(--CR);font-size:20px;cursor:pointer;padding:0;line-height:1">‹</button>
         <div>
           <div style="font-family:'Playfair Display',serif;font-size:16px;color:var(--CR);font-weight:700">Phindu Proposal Form</div>
@@ -4530,7 +4521,7 @@ select.f-inp:focus ~ label.f-lbl { color: var(--M) }
 
     <!-- ── TAB: EDUCATIONAL PLANS ── -->
     <div class="tab-panel" id="tab-edu-plans">
-      <div style="background:var(--M);padding:14px 18px 12px;display:flex;align-items:center;gap:10px">
+      <div style="background:var(--M);padding:14px 18px 12px;border-radius:0 0 16px 16px;display:flex;align-items:center;gap:10px">
         <button onclick="switchTab('quotes-hub')" style="background:none;border:none;color:#d1fae5;font-size:20px;cursor:pointer;padding:0;line-height:1">‹</button>
         <div>
           <div style="font-family:'Playfair Display',serif;font-size:16px;color:#d1fae5;font-weight:700">Educational Plans</div>
@@ -4868,7 +4859,7 @@ select.f-inp:focus ~ label.f-lbl { color: var(--M) }
         <svg viewBox="0 0 24 24" fill="none" stroke="var(--M)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
       </div>
       <div>
-        <div class="more-item-label">Agent management <span class="more-admin-badge">ADMIN</span></div>
+        <div class="more-item-label">Agent Management <span class="more-admin-badge">ADMIN</span></div>
         <div class="more-item-desc">Add, disable or reset agent PINs</div>
       </div>
       <span class="more-item-arrow">›</span>
@@ -7884,7 +7875,31 @@ function saveBonusRate(pct){
   const r = Math.min(10, Math.max(1, parseInt(pct)||5));
   localStorage.setItem(BONUS_RATE_KEY, String(r/100));
   showToast('✓ Projection bonus rate set to '+r+'% p.a.');
-  renderAdminPanel();
+  renderProfileTab();
+  renderBonusTable();
+}
+
+function renderBonusTable(){
+  const rate = getBonusRate();
+  const pct  = getBonusRatePct();
+  const baseSA = 1000000;
+  const years  = [5,10,15,20,25,30,35];
+  var lbl = document.getElementById('bonus-rate-lbl');
+  if(lbl) lbl.textContent = pct;
+  var body = document.getElementById('bonus-table-body');
+  if(!body) return;
+  var rows = '';
+  years.forEach(function(yr){
+    var total = Math.round(baseSA * Math.pow(1 + rate, yr));
+    var bonus = total - baseSA;
+    rows += '<tr><td>'+yr+'</td><td style="text-align:right">MK '+bonus.toLocaleString()+'</td><td style="text-align:right"><strong>MK '+total.toLocaleString()+'</strong></td></tr>';
+  });
+  body.innerHTML =
+    '<p style="font-size:11px;color:#888;margin:0 0 8px">Illustrative only &mdash; assumes '+pct+'% p.a. reversionary bonus. Actual bonuses declared annually by VLA board. Not guaranteed.</p>'+
+    '<div style="overflow-x:auto"><table class="fs-tbl" style="font-size:11px">'+
+    '<tr style="background:var(--M)"><th style="color:#fff;padding:5px 8px">Years</th><th style="color:#fff;padding:5px 8px;text-align:right">Bonus Added</th><th style="color:#fff;padding:5px 8px;text-align:right">Total Claim Value</th></tr>'+
+    rows+
+    '</table></div>';
 }
 
 /* ═══════════════════════════════════════════
@@ -8071,30 +8086,7 @@ function _buildAdminPanel(body){
   }
 
 
-  // PROJECTION SETTINGS card
-  var currentRate = getBonusRatePct();
-  html +=
-    '<div class="card" style="margin-bottom:14px">' +
-      '<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">' +
-        '<div style="width:28px;height:28px;background:var(--M);border-radius:6px;display:flex;align-items:center;justify-content:center;flex-shrink:0">' +
-          '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="var(--CR)" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>' +
-        '</div>' +
-        '<div class="sec-lbl" style="margin:0">Projection Bonus Rate</div>' +
-      '</div>' +
-      '<p style="font-size:12px;color:#666;margin:0 0 14px;line-height:1.6">Set the illustrative annual bonus rate used in all quote projections (PSP, Edu, Phindu). <strong>Current: ' + currentRate + '% p.a.</strong> — appears in disclaimer on every quote.</p>' +
-      '<div style="display:flex;align-items:center;gap:12px;margin-bottom:10px">' +
-        '<span style="font-size:12px;color:#641414;font-weight:600;min-width:28px">1%</span>' +
-        '<input type="range" id="admin-bonus-rate-slider" min="1" max="10" step="1" value="' + currentRate + '" ' +
-          'oninput="document.getElementById(\'admin-bonus-rate-val\').textContent=this.value+\'%\'" ' +
-          'style="flex:1;accent-color:#641414;height:6px;cursor:pointer">' +
-        '<span style="font-size:12px;color:#641414;font-weight:600;min-width:28px">10%</span>' +
-      '</div>' +
-      '<div style="text-align:center;margin-bottom:12px">' +
-        '<span id="admin-bonus-rate-val" style="font-size:22px;font-weight:800;color:#641414;font-family:\'Playfair Display\',serif">' + currentRate + '%</span>' +
-        '<span style="font-size:12px;color:#888"> p.a. compound annual bonus</span>' +
-      '</div>' +
-      '<button class="btn-primary" style="padding:10px;font-size:13px" onclick="saveBonusRate(document.getElementById(\'admin-bonus-rate-slider\').value)">✓ Save Bonus Rate</button>' +
-    '</div>';
+  // PROJECTION SETTINGS card — moved to Admin Profile
 
     // SYNC AGENTS card
   html +=
@@ -8110,40 +8102,6 @@ function _buildAdminPanel(body){
     '<div class="card" style="margin-bottom:14px">' +
       '<div class="sec-lbl">Quote Statistics</div>' +
       statsHTML +
-    '</div>';
-
-  // DANGER ZONE card — admin only
-  html +=
-    '<div class="card" style="margin-bottom:14px;border:2px solid #991b1b;background:#fff5f5">' +
-      '<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">' +
-        '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#991b1b" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>' +
-        '<div class="sec-lbl" style="margin:0;color:#991b1b">Danger Zone</div>' +
-      '</div>' +
-      '<p style="font-size:11px;color:#888;margin:0 0 12px">These actions are permanent and cannot be undone. Audit log is kept in Sheets.</p>' +
-
-      // Clear All Sheets
-      '<div style="border:1px solid #fca5a5;border-radius:6px;padding:10px 12px;margin-bottom:10px;background:#fff">' +
-        '<div style="font-size:12px;font-weight:700;color:#991b1b;margin-bottom:2px">Clear All Quote Sheets</div>' +
-        '<div style="font-size:11px;color:#888;margin-bottom:8px">Deletes all data rows from the Quotes sheet (PSP, Edu, Manga Yako), the Phindu sheet, and the Manga Yako Proposals sheet in Google Sheets. Agent list is preserved. An audit entry is logged.</div>' +
-        '<button class="btn-danger" style="width:100%;padding:9px;font-size:13px" onclick="adminClearSheets()">' +
-          '🗑 Clear All Quote Sheets' +
-        '</button>' +
-        '<div id="clear-sheets-status" style="font-size:11px;text-align:center;margin-top:5px;color:#991b1b"></div>' +
-      '</div>' +
-
-      // Clear Local Quotes (all users)
-      '<div style="border:1px solid #fed7aa;border-radius:6px;padding:10px 12px;background:#fff">' +
-        '<div style="font-size:12px;font-weight:700;color:#c2410c;margin-bottom:2px">Clear This Device\'s Quotes</div>' +
-        '<div style="font-size:11px;color:#888;margin-bottom:8px">Removes all locally stored quotes from this device. You can re-sync from Sheets afterwards.</div>' +
-        '<div style="display:flex;gap:8px">' +
-          '<button class="btn-danger" style="flex:1;padding:9px;font-size:13px;background:#fff3cd;color:#c2410c;border-color:#fed7aa" onclick="clearLocalQuotes(false)">' +
-            'Clear Local Only' +
-          '</button>' +
-          '<button class="btn-danger" style="flex:1;padding:9px;font-size:13px" onclick="clearLocalQuotes(true)">' +
-            'Clear + Re-sync from Sheets' +
-          '</button>' +
-        '</div>' +
-      '</div>' +
     '</div>';
 
   // Sign out
@@ -9262,6 +9220,63 @@ function renderProfileTab(){
   if(profName)profName.textContent=currentAgent;
   const profRole=document.getElementById('prof-role');
   if(profRole)profRole.textContent=isAdmin?'Administrator':'Sales Agent';
+
+  // Admin-only sections
+  const adminSec=document.getElementById('profile-admin-section');
+  if(adminSec){
+    if(isAdmin){
+      adminSec.style.display='block';
+      var currentRate=getBonusRatePct();
+      adminSec.innerHTML=
+        '<div class="card" style="margin-bottom:14px">'+
+          '<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">'+
+            '<div style="width:28px;height:28px;background:var(--M);border-radius:6px;display:flex;align-items:center;justify-content:center;flex-shrink:0">'+
+              '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="var(--CR)" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>'+
+            '</div>'+
+            '<div class="sec-lbl" style="margin:0">Projection Bonus Rate</div>'+
+          '</div>'+
+          '<p style="font-size:12px;color:#666;margin:0 0 14px;line-height:1.6">Set the annual bonus rate used in all quote projections (PSP, Edu, Phindu). <strong>Current: '+currentRate+'% p.a.</strong></p>'+
+          '<div style="display:flex;align-items:center;gap:12px;margin-bottom:10px">'+
+            '<span style="font-size:12px;color:#641414;font-weight:600;min-width:28px">1%</span>'+
+            '<input type="range" id="profile-bonus-rate-slider" min="1" max="10" step="1" value="'+currentRate+'" '+
+              'oninput="document.getElementById(\'profile-bonus-rate-val\').textContent=this.value+\'%\'" '+
+              'style="flex:1;accent-color:#641414;height:6px;cursor:pointer">'+
+            '<span style="font-size:12px;color:#641414;font-weight:600;min-width:28px">10%</span>'+
+          '</div>'+
+          '<div style="text-align:center;margin-bottom:12px">'+
+            '<span id="profile-bonus-rate-val" style="font-size:22px;font-weight:800;color:#641414;font-family:\'Playfair Display\',serif">'+currentRate+'%</span>'+
+            '<span style="font-size:12px;color:#888"> p.a. compound annual bonus</span>'+
+          '</div>'+
+          '<button class="btn-primary" style="padding:10px;font-size:13px" onclick="saveBonusRate(document.getElementById(\'profile-bonus-rate-slider\').value)">&#x2713; Save Bonus Rate</button>'+
+        '</div>'+
+        '<div class="card" style="margin-bottom:14px;border:2px solid #991b1b;background:#fff5f5">'+
+          '<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">'+
+            '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#991b1b" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>'+
+            '<div class="sec-lbl" style="margin:0;color:#991b1b">Danger Zone</div>'+
+          '</div>'+
+          '<p style="font-size:11px;color:#888;margin:0 0 12px">These actions are permanent and cannot be undone. Audit log is kept in Sheets.</p>'+
+          '<div style="border:1px solid #fca5a5;border-radius:6px;padding:10px 12px;margin-bottom:10px;background:#fff">'+
+            '<div style="font-size:12px;font-weight:700;color:#991b1b;margin-bottom:2px">Clear All Quote Sheets</div>'+
+            '<div style="font-size:11px;color:#888;margin-bottom:8px">Deletes all data rows from the Quotes sheet (PSP, Edu, Manga Yako), the Phindu sheet, and the Manga Yako Proposals sheet. Agent list is preserved.</div>'+
+            '<button class="btn-danger" style="width:100%;padding:9px;font-size:13px" onclick="adminClearSheets()">&#x1F5D1; Clear All Quote Sheets</button>'+
+            '<div id="clear-sheets-status" style="font-size:11px;text-align:center;margin-top:5px;color:#991b1b"></div>'+
+          '</div>'+
+          '<div style="border:1px solid #fed7aa;border-radius:6px;padding:10px 12px;background:#fff">'+
+            '<div style="font-size:12px;font-weight:700;color:#c2410c;margin-bottom:2px">Clear This Device\'s Quotes</div>'+
+            '<div style="font-size:11px;color:#888;margin-bottom:8px">Removes all locally stored quotes from this device. Re-sync from Sheets afterwards.</div>'+
+            '<div style="display:flex;gap:8px">'+
+              '<button class="btn-danger" style="flex:1;padding:9px;font-size:13px;background:#fff3cd;color:#c2410c;border-color:#fed7aa" onclick="clearLocalQuotes(false)">Clear Local Only</button>'+
+              '<button class="btn-danger" style="flex:1;padding:9px;font-size:13px" onclick="clearLocalQuotes(true)">Clear + Re-sync</button>'+
+            '</div>'+
+          '</div>'+
+        '</div>';
+    } else {
+      adminSec.style.display='none';
+    }
+  }
+  // Hide the standalone clear-local section for admins (Danger Zone covers it)
+  const clearLocalSec=document.getElementById('profile-clear-local-section');
+  if(clearLocalSec) clearLocalSec.style.display=isAdmin?'none':'block';
 }
 
 function renderBusinessCard(){
@@ -11132,7 +11147,8 @@ async function phinduGenerateQuote(){
 
   const result = await gasGetQuote({product:'phindu', anb, mt, mode:'prem', prem:premRaw});
   if(!result) return;
-  const {prem, basicSA, saWithBonus} = result;
+  const {prem, basicSA} = result;
+  const saWithBonus = Math.round(basicSA * Math.pow(1 + getBonusRate(), PHINDU_TERM));
   phinduBuildAndShow(name,dob,gender,anb,band,prem,mt,basicSA,saWithBonus,'prem',phone,town,district);
 }
 
@@ -11155,7 +11171,8 @@ async function phinduGenerateQuote2(){
 
   const result = await gasGetQuote({product:'phindu', anb, mt, mode:'sa', sa:tSA});
   if(!result) return;
-  const {prem, basicSA, saWithBonus} = result;
+  const {prem, basicSA} = result;
+  const saWithBonus = Math.round(basicSA * Math.pow(1 + getBonusRate(), PHINDU_TERM));
   phinduBuildAndShow(name,dob,gender,anb,band,prem,mt,basicSA,saWithBonus,'sa',phone,town,district);
 }
 
