@@ -4502,7 +4502,7 @@ select.f-inp:focus ~ label.f-lbl { color: var(--M) }
               <div class="q-lh-address">
                 <div class="q-lh-addr-col"><span class="q-lh-icon">🏠</span><span>Robins Road, P.O. Box 1625, Blantyre, Malawi</span></div>
                 <div class="q-lh-addr-col"><span class="q-lh-icon">📱</span><span>+265 887 094 872</span></div>
-                <div class="q-lh-addr-col"><span class="q-lh-icon">✉</span><span><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="4c25222a230c3a2d222b392d3e2820252a29213b622f2321">[email&#160;protected]</a></span></div>
+                <div class="q-lh-addr-col"><span class="q-lh-icon">✉</span><span><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="771e1911183701161910021605131b1e11121a005914181a">[email&#160;protected]</a></span></div>
               </div>
               <div class="q-lh-divider"></div>
             </div>
@@ -5293,6 +5293,20 @@ async function fetchAgentsFromSheets(){
         const merged = Object.assign({}, local, data.agents);
         saveAgents(merged);
         localStorage.setItem('vla_agents_fetched_at', String(Date.now()));
+        // Sync profile fields (mobile/email/roleTitle/callCentre) into profile store
+        // so loadProfileData works on every device, not just the admin's device
+        try {
+          const profStore = JSON.parse(localStorage.getItem(PROFILE_KEY)||'{}');
+          let profChanged = false;
+          Object.keys(data.agents).forEach(agName => {
+            const ag = data.agents[agName];
+            if(ag.mobile    !== undefined){ profStore[agName+'_mobile']      = ag.mobile;     profChanged=true; }
+            if(ag.email     !== undefined){ profStore[agName+'_email']       = ag.email;      profChanged=true; }
+            if(ag.roleTitle !== undefined){ profStore[agName+'_role_title']  = ag.roleTitle;  profChanged=true; }
+            if(ag.callCentre!== undefined){ profStore[agName+'_call_centre'] = ag.callCentre; profChanged=true; }
+          });
+          if(profChanged) localStorage.setItem(PROFILE_KEY, JSON.stringify(profStore));
+        } catch(e){}
         console.log('[AGENTS] ✅ Fetched', Object.keys(data.agents).length, 'agents from Sheets');
         return merged;
       }
@@ -5308,7 +5322,7 @@ async function fetchAgentsFromSheets(){
 }
 
 // Push a single agent change to Sheets
-async function pushAgentToSheets(name, pin, role, active, jobTitle, mobile, email){
+async function pushAgentToSheets(name, pin, role, active, roleTitle, mobile, email, callCentre){
   const url = localStorage.getItem(SHEETS_URL_KEY) || APPS_SCRIPT_URL;
   if(!url) return;
   try {
@@ -5317,9 +5331,10 @@ async function pushAgentToSheets(name, pin, role, active, jobTitle, mobile, emai
       mode:'no-cors',
       body: JSON.stringify({
         action:'saveAgent', name, pin, role, active,
-        jobTitle: jobTitle || '',
-        mobile:   mobile   || '',
-        email:    email    || ''
+        roleTitle:  roleTitle  || '',
+        mobile:     mobile     || '',
+        email:      email      || '',
+        callCentre: callCentre || '3043'
       })
     });
   } catch(e){}
@@ -8231,6 +8246,15 @@ async function removeAgent(name){
   const agents=getAgents();
   delete agents[name];
   saveAgents(agents);
+  // Soft-delete in Sheets so agent doesn't come back on next sync
+  try {
+    const url = localStorage.getItem(SHEETS_URL_KEY) || APPS_SCRIPT_URL;
+    if(url) fetch(url, {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({action:'deleteAgent', name, hard:false})
+    }).catch(()=>{});
+  } catch(e){}
   showToast('Agent "'+name+'" removed');
   renderAdminPanel();
 }
@@ -8636,10 +8660,64 @@ function _buildPhinduPdf(q){
     ['Client profit','MK '+Math.round(q.profit||0).toLocaleString()],
   ];
   cr2.forEach((r,i)=>{y=_pdfDataRow(doc,M,y,CW,r[0],r[1],i%2===0);});
-  y+=8;
+  y+=4;
 
-  _pdfSetFont(doc,6.5,'italic',PDF_GREY);
-  doc.text('Indicative quotation only. Subject to underwriting. Regulated by Reserve Bank of Malawi.',M,y,{maxWidth:CW});
+  // ── Premium band ──
+  const phPrem = q.premium||q.prem||0;
+  doc.setFillColor(...PDF_MAROON);
+  doc.rect(M, y, CW, 11, 'F');
+  _pdfSetFont(doc, 7.5, 'normal', [216,201,180]);
+  doc.text('Monthly Premium', M+4, y+4);
+  _pdfSetFont(doc, 12, 'bold', PDF_CREAM);
+  doc.text('MK '+Math.round(phPrem).toLocaleString(), M+CW-4, y+8.5, {align:'right'});
+  y += 14;
+
+  // ── Key Features ──
+  y = _pdfSectionHead(doc, M, y, CW, 'Key Features');
+  _pdfSetFont(doc, 8.5, 'normal', PDF_BLACK);
+  y += 2;
+  [
+    'Maturity benefit (Year 10): Sum assured plus all declared bonuses.',
+    'Money Tree benefit: '+(q.mt||'—')+'% of Basic SA paid at Year 5 and again at Year 10.',
+    'Death benefit (Yrs 1–3): Premiums refunded plus 4% compound p.a.',
+    'Death benefit (after Yr 3): Sum assured plus all declared bonuses.',
+    'No medical tests required. Entry age 18–65.',
+    'Surrender & paid-up: Available after 2 full years.',
+  ].forEach(f=>{
+    const lines = doc.splitTextToSize('\u2022  '+f, CW-6);
+    doc.text(lines, M+4, y);
+    y += lines.length * 4.5;
+  });
+  y += 3;
+
+  // ── Disclaimer ──
+  const dTxt = 'Indicative quotation only. Subject to underwriting and actual bonus declarations — not guaranteed. Regulated by Reserve Bank of Malawi. Full Terms & Conditions apply. Call 3043 for full policy terms.';
+  const dLines = doc.splitTextToSize(dTxt, CW-6);
+  const dH = dLines.length*4 + 4;
+  doc.setFillColor(247,244,240); doc.rect(M, y, CW, dH, 'F');
+  doc.setDrawColor(...PDF_LGREY); doc.setLineWidth(0.3); doc.rect(M, y, CW, dH);
+  _pdfSetFont(doc, 7, 'italic', PDF_GREY);
+  doc.text(dLines, M+3, y+3.8);
+  y += dH + 4;
+
+  // ── Prepared by ──
+  const phAgent = q.agent||currentAgent||'';
+  const {mobile:phMob, email:phEmail, roleTitle:phRole, callCentre:phCC} = loadProfileData(phAgent);
+  doc.setDrawColor(...PDF_LGREY); doc.setLineWidth(0.3); doc.line(M, y, M+CW, y);
+  y += 4;
+  _pdfSetFont(doc, 6.5, 'normal', [170,170,170]);
+  doc.text('PREPARED BY', M, y);
+  _pdfSetFont(doc, 10, 'bold', PDF_MAROON);
+  doc.text(phAgent, M, y+5);
+  _pdfSetFont(doc, 8, 'normal', [102,102,102]);
+  doc.text(phRole||'Sales Agent', M, y+9.5);
+  let phRy = y;
+  _pdfSetFont(doc, 8, 'normal', [85,85,85]);
+  if(phEmail){ doc.text('Email: '+phEmail, M+CW, phRy, {align:'right'}); phRy += 4; }
+  if(phMob){   doc.text('Tel: '+phMob,     M+CW, phRy, {align:'right'}); phRy += 4; }
+  _pdfSetFont(doc, 8, 'normal', [136,136,136]);
+  doc.text((phCC||'3043')+' (Call Centre)', M+CW, phRy, {align:'right'});
+
   _pdfFooter(doc,W,H,q.agent||"",fmtDate(q.savedAt||q.doq||""));
   return doc;
 }
@@ -8672,10 +8750,63 @@ function _buildMyPdf(q){
     ['Payment frequency','Monthly'],
   ];
   cr2.forEach((r,i)=>{y=_pdfDataRow(doc,M,y,CW,r[0],r[1],i%2===0);});
-  y+=8;
+  y+=4;
 
-  _pdfSetFont(doc,6.5,'italic',PDF_GREY);
-  doc.text('USD-denominated product. Indicative quotation only. Subject to underwriting. Regulated by Reserve Bank of Malawi.',M,y,{maxWidth:CW});
+  // ── Premium band ──
+  doc.setFillColor(...PDF_MAROON);
+  doc.rect(M, y, CW, 11, 'F');
+  _pdfSetFont(doc, 7.5, 'normal', [216,201,180]);
+  doc.text('Monthly Premium', M+4, y+4);
+  _pdfSetFont(doc, 12, 'bold', PDF_CREAM);
+  doc.text('USD '+Math.round(q.prem||0).toLocaleString(), M+CW-4, y+8.5, {align:'right'});
+  y += 14;
+
+  // ── Key Features ──
+  y = _pdfSectionHead(doc, M, y, CW, 'Key Features');
+  _pdfSetFont(doc, 8.5, 'normal', PDF_BLACK);
+  y += 2;
+  [
+    'Maturity benefit: Fund value paid in MWK at official exchange rate (or swap for VLA land) at Year 15.',
+    'Death benefit: Higher of USD 1,000 or current fund value.',
+    'USD-denominated: Protected from MWK currency depreciation.',
+    'Top-up contributions permitted at any time.',
+    'Surrender available after 2 full years of contributions.',
+    '30-day cooling-off period from inception.',
+  ].forEach(f=>{
+    const lines = doc.splitTextToSize('\u2022  '+f, CW-6);
+    doc.text(lines, M+4, y);
+    y += lines.length * 4.5;
+  });
+  y += 3;
+
+  // ── Disclaimer ──
+  const myDTxt = 'USD-denominated product. Returns depend on fund performance — not guaranteed. Indicative quotation only. Subject to underwriting. Regulated by Reserve Bank of Malawi. Full Terms & Conditions apply. Call 3043 for full policy terms.';
+  const myDLines = doc.splitTextToSize(myDTxt, CW-6);
+  const myDH = myDLines.length*4 + 4;
+  doc.setFillColor(247,244,240); doc.rect(M, y, CW, myDH, 'F');
+  doc.setDrawColor(...PDF_LGREY); doc.setLineWidth(0.3); doc.rect(M, y, CW, myDH);
+  _pdfSetFont(doc, 7, 'italic', PDF_GREY);
+  doc.text(myDLines, M+3, y+3.8);
+  y += myDH + 4;
+
+  // ── Prepared by ──
+  const myAgent = q.agent||currentAgent||'';
+  const {mobile:myMob, email:myEmail, roleTitle:myRole, callCentre:myCC} = loadProfileData(myAgent);
+  doc.setDrawColor(...PDF_LGREY); doc.setLineWidth(0.3); doc.line(M, y, M+CW, y);
+  y += 4;
+  _pdfSetFont(doc, 6.5, 'normal', [170,170,170]);
+  doc.text('PREPARED BY', M, y);
+  _pdfSetFont(doc, 10, 'bold', PDF_MAROON);
+  doc.text(myAgent, M, y+5);
+  _pdfSetFont(doc, 8, 'normal', [102,102,102]);
+  doc.text(myRole||'Sales Agent', M, y+9.5);
+  let myRy = y;
+  _pdfSetFont(doc, 8, 'normal', [85,85,85]);
+  if(myEmail){ doc.text('Email: '+myEmail, M+CW, myRy, {align:'right'}); myRy += 4; }
+  if(myMob){   doc.text('Tel: '+myMob,     M+CW, myRy, {align:'right'}); myRy += 4; }
+  _pdfSetFont(doc, 8, 'normal', [136,136,136]);
+  doc.text((myCC||'3043')+' (Call Centre)', M+CW, myRy, {align:'right'});
+
   _pdfFooter(doc,W,H,q.agent||"",fmtDate(q.savedAt||q.doq||""));
   return doc;
 }
@@ -9020,10 +9151,11 @@ function loadProfileData(agentName){
   // agentName param lets admin load data for any agent; defaults to currentAgent
   var who = agentName || currentAgent;
   const saved=JSON.parse(localStorage.getItem(PROFILE_KEY)||'{}');
-  const mobile=saved[who+'_mobile']||'';
-  const email=saved[who+'_email']||'';
-  const roleTitle=saved[who+'_role_title']||'Sales Agent';
-  const callCentre=saved[who+'_call_centre']||'3043';
+  const _ag=(getAgents()||{})[who]||{};
+  const mobile=saved[who+'_mobile']||_ag.mobile||'';
+  const email=saved[who+'_email']||_ag.email||'';
+  const roleTitle=saved[who+'_role_title']||_ag.roleTitle||'Sales Agent';
+  const callCentre=saved[who+'_call_centre']||_ag.callCentre||'3043';
   // Update read-only display fields (for current user's profile tab)
   if(!agentName){
     var dispRole=document.getElementById('prof-role-title-disp');
@@ -9056,12 +9188,21 @@ function saveProfile(agentName){
   saved[who+'_mobile']      = newMobile;
   saved[who+'_email']       = newEmail;
   saved[who+'_call_centre'] = newCC;
+  // Also persist in agent object so other devices get it via agent sync
+  try{
+    const _ag = getAgents();
+    if(_ag[who]){
+      _ag[who].mobile=newMobile; _ag[who].email=newEmail;
+      _ag[who].roleTitle=newTitle; _ag[who].callCentre=newCC;
+      saveAgents(_ag);
+    }
+  }catch(e){}
   localStorage.setItem(PROFILE_KEY, JSON.stringify(saved));
   // Push updated contact details to Sheets (agent must already exist there)
   const agents = getAgents();
   const agent  = agents[who] || {};
   pushAgentToSheets(who, agent.pin||'', agent.role||'agent', agent.active!==false,
-                    newTitle, newMobile, newEmail).catch(()=>{});
+                    newTitle, newMobile, newEmail, newCC).catch(()=>{});
   showToast('\u2713 Details saved for '+who+' — syncing to Sheets');
   renderBusinessCard();
 }
