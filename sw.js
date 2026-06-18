@@ -3,7 +3,7 @@
    UI: Production-grade redesign · Maroon + Cream
 ═══════════════════════════════════════════════════════ */
 
-const CACHE_VERSION = 'vla-v8.0';
+const CACHE_VERSION = 'vla-v8.1';
 const CACHE_NAME    = CACHE_VERSION;
 
 // Only cache static assets — NEVER index.html
