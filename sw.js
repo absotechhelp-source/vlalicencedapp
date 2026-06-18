@@ -1,8 +1,9 @@
 /* ═══════════════════════════════════════════════════════
-   VLA Sales App — Service Worker v2.7
+   VLA Sales App — Service Worker v3.0
+   UI: Production-grade redesign · Maroon + Cream
 ═══════════════════════════════════════════════════════ */
 
-const CACHE_VERSION = 'vla-v7.73';
+const CACHE_VERSION = 'vla-v8.0';
 const CACHE_NAME    = CACHE_VERSION;
 
 // Only cache static assets — NEVER index.html
