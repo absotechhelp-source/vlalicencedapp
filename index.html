@@ -8905,6 +8905,26 @@ function _buildEduPdf(q){
 
   _pdfSetFont(doc,6.5,'italic',PDF_GREY);
   doc.text('* Projected values assume '+getBonusRatePct()+'% p.a. compound annual bonus - not guaranteed. Indicative quotation only. Subject to underwriting. Regulated by Reserve Bank of Malawi.',M,y,{maxWidth:CW});
+  y+=8;
+
+  // ── Prepared by ──
+  const eduAgent = q.agent||currentAgent||'';
+  const {mobile:eduMob, email:eduEmail, roleTitle:eduRole, callCentre:eduCC} = loadProfileData(eduAgent);
+  doc.setDrawColor(...PDF_LGREY); doc.setLineWidth(0.3); doc.line(M, y, M+CW, y);
+  y += 4;
+  _pdfSetFont(doc, 6.5, 'normal', [170,170,170]);
+  doc.text('PREPARED BY', M, y);
+  _pdfSetFont(doc, 10, 'bold', PDF_MAROON);
+  doc.text(eduAgent, M, y+5);
+  _pdfSetFont(doc, 8, 'normal', [102,102,102]);
+  doc.text(eduRole||'Sales Agent', M, y+9.5);
+  let eduRy = y;
+  _pdfSetFont(doc, 8, 'normal', [85,85,85]);
+  if(eduEmail){ doc.text('Email: '+eduEmail, M+CW, eduRy, {align:'right'}); eduRy += 4; }
+  if(eduMob){   doc.text('Tel: '+eduMob,     M+CW, eduRy, {align:'right'}); eduRy += 4; }
+  _pdfSetFont(doc, 8, 'normal', [136,136,136]);
+  doc.text((eduCC||'3043')+' (Call Centre)', M+CW, eduRy, {align:'right'});
+
   _pdfFooter(doc,W,H,q.agent||"",fmtDate(q.savedAt||q.doq||""));
   return doc;
 }
