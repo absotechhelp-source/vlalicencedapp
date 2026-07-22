@@ -5412,6 +5412,164 @@ async function pushAgentToSheets(name, pin, role, active, roleTitle, mobile, ema
 }
 
 /* ═══════════════════════════════════════════
+   SHARED APP SETTINGS (e.g. Projection Bonus Rate)
+   Read/write via the Settings sheet through Apps Script, so a change an
+   admin makes on one device reaches every other device — same idea as
+   agent sync above, just for app-wide settings instead of per-agent data.
+═══════════════════════════════════════════ */
+async function pushSettingToSheets(key, value){
+  const url = localStorage.getItem(SHEETS_URL_KEY) || APPS_SCRIPT_URL;
+  if(!url) return;
+  try {
+    await fetch(url, {
+      method:'POST',
+      mode:'no-cors',
+      body: JSON.stringify({ action:'saveSettings', key, value })
+    });
+  } catch(e){}
+}
+
+async function fetchSettingsFromSheets(){
+  const url = localStorage.getItem(SHEETS_URL_KEY) || APPS_SCRIPT_URL;
+  if(!url) return null;
+  try {
+    const res = await Promise.race([
+      fetch(url + '?action=getsettings'),
+      new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')), 8000))
+    ]);
+    const text = await res.text();
+    if(text.trimStart().startsWith('<')) return null; // Apps Script error page
+    const data = JSON.parse(text);
+    if(data.status !== 'ok' || !data.settings) return null;
+    // Bonus rate is stored on the sheet as a whole-number percent (e.g. "5")
+    const pct = parseFloat(data.settings.bonus_rate);
+    if(!isNaN(pct) && pct >= 1 && pct <= 10){
+      localStorage.setItem(BONUS_RATE_KEY, String(pct/100));
+    }
+    return data.settings;
+  } catch(e){
+    console.warn('[SETTINGS] could not reach Sheets —', e.message);
+    return null;
+  }
+}
+
+/* ═══════════════════════════════════════════
+   PULL QUOTES BACK FROM SHEETS
+   Quotes are already written TO Sheets when generated (see the log*Quote
+   functions). This is the missing other half: pulling them back so an
+   agent's quotes are visible from any device they sign into, and so the
+   Admin can see every agent's quotes, not just whatever was generated on
+   the device currently in front of them.
+   Regular agents only request their own quotes (agent filter); Admin
+   requests everyone's. Local quotes always take priority on ref clashes —
+   this only fills in quotes the current device doesn't already have.
+═══════════════════════════════════════════ */
+function _sheetRowToLocalQuote(r){
+  const product = String(r['Product']||'');
+  const base = {
+    ref: r['Reference']||'', agent: r['Agent']||'',
+    savedAt: r['Timestamp']||r['Quote Date']||'', doq: r['Quote Date']||r['Timestamp']||'',
+    status: r['Status']||'', deletedBy: r['Deleted By']||'',
+    _fromSheets: true
+  };
+  const isMo = String(r['Frequency']||'').toLowerCase()==='monthly';
+  if(product === 'Educational Plans'){
+    return { ...base, product,
+      clientName: r['Full Name']||'', parentName: r['Full Name']||'',
+      childName: r['Child Full Name']||'',
+      plan: r['Plan Code']||'', premTerm: Number(r['Premium Term (yrs)'])||'',
+      isMo, pANB: Number(r['ANB'])||'', cANB: Number(r['Child ANB'])||'',
+      totalSA: Number(r['Sum Assured (MK)'])||0,
+      totalPrem: Number(r['Total Premium (MK)'])||0, totalP: Number(r['Total Premium (MK)'])||0,
+      basicPrem: Number(r['Basic Premium (MK)'])||0, occPrem: Number(r['Occ Loading (MK)'])||0,
+      colPrem: Number(r['College Premium (MK)'])||0, colSA: Number(r['College Benefit SA (MK)'])||0,
+      hasCollege: String(r['Has College Benefit']||'')==='Yes',
+      occCls: r['Occupation Class']||'Standard'
+    };
+  }
+  if(product === 'Manga Yako'){
+    return { ...base, product,
+      clientName: r['Full Name']||'', clientEmail: r['Email']||'', clientPhone: r['Phone']||'',
+      clientCity: r['Town / City']||'', clientCountry: r['District / Country']||'',
+      gender: r['Gender']||'', dob: r['DOB']||'', anb: Number(r['ANB'])||'',
+      prem: Number(r['Monthly Premium (MK)'])||0, tmv: Number(r['Target Maturity Value (MK)'])||0,
+      totalContrib: Number(r['Total Contributions (MK)'])||0
+    };
+  }
+  if(product === 'Phindu'){
+    return { ...base, product,
+      name: r['Full Name']||'', clientName: r['Full Name']||'',
+      gender: r['Gender']||'', dob: r['DOB']||'', anb: Number(r['ANB'])||'',
+      mt: Number(r['Money Tree % (Phindu)'])||0, band: r['Band (Phindu)']||'',
+      phone: r['Phone']||'', town: r['Town / City']||'', district: r['District / Country']||'',
+      premium: Number(r['Monthly Premium (MK)'])||0, totalP: Number(r['Monthly Premium (MK)'])||0,
+      basicSA: Number(r['Sum Assured (MK)'])||0, saWithBonus: Number(r['SA + Bonus at Maturity (MK)'])||0,
+      mtBenefit: Number(r['Money Tree Benefit (MK)'])||0,
+      totalReceipts: Number(r['Total Receipts (MK)'])||0, projM: Number(r['Total Receipts (MK)'])||0,
+      totalPremiums: Number(r['Total Premiums Paid (MK)'])||0, profit: Number(r['Phindu Profit (MK)'])||0
+    };
+  }
+  // Default: Pure Savings Plan / Conventional Plans
+  return { ...base, product: product||'Pure Savings Plan',
+    clientName: r['Full Name']||'', occupation: r['Occupation']||'',
+    anb: Number(r['ANB'])||'', term: Number(r['Policy Term (yrs)'])||Number(r['Premium Term (yrs)'])||'',
+    freq: r['Frequency']||'', isMo,
+    dabIncluded: String(r['Riders']||'').includes('DAB'),
+    SA: Number(r['Sum Assured (MK)'])||0, projM: Number(r['Projected SA (MK)'])||0,
+    totalP: Number(r['Total Premium (MK)'])||0, basicP: Number(r['Basic Premium (MK)'])||0,
+    dabP: Number(r['DAB Premium (MK)'])||0, policyFee: Number(r['Policy Fee (MK)'])||0
+  };
+}
+
+async function fetchQuotesFromSheets(){
+  const url = localStorage.getItem(SHEETS_URL_KEY) || APPS_SCRIPT_URL;
+  if(!url) return null;
+  const qs = 'action=getquotes' + (isAdmin ? '' : '&agent='+encodeURIComponent(currentAgent||''));
+  try {
+    const res = await Promise.race([
+      fetch(url + '?' + qs),
+      new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')), 10000))
+    ]);
+    const text = await res.text();
+    if(text.trimStart().startsWith('<')) return null;
+    const data = JSON.parse(text);
+    if(data.status !== 'ok' || !Array.isArray(data.quotes)) return null;
+
+    // Bucket by product into the same three local stores renderHistory() reads
+    const pspBucket = [], eduBucket = [], myBucket = [], phBucket = [];
+    data.quotes.forEach(r=>{
+      const mapped = _sheetRowToLocalQuote(r);
+      if(!mapped.ref) return; // skip anything without a reference — can't dedupe safely
+      if(mapped.product === 'Manga Yako') myBucket.push(mapped);
+      else if(mapped.product === 'Phindu') phBucket.push(mapped);
+      else if(mapped.product === 'Educational Plans') eduBucket.push(mapped);
+      else pspBucket.push(mapped);
+    });
+
+    // Merge helper: local entries always win on a ref clash — remote copies only fill gaps
+    function merge(localKey, remoteList){
+      const local = JSON.parse(localStorage.getItem(localKey)||'[]');
+      const seen = new Set(local.map(q=>String(q.ref||'').toUpperCase()).filter(Boolean));
+      let added = 0;
+      remoteList.forEach(r=>{
+        const key = String(r.ref).toUpperCase();
+        if(!seen.has(key)){ local.push(r); seen.add(key); added++; }
+      });
+      if(added) localStorage.setItem(localKey, JSON.stringify(local));
+      return added;
+    }
+    const n1 = merge('vla_quotes', [...pspBucket, ...eduBucket]);
+    const n2 = merge('vla_my_quotes', myBucket);
+    const n3 = merge(PHINDU_QUOTES_KEY, phBucket);
+    console.log('[QUOTES] merged from Sheets — PSP/EDU:', n1, 'MY:', n2, 'Phindu:', n3);
+    return { added: n1+n2+n3 };
+  } catch(e){
+    console.warn('[QUOTES] could not reach Sheets —', e.message);
+    return null;
+  }
+}
+
+/* ═══════════════════════════════════════════
    OCC MAP
 ═══════════════════════════════════════════ */
 const OCC_MAP = {
@@ -5767,6 +5925,7 @@ window.addEventListener('DOMContentLoaded', async ()=>{
     } catch(e){
       if(connStatus){ connStatus.textContent='⚠️ Offline — cached logins only'; connStatus.style.color='#fca5a5'; }
     }
+    fetchSettingsFromSheets().catch(()=>{}); // quiet — no UI feedback needed for this one
   })();
   // Set Manga Yako date of quote to today
   const myDoqEl=document.getElementById('my-doq');
@@ -6086,7 +6245,12 @@ function switchTab(tab){
   const activeBar = document.getElementById('nav-bar-'+activeNav);
   if(activeBar) activeBar.style.display='block';
 
-  if(tab==='history')renderHistory();
+  if(tab==='history'){
+    renderHistory();
+    // Background-sync quotes from Sheets (other agents' quotes for Admin,
+    // or this agent's own quotes generated on other devices) then re-render.
+    fetchQuotesFromSheets().then(r=>{ if(r && r.added) renderHistory(); }).catch(()=>{});
+  }
   if(tab==='admin')renderAdminPanel();
   if(tab==='home')renderHomeDash();
   if(tab==='quotes-hub')renderQuotesHub();
@@ -7537,10 +7701,17 @@ function _histRevise(ref){
   const phinduRaw = JSON.parse(localStorage.getItem(PHINDU_QUOTES_KEY)||'[]');
   const allLocal  = getLocalQuotes();
   const myRaw     = getLocalMyQuotes();
-  let q = phinduRaw.find(x=>x.ref===ref) || myRaw.find(x=>x.ref===ref) || allLocal.find(x=>x.ref===ref);
+  // Find the quote AND remember which store it came from — this lets us
+  // correctly tag older quotes saved before 'product' was recorded on them.
+  let q, sourceProduct;
+  const inPhindu = phinduRaw.find(x=>x.ref===ref);
+  const inMy     = !inPhindu && myRaw.find(x=>x.ref===ref);
+  const inLocal  = !inPhindu && !inMy && allLocal.find(x=>x.ref===ref);
+  if(inPhindu){ q = inPhindu; sourceProduct = 'Phindu'; }
+  else if(inMy){ q = inMy; sourceProduct = 'Manga Yako'; }
+  else if(inLocal){ q = inLocal; sourceProduct = q.product || q._product || ''; }
   if(!q){ showToast('Quote not found'); return; }
-  const product = (q.product||q._product||'');
-  if(product==='Educational Plans') q = {...q, product:'Educational Plans'};
+  if(!q.product && !q._product) q = {...q, product: sourceProduct};
   currentHistQuote = q;
   reviseQuote();
 }
@@ -7905,6 +8076,7 @@ function saveBonusRate(pct){
   showToast('✓ Projection bonus rate set to '+r+'% p.a.');
   renderProfileTab();
   renderBonusTable();
+  pushSettingToSheets('bonus_rate', r); // fire-and-forget — other devices pick it up on next sync
 }
 
 function renderBonusTable(){
@@ -9900,7 +10072,7 @@ async function myGenerateQuote(){
   document.getElementById('my-quote-output').scrollIntoView({behavior:'smooth',block:'start'});
   // Save to local Manga Yako history
   const _myHist=JSON.parse(localStorage.getItem('vla_my_quotes')||'[]');
-  _myHist.unshift({...myQ, savedAt:new Date().toISOString()});
+  _myHist.unshift({...myQ, product:'Manga Yako', savedAt:new Date().toISOString()});
   localStorage.setItem('vla_my_quotes',JSON.stringify(_myHist.slice(0,200)));
   mySyncToSheets(myQ);
   try{renderRecentQuotes();}catch(e){}
@@ -11232,7 +11404,7 @@ function phinduBuildAndShow(name,dob,gender,anb,band,prem,mt,basicSA,saWithBonus
   const totalPrems = Math.round(prem*12*PHINDU_TERM);
   const profit     = totalRcpts - totalPrems;
   const ref='PHN-'+new Date().toISOString().slice(0,10).replace(/-/g,'')+'-'+Math.floor(1000+Math.random()*9000);
-  phinduQuoteData={ref,savedAt:new Date().toISOString(),agent:currentAgent,name,dob,gender,anb,band,
+  phinduQuoteData={ref,savedAt:new Date().toISOString(),agent:currentAgent,product:'Phindu',name,dob,gender,anb,band,
     phone:phone||'',town:town||'',district:district||'',
     premium:Math.round(prem),mt,basicSA:Math.round(basicSA),saWithBonus:Math.round(saWithBonus),
     mtBenefit,maturity,totalReceipts:totalRcpts,totalPremiums:totalPrems,profit,mode};
