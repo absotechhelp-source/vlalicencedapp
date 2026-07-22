@@ -4288,8 +4288,8 @@ select.f-inp:focus ~ label.f-lbl { color: var(--M) }
         <!-- Premium input area -->
         <div id="phindu-prem-area" class="card" style="margin-bottom:12px">
           <label class="f-lbl">Monthly Premium (MWK) *</label>
-          <input id="phindu-prem" class="f-inp" type="number" placeholder="e.g. 50000" min="25000" max="500000" step="1000">
-          <div style="font-size:11px;color:#6b7280;margin-top:4px">Range: MWK 25,000 – 500,000 per month</div>
+          <input id="phindu-prem" class="f-inp" type="number" placeholder="e.g. 50000" min="25000" max="2000000" step="1000">
+          <div style="font-size:11px;color:#6b7280;margin-top:4px">Range: MWK 25,000 – 2,000,000 per month</div>
         </div>
 
         <!-- SA → Premium input area -->
@@ -11271,7 +11271,7 @@ function triggerPWAInstall(){
 const PHINDU_QUOTES_KEY = 'vla_phindu_quotes';
 const PHINDU_PROPOSALS_KEY = 'vla_phindu_proposals';
 const PHINDU_MIN_PREM = 25000;
-const PHINDU_MAX_PREM = 500000;
+const PHINDU_MAX_PREM = 2000000;
 const PHINDU_TERM = 10;
 
 /* -- Lookup tables [basicSA, saWithBonus] per [mt][ageBand][premium] -- */
@@ -11360,7 +11360,7 @@ async function phinduGenerateQuote(){
   if(!phone){showToast('Phone number required');return;}
   if(!premRaw||isNaN(premRaw)){showToast('Enter monthly premium');return;}
   if(premRaw<PHINDU_MIN_PREM){showToast('Min premium: MWK 25,000');return;}
-  if(premRaw>PHINDU_MAX_PREM){showToast('Max premium: MWK 500,000');return;}
+  if(premRaw>PHINDU_MAX_PREM){showToast('Max premium: MWK 2,000,000');return;}
   const anb=phinduCalcAnb(dob), band=phinduGetBand(anb);
   if(!band){showToast('Age must be 18–65');return;}
   phinduAnb=anb;
