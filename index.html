@@ -8118,6 +8118,7 @@ async function renderAdminPanel(){
     const fresh = await fetchAgentsFromSheets();
     if(fresh) _buildAdminPanel(body); // re-render with Sheets data
   } catch(e){}
+  fetchSettingsFromSheets().then(s=>{ if(s) _buildAdminPanel(body); }).catch(()=>{});
 }
 
 function _buildAdminPanel(body){
