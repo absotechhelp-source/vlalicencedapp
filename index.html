@@ -4288,8 +4288,8 @@ select.f-inp:focus ~ label.f-lbl { color: var(--M) }
         <!-- Premium input area -->
         <div id="phindu-prem-area" class="card" style="margin-bottom:12px">
           <label class="f-lbl">Monthly Premium (MWK) *</label>
-          <input id="phindu-prem" class="f-inp" type="number" placeholder="e.g. 50000" min="25000" max="2000000" step="1000">
-          <div style="font-size:11px;color:#6b7280;margin-top:4px">Range: MWK 25,000 – 2,000,000 per month</div>
+          <input id="phindu-prem" class="f-inp" type="number" placeholder="e.g. 50000" min="25000" max="500000" step="1000">
+          <div style="font-size:11px;color:#6b7280;margin-top:4px">Range: MWK 25,000 – 500,000 per month</div>
         </div>
 
         <!-- SA → Premium input area -->
@@ -6721,9 +6721,6 @@ function renderQuoteDoc(q, isModal){
 }
 
 // ── Legacy helpers (kept for backward compat, no longer used in renderQuoteDoc) ─
-function _pspDocScaffold(logoSrc, ref, doq, isMo){ return ''; }
-function _pspRow(lbl, val, idx, bold=false){ return ''; }
-function _pspBdRow(lbl, val, nil=false){ return ''; }
 
 /* ═══════════════════════════════════════════════════════════════════
    UNIFIED QUOTE DOCUMENT BUILDER
@@ -8118,7 +8115,6 @@ async function renderAdminPanel(){
     const fresh = await fetchAgentsFromSheets();
     if(fresh) _buildAdminPanel(body); // re-render with Sheets data
   } catch(e){}
-  fetchSettingsFromSheets().then(s=>{ if(s) _buildAdminPanel(body); }).catch(()=>{});
 }
 
 function _buildAdminPanel(body){
@@ -8448,13 +8444,17 @@ async function removeAgent(name){
   const agents=getAgents();
   delete agents[name];
   saveAgents(agents);
-  // Soft-delete in Sheets so agent doesn't come back on next sync
+  // Soft-delete in Sheets so agent doesn't come back on next sync.
+  // NOTE: must NOT set a Content-Type header here — that forces a CORS
+  // preflight (OPTIONS) request, which Apps Script web apps don't support,
+  // so the request would silently fail every time (see project notes on
+  // GAS fetch calls). Use the same bare/no-cors pattern as pushAgentToSheets.
   try {
     const url = localStorage.getItem(SHEETS_URL_KEY) || APPS_SCRIPT_URL;
     if(url) fetch(url, {
       method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({action:'deleteAgent', name, hard:false})
+      mode:'no-cors',
+      body: JSON.stringify({action:'deleteAgent', name, hard:false, token: GAS_APP_TOKEN})
     }).catch(()=>{});
   } catch(e){}
   showToast('Agent "'+name+'" removed');
@@ -8686,11 +8686,8 @@ function _buildPSPPdf(q){
     return yy + 6.5;
   }
 
-  // ── HEADER (exact image from Letterhead_VLA.pdf) ──
-  // Image is 1100x120 → at full width 210mm tall ≈ 22.9mm. Use 0 margin, full bleed.
-  try{ doc.addImage(VLA_HEADER_IMG, 'JPEG', 0, 4, W, W*397/2477); }catch(e){}
-
-  let y = 4 + W*397/2477 + 3;
+  // ── HEADER (shared with the other three PDF builders) ──
+  let y = _pdfHeader(doc, W, logo);
 
   // ── Ref / Date line (plain text) ──
   _pdfSetFont(doc, 9, 'bold', PDF_MAROON);
@@ -8822,9 +8819,8 @@ function _buildPSPPdf(q){
   _pdfSetFont(doc, 8, 'normal', [136,136,136]);
   doc.text((agCC||'3043')+' (Call Centre)', M+CW, ry, {align:'right'});
 
-  // ── FOOTER (exact image from Letterhead_VLA.pdf) ──
-  // Image is 1100x105 → at full width 210mm tall ≈ 20mm. Bottom-aligned, full bleed.
-  try{ doc.addImage(VLA_FOOTER_IMG, 'JPEG', 0, H - (W*264/2480), W, W*264/2480); }catch(e){}
+  // ── FOOTER (shared with the other three PDF builders) ──
+  _pdfFooter(doc, W, H, agentName, fmtDate(q.savedAt||q.doq||''));
 
   return doc;
 }
@@ -9941,16 +9937,6 @@ function initMYDoq(){
    MANGA YAKO — QUOTING ENGINE
 ═══════════════════════════════════════════ */
 
-/* -- Mode switch -- */
-function mySetMode(m){
-  myMode = m;
-  ['tmv','prem'].forEach(x=>{
-    document.getElementById('my-tab-'+x).classList.toggle('active', x===m);
-  });
-  document.getElementById('my-tmv-area').style.display  = m==='tmv'  ? '' : 'none';
-  document.getElementById('my-prem-area').style.display = m==='prem' ? '' : 'none';
-}
-
 /* -- Name assembly -- */
 function myAssembleName(){
   const f=(document.getElementById('my-fname').value||'').trim();
@@ -10470,9 +10456,10 @@ function propUpdateShareTotal(){
   }
   const pill = document.getElementById('prop-share-pill');
   if(pill){
-    pill.textContent = `Total: ${Math.round(total)}%`;
-    pill.style.background = Math.round(total)===100?'var(--ML)':total>100?'#fee2e2':'var(--ML)';
-    pill.style.color = Math.round(total)===100?'var(--M)':total>100?'#dc2626':'var(--M)';
+    const r = Math.round(total);
+    pill.textContent = `Total: ${r}%`;
+    pill.style.background = r===100 ? 'var(--ML)' : r>100 ? '#fee2e2' : '#fef3c7';
+    pill.style.color      = r===100 ? 'var(--M)'  : r>100 ? '#dc2626' : '#d97706';
   }
 }
 
@@ -11272,7 +11259,7 @@ function triggerPWAInstall(){
 const PHINDU_QUOTES_KEY = 'vla_phindu_quotes';
 const PHINDU_PROPOSALS_KEY = 'vla_phindu_proposals';
 const PHINDU_MIN_PREM = 25000;
-const PHINDU_MAX_PREM = 2000000;
+const PHINDU_MAX_PREM = 500000; // must match calcPhindu() in AppsScript_v5.gs
 const PHINDU_TERM = 10;
 
 /* -- Lookup tables [basicSA, saWithBonus] per [mt][ageBand][premium] -- */
@@ -11361,7 +11348,7 @@ async function phinduGenerateQuote(){
   if(!phone){showToast('Phone number required');return;}
   if(!premRaw||isNaN(premRaw)){showToast('Enter monthly premium');return;}
   if(premRaw<PHINDU_MIN_PREM){showToast('Min premium: MWK 25,000');return;}
-  if(premRaw>PHINDU_MAX_PREM){showToast('Max premium: MWK 2,000,000');return;}
+  if(premRaw>PHINDU_MAX_PREM){showToast('Max premium: MWK 500,000');return;}
   const anb=phinduCalcAnb(dob), band=phinduGetBand(anb);
   if(!band){showToast('Age must be 18–65');return;}
   phinduAnb=anb;
@@ -11705,6 +11692,9 @@ function phinduPropSubmit(){
     const bn=getVal('pp-bn-'+i);
     if(bn)beneficiaries.push({name:bn,relationship:getVal('pp-br-'+i),dob:getVal('pp-bd-'+i),share:getVal('pp-bs-'+i)});
   }
+  if(beneficiaries.length===0){showToast('At least one beneficiary is required');return;}
+  const totalShare=beneficiaries.reduce((s,b)=>s+(parseFloat(b.share)||0),0);
+  if(Math.round(totalShare)!==100){showToast('Beneficiary shares must total 100% (current: '+Math.round(totalShare)+'%)',4000);return;}
   const ref='PHN-PROP-'+new Date().toISOString().slice(0,10).replace(/-/g,'')+'-'+Math.floor(1000+Math.random()*9000);
   phinduPropData={ref,submittedAt:new Date().toISOString(),agent:currentAgent,
     name,dob:getVal('pp-dob'),gender:getVal('pp-gender'),nationality:getVal('pp-nationality'),
