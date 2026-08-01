@@ -4932,6 +4932,11 @@ select.f-inp:focus ~ label.f-lbl { color: var(--M) }
 const AGENTS_KEY = 'vla_agents_v2';
 const SHEETS_URL_KEY = 'vla_sheets_url';
 const SHEETS_URL_VERSION = 'v4.1';  // Bump this when APPS_SCRIPT_URL changes
+// Minimum GAS backend version the "Save & Test" connection check will accept
+// without warning. Bump this whenever a deployment ships a change agents
+// actually need (new required action, fixed calc, etc). Must be kept in sync
+// with the version number in AppsScript_v5.gs's doGet 'ping' response message.
+const MIN_GAS_VERSION = 5.0;
 const SHEETS_URL_VER_KEY = 'vla_sheets_url_ver';
 const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwG5yrxCV3qq2OZU9n5qSAZRI8fxMgOAbUKLXOSrQ0-5ueb6_MhvPV73M-XWESj6lg5Zw/exec';
 const ADMIN_USER = 'VLA Admin';
@@ -7512,7 +7517,9 @@ function saveSheetURL(){
       catch(e){ throw new Error('Script returned non-JSON — check deployment URL'); }
       if(data.status==='ok'){
         const ver = data.message || '';
-        const isOld = ver && !ver.includes('v4.0');
+        const verMatch = ver.match(/v(\d+(?:\.\d+)?)/i);
+        const verNum   = verMatch ? parseFloat(verMatch[1]) : 0;
+        const isOld = ver && verNum < MIN_GAS_VERSION;
         if(isOld){
           s.textContent='⚠️ Connected but OLD version active ('+ver+'). Sync will fail. Please deploy AppsScript_FIXED.gs as a NEW deployment and update this URL.';
           s.style.color='#b45309';
